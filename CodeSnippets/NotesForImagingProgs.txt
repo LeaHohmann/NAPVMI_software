@@ -1,0 +1,13 @@
+
+I couldn't get these to work with Spyder, it doesn't like openCV
+
+test2.1    makes an average image when you press the q key  and when you press a it displays the images, plots it and crashes
+
+gui2b   takes snapshot on q , gets upset on a, has buttons that partially work but pass the wrong type of value
+
+
+gui3 and gui4  determines and displays the FPS  , FPS is not important for the vmi expt but i was trying to see how to read the gain and exposure values off the camera
+
+gui6 snapshot button works, saves the image as a jpg, others buttons don't work
+
+simplegui_object  has a class to gracte bottons to control openCV fuinctions on the camera
