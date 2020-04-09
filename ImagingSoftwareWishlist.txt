@@ -1,0 +1,29 @@
+
+
+Imaging software wishlist
+
+
+Control delay generator
+    read back the delay values from BNC box (before changing them)
+    set delays on BNC box
+    choose one channel to scan, set initial and final value, step size (alternative would be number of steps but then you get weird step sizes)
+
+
+
+Control camera
+    read and set gain, exposure time, x and y pixels if we don't want to use/save the whole image
+    set the number of images to sum
+    check if we saturate the camera or file format at high signal
+    take a single image
+    display the live image (rolling average of last x shots? lots more memory? good for low signal)
+    display the summed image
+    take a single summed image while scanning the MB delay to integrate over the speed distribution in the incident beam
+    do a kinetic scan with a new image at each step of the delay generator scan, link delay value to fame (absolute top priority once hardware is working but not the first thing to do for the software)
+    save the image(s) what format?
+
+
+Control laser
+    scan range - start, finish, step size (tell the kinetic scan how many steps it will be), dwell time (tell the camera), write wavelength so that we know what is corresponding image frame
+    go to wavelength
+
+
