@@ -12,7 +12,7 @@ def updatechannels():
 
 def changedelay(channumber):
     newdelay = Bfield.get()
-    inputstring = "PULS{}:DEL {}\r\n".format(channumber,newdelay)
+    inputstring = ":PULS{}:DEL {}\r\n".format(channumber,newdelay)
     ser.write(inputstring.encode("utf-8"))
     lastline = ser.readline().decode("utf-8")
     updatechannels()
