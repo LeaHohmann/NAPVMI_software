@@ -1,5 +1,3 @@
-Imaging Software Necessary Features
------------------------------------
 
 #Delay generator#
 
@@ -18,7 +16,7 @@ So the rest of the delays should automatically scale with this one or depend on 
 **Set the number of images to sum**
 
 **Check if we saturate the camera or file format at high signal**  
-? Automatic check or looking at the image live? Saturate file format??
+Saturate file format??
 
 **Take a single image**
 
@@ -27,12 +25,12 @@ The camera can also display the live image without taking a shot and without sav
 
 **Display the summed image**
 
-**Take a single summed image while scanning the MB delay to integrate over the speed distribution in the incident beam**  
-Isn't this convoluted with kinetics? 
+**Take a single summed image while scanning the MB delay to integrate over the speed distribution in the incident beam* 
 
 **Do a kinetic scan with a new image at each step of the delay generator scan, link delay value to frame (absolute top priority once hardware is working but not the first thing to do for the software**
 
 **Save the images in what format?**
+? What do we have to do to the image afterwards
 
 
 #Laser#
