@@ -1,4 +1,5 @@
-#Summary#
+Summary
+-------
 
 Program will contain the following modules:
 
@@ -10,12 +11,14 @@ Program will contain the following modules:
 The modules are described in more detail below
 
 
-#Main#
+Main
+----
 
 Main module that will contain the GUI root, define important global variables (e.g. establish serial port connection to the delay generator)
 
 
-#Delay generator#
+Delay generator
+---------------
 
 Module that contains the Channels classes and other classes to interact with the delay generator (connection needs to be established in mains)
 
@@ -34,12 +37,13 @@ Delay changing might be disabled for the fixed channels (all but Molecular Beam 
 +Make sure USB connection is stable!! 
 
 
-#Camera#
+Camera
+------
 
 Camera module that will contain the functions to operate the camera, using the PySpin python wrapper from FLIR
 
 **Current functionalities:**
--
+
 
 **Functionalties to add:**
 
@@ -58,7 +62,8 @@ Camera module that will contain the functions to operate the camera, using the P
 +Image file format
 
 
-#Laser#
+Laser
+-----
 
 Module that will contain the functions to interact with the laser
 
