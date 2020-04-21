@@ -2,13 +2,11 @@ import PySpin
 import tkinter as tk
 
 def quitthecamera(system):
-    del camera
+    global camera
+    camera =""
     system.ReleaseInstance()
 
 def cameraident(cameralist,serialnumber):
-    
-    global camera
-    camera = None
 
     for cam in cameralist:
 
@@ -21,12 +19,15 @@ def cameraident(cameralist,serialnumber):
             serialno = "0"
 
         if serialno == serialnumber:
+            global camera
             camera = cam
             message = "Connected to camera"
             print(message)
             break
     
-    if camera == None:
+    import pdb; pdb.set_trace()
+    
+    if camera == "":
         message = "Camera not found"
         print(message)
 
@@ -39,10 +40,9 @@ def camerainit(system,serialnumber):
     cameralist = system.GetCameras()
 
     if cameralist.GetSize() == 0:
-        #message = "No cameras connected. Connect a camera and try again."
-
+        message = "No cameras connected. Connect a camera and try again."
+        print(message)
         cameralist.Clear()
-        system.ReleaseInstance()
 
     else:
         cameraident(cameralist,serialnumber)
