@@ -12,7 +12,7 @@ class CameraApp(tk.Frame):
         self.camera = ""
         self.serialnumber = serialnumber
 
-        self.connect = tk.Button(self, Text="Connect to camera", command=)
+        self.connect = tk.Button(self, Text="Connect to camera", command=self.connectcamera)
         self.connect.pack(side=tk.TOP, ipadx=5, ipady=5, padx=5, pady=5)
 
         self.message = tk.Label(self, Text="")
@@ -58,13 +58,17 @@ class CameraApp(tk.Frame):
 
 
     def guiinit(self):
+        self.connect.configure(Text="Disconnect camera", command=self.disconnect)
+
+        #Rest of camera gui goes here
 
 
+    def disconnect(self):
+        self.camera =""
+        self.system.ReleaseInstance()
 
+        self.connect.configure(Text="Connect to camera", command=self.connectcamera)
 
-def quitthecamera(system):
-    global camera
-    camera =""
-    system.ReleaseInstance()
+        #Destroy rest of the GUI
 
-
+    

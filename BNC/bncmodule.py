@@ -1,6 +1,77 @@
 import serial
 import tkinter as tk
 
+class DelayApp(tk.Frame):
+
+    def __init__(self,root,port,baudrate):
+        tk.Frame.__init__(self,root)
+        self.pack()
+        
+        self.port = port
+        self.baudrate = baudrate
+        
+        self.connect = tk.Button(self, Text="Connect to delay generator"i, command=self.connectbnc)
+        self.connect.pack(side=tk.TOP, ipadx=5, ipady=5, padx=5, pady=5)
+
+        self.message = tk.Label(self, Text="")
+        self.message.pack(side=tk.BOTTOM, padx=5, pady=5)
+
+    def connectbnc(self):
+        self.bnc = serial.Serial(self.port, baudrate=self.baudrate, bytesize=8, parity="N", stopbits=1, timeout=1)
+
+        self.message.configure(Text="Connected to BNC delay generator at interface {}".format(self.port))
+        self.guiinit()
+        self.connect.configure(Text="Disconnect", command=quitbnc)
+
+
+    def quitbnc(self):
+        self.bnc.close()
+
+        self.frameA.destroy()
+        self.frameB.destroy()
+        self.frameC.destroy()
+        self.frameD.destroy()
+        self.frameE.destroy()
+        self.frameF.destroy()
+        self.frameG.destroy()
+        self.frameH.destroy()
+
+        self.connect.configure(Text="Connect", command=connectbnc)
+
+    def guiinit(self):
+        self.frameA = tk.Frame(self)
+        frameA.pack(side=tk.TOP)
+        ChA = Channel("A",1,frameA,self.bnc)
+
+        self.frameB = tk.Frame(self)
+        frameB.pack(side = tk.TOP)
+        ChB = Channel("B",2,frameB,self.bnc)
+
+        self.frameC = tk.Frame(self)
+        frameC.pack(side=tk.TOP)
+        ChC = Channel("C",3,frameC,self.bnc)
+
+        self.frameD = tk.Frame(self)
+        frameD.pack(side=tk.TOP)
+        ChD = Channel("D",4,frameD,self.bnc)
+
+        self.frameE = tk.Frame(self)
+        frameE.pack(side=tk.TOP)
+        ChE = Channel("E",5,frameE,self.bnc)
+
+        self.frameF = tk.Frame(self)
+        frameF.pack(side=tk.TOP)
+        ChF = Channel("F",6,frameF,self.bnc)
+
+        self.frameG = tk.Frame(self)
+        frameG.pack(side=tk.TOP)
+        ChG = Channel("G",7,frameG,self.bnc)
+
+        self.frameH = tk.Frame(self)
+        frameH.pack(side=tk.TOP)
+        ChH = Channel("H",8,frameH,seld.bnc)
+
+
 class Channel():
 
     def __init__(self, name, number, frame, unit)
