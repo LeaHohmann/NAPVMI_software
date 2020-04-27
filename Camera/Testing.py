@@ -1,29 +1,19 @@
-import PySpin
 import tkinter as tk
 import cameramodule
 
-system = PySpin.System.GetInstance()
 
-camera = ""
-
-def exit(system):
-    cameramodule.quitthecamera(system)
-    root.quit()
+def quitgui():
+    cameragui.quitthesystem()
+    root.destroy()
 
 root = tk.Tk()
-root.geometry("300x200+30+30")
+root.geometry("500x400+30+30")
+root.protocol("WM_DELETE_WINDOW", root.iconify)
 
-cameraconnect = tk.Button(root, text="Connect to Camera", command=lambda:cameramodule.camerainit(system,"18479311"))
-cameraconnect.pack(ipadx=5, ipady=5)
+cameragui = cameramodule.CameraApp(root,"18479311")
 
-quit = tk.Button(root, text="Quit", command=lambda:exit(system))
-quit.pack(ipadx=5, ipady=5)
-
-messageframe = tk.Frame(root, width=200)
-messageframe.pack(side=tk.BOTTOM)
-
-messagelabel = tk.Label(messageframe, text="")
-messagelabel.pack
+quit = tk.Button(root, text="Quit", command=quitgui)
+quit.pack(side=tk.TOP, ipadx=5, ipady=5, pady=20)
 
 root.mainloop()
 
