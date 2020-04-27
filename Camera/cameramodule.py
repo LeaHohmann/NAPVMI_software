@@ -42,8 +42,8 @@ class CameraApp(tk.Frame):
     def cameraident(self):
         for cam in self.cameralist:
 
-            device_nodemap = cam.GetTLDeviceNodeMap()
-            node_serialno = PySpin.CStringPtr(device_nodemap.GetNode("DeviceSerialNumber"))
+            tldevice_nodemap = cam.GetTLDeviceNodeMap()
+            node_serialno = PySpin.CStringPtr(tldevice_nodemap.GetNode("DeviceSerialNumber"))
             if PySpin.IsAvailable(node_serialno) and PySpin.IsReadable(node_serialno):
                 serialno = node_serialno.ToString()
             else:
@@ -51,8 +51,9 @@ class CameraApp(tk.Frame):
 
             if serialno == self.serialnumber:
                 self.camera = cam
+                self.camera.Init()
                 self.message.configure(text="Connected to camera")
-                self.nodemap = device_nodemap
+                self.nodemap = self.camera.GetNodeMap()
                 break
     
         del cam
