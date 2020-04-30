@@ -52,7 +52,8 @@ class Livegui(tk.Tk):
 
     def guiinit(self):
         self.imageplot = matplotlib.figure.Figure()
-        self.img = self.imageplot.add_subplot(111)
+        self.img = self.imageplot.add_subplot(211)
+        self.histogram = self.imageplot.add_subplot(212)
 
         self.canvas = FigureCanvasTkAgg(self.imageplot, master=self)
         self.canvas.draw()
@@ -66,7 +67,6 @@ class Livegui(tk.Tk):
     def quit_window(self):
         if self.startstop["text"] == "Stop":
             self.running = False
-            self.camera.EndAcquisition()
             
         self.camera.DeInit()
         del self.camera
@@ -99,20 +99,26 @@ class Livegui(tk.Tk):
         try:
             image_result = self.camera.GetNextImage()
             image_data = image_result.GetNDArray()
+            channel_stats = image_result.CalculateChannelStatistics(0)
+            image_histogram = channel_stats.histogram
+            
         
         except PySpin.SpinnakerException as ex:
             print("Error: {}".format(ex))
+            image_result.Release()
+            self.camera.EndAcquisition()
             return
             
         self.img.clear()
         self.img.imshow(image_data, cmap="gray")
+        self.histogram.plot(numpy.arange(1,257),image_histogram)
         self.canvas.draw()
         image_result.Release()
 
-        if self.running == True:
-            self.after(1, self.imageloop)
-        else:
-            self.camera.EndAcquisition()
+        #if self.running == True:
+            #self.after(1, self.imageloop)
+        #else:
+        self.camera.EndAcquisition()
        
   
     def stopacquisition(self):
