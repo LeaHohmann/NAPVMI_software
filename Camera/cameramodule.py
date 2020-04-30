@@ -24,20 +24,28 @@ class CameraApp(tk.Frame):
     def guiinit(self):
         
         self.leftframe = tk.Frame(self)
-        self.leftframe.pack(side=tk.LEFT, padx=10)
+        self.leftframe.pack(side=tk.LEFT, padx=30)
 
         self.rightframe = tk.Frame(self)
         self.rightframe.pack(side=tk.LEFT, padx=10)
 
-        self.settingslabel = tk.Label(self.leftframe, text="Camera settings:")
+        self.settingslabel = tk.Label(self.leftframe, text="Camera settings", anchor=tk.NW, font=("Helvetica", 32))
         self.settingslabel.pack(side=tk.TOP, pady=10)
 
-        self.figure = matplotlib.figure.Figure()
-        self.imagedisplay = self.figure.add_subplot(111)
+        self.gainlabel = tk.Label(self.leftframe, text="Gain:", anchor=tk.NW, font=("Helvetica",20))
+        #pack when gain widget is ready
+
+        self.exposurelabel = tk.Label(self.leftframe, text="Exposure time:", anchor=tk.NW, font=("Helvetica",20))
+        #pack when exposure time widget is ready
+
+        self.figure = matplotlib.figure.Figure(figsize=[7.0,6.0])
+        self.grid = self.figure.add_gridspec(ncols=1, nrows=2, height_ratios=[5,1])
+        self.imagedisplay = self.figure.add_subplot(self.grid[0,0])
+        self.histogram = self.figure.add_subplot(self.grid[1,0])
 
         self.canvas = FigureCanvasTkAgg(self.figure, master=self.rightframe)
         self.canvas.draw()
-        self.canvas.get_tk_widget().pack(side=tk.TOP, expand=1, fill=tk.BOTH)
+        self.canvas.get_tk_widget().pack(side=tk.TOP, expand=1, fill=tk.BOTH, pady=10)
         
         self.startlive = tk.Button(self.rightframe, text="Display live", command=self.start_liveacquisition)
         self.startlive.pack(side=tk.LEFT, ipadx=5, ipady=5, pady=20)
@@ -70,6 +78,8 @@ class CameraApp(tk.Frame):
         try:
             image_result = self.camera.GetNextImage()
             image_data = image_result.GetNDArray()
+            channel_stats = image_result.CalculateChannelStatistics(0)
+            image_histogram = channel_stats.histogram
 
         except PySpin.SpinnakerException as ex:
             
@@ -82,6 +92,8 @@ class CameraApp(tk.Frame):
 
         self.imagedisplay.clear()
         self.imagedisplay.imshow(image_data, cmap="gray")
+        self.histogram.clear()
+        self.histogram.plot(image_histogram)
         self.canvas.draw()
         image_result.Release()
 
