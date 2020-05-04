@@ -5,10 +5,24 @@ def nodetesting(camera):
     nodemap = camera.GetNodeMap()
 
     node_autoexposure = PySpin.CEnumerationPtr(nodemap.GetNode("ExposureAuto"))
-    node_autoexposure_continuous = node_autoexposure.GetEntryByName("Continuous")
-    node_autoexposure.SetIntValue(node_autoexposure_continuous.GetValue())
-    autoexposure_status = node_autoexposure.GetCurrentEntry().GetValue()
+    #node_autoexposure.SetIntValue(2)
+    autoexposure_status = node_autoexposure.GetCurrentEntry().GetDisplayName()
     print("Auto Exposure: {}".format(autoexposure_status))
+
+    node_autogain = PySpin.CEnumerationPtr(nodemap.GetNode("GainAuto"))
+    #node_autogain.SetIntValue(2)
+    autogain_status = node_autogain.GetCurrentEntry().GetDisplayName()
+    print("Auto Gain: {}".format(autogain_status))
+
+    node_autoexpocomp = PySpin.CEnumerationPtr(nodemap.GetNode("pgrExposureCompensationAuto"))
+    node_autoexpocomp.SetIntValue(0)
+    autoexpocomp_status = node_autoexpocomp.GetCurrentEntry().GetDisplayName()
+    print("Auto Exposure compensation: {}".format(autoexpocomp_status))
+
+    node_exposuretime = PySpin.CFloatPtr(nodemap.GetNode("ExposureTime"))
+    print(node_exposuretime.GetValue())
+    node_exposuretime.SetValue(25000.00)
+    print(node_exposuretime.GetValue())
 
 
 

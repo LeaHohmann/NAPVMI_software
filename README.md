@@ -49,16 +49,18 @@ Camera module that will contain the functions to operate the camera, using the P
 
 - Scanning for a connected cameras, if "our" camera is among it, connecting to it 
 - Display the live footage 
-- Check if we saturate the camera at high signal by displaying the histogram/pixel value distribution    
+- Check if we saturate the camera at high signal by displaying the histogram/pixel value distribution
+- Read and set gain, exposure time
 
 **Functionalties to add:**
 
 - Set the camera to trigger mode instead of  automatic and execute the acquisition and display functions in triggered mode
-- Read and set gain, exposure time, x and y pixels if we don't want to use the whole image  
+- Set x and y pixels if we don't want to use the whole image  
 - Set the number of images to sum  
 - Take a single image/frame  
 - For low signal: Display rolling average of last x shots?    
-- Display the summed image  
+- Display the summed image 
+- Save and load parameters
 
 **Issues to think about:**
 

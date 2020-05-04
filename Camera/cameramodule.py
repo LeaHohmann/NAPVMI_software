@@ -18,25 +18,34 @@ class CameraApp(tk.Frame):
         self.nodemap = self.camera.GetNodeMap()
         self.streamnodemap = self.camera.GetTLStreamNodeMap()
 
+        self.camerasetup()
         self.guiinit()
 
 
     def guiinit(self):
         
         self.leftframe = tk.Frame(self)
-        self.leftframe.pack(side=tk.LEFT, padx=30)
+        self.leftframe.pack(side=tk.LEFT, fill=tk.Y, padx=40)
 
         self.rightframe = tk.Frame(self)
         self.rightframe.pack(side=tk.LEFT, padx=10)
 
-        self.settingslabel = tk.Label(self.leftframe, text="Camera settings", anchor=tk.NW, font=("Helvetica", 32))
-        self.settingslabel.pack(side=tk.TOP, pady=10)
+        self.settingslabel = tk.Label(self.leftframe, text="Camera settings", anchor=tk.NW, font=("Helvetica", 18))
+        self.settingslabel.pack(side=tk.TOP, pady=(10,30))
 
-        self.gainlabel = tk.Label(self.leftframe, text="Gain:", anchor=tk.NW, font=("Helvetica",20))
-        #pack when gain widget is ready
+        self.exposurelabel = tk.Label(self.leftframe, text="Exposure time [us] : {}".format(round(self.node_exposuretime.GetValue(),2)), anchor=tk.NW, font=("Helvetica",12))
+        self.exposurelabel.pack(side=tk.TOP, pady=5)
 
-        self.exposurelabel = tk.Label(self.leftframe, text="Exposure time:", anchor=tk.NW, font=("Helvetica",20))
-        #pack when exposure time widget is ready
+        self.exposureslider = tk.Scale(self.leftframe, from_=40.00, to=32000.00, resolution=30.00, orient=tk.HORIZONTAL, length=200, command=self.exposuretime)
+        self.exposureslider.set(self.node_exposuretime.GetValue())
+        self.exposureslider.pack(side=tk.TOP, pady=(0,30))
+
+        self.gainlabel = tk.Label(self.leftframe, text="Gain: {}".format(round(self.node_gain.GetValue(),2)), anchor=tk.NW, font=("Helvetica",12))
+        self.gainlabel.pack(side=tk.TOP, pady=5)
+
+        self.gainslider = tk.Scale(self.leftframe, from_=-10.75, to=23.05, resolution=0.26, orient=tk.HORIZONTAL, length=200, command=self.gain)
+        self.gainslider.set(self.node_gain.GetValue())
+        self.gainslider.pack(side=tk.TOP, pady=(0,30))
 
         self.figure = matplotlib.figure.Figure(figsize=[7.0,6.0])
         self.grid = self.figure.add_gridspec(ncols=1, nrows=2, height_ratios=[5,1])
@@ -49,6 +58,33 @@ class CameraApp(tk.Frame):
         
         self.startlive = tk.Button(self.rightframe, text="Display live", command=self.start_liveacquisition)
         self.startlive.pack(side=tk.LEFT, ipadx=5, ipady=5, pady=20)
+
+    
+    def camerasetup(self):
+        
+        node_autoexposure = PySpin.CEnumerationPtr(self.nodemap.GetNode("ExposureAuto"))
+        node_autoexposure.SetIntValue(0)
+        
+        node_autogain = PySpin.CEnumerationPtr(self.nodemap.GetNode("GainAuto"))
+        node_autogain.SetIntValue(0)
+
+        node_autoexpocomp = PySpin.CEnumerationPtr(self.nodemap.GetNode("pgrExposureCompensationAuto"))
+        node_autoexpocomp.SetIntValue(0)
+
+        self.node_exposuretime = PySpin.CFloatPtr(self.nodemap.GetNode("ExposureTime"))
+        self.node_gain = PySpin.CFloatPtr(self.nodemap.GetNode("Gain"))
+
+
+    def exposuretime(self,value):
+
+        self.node_exposuretime.SetValue(float(value))
+        self.exposurelabel.configure(text="Exposure time [us] : {}".format(round(self.node_exposuretime.GetValue(),2)))
+
+    
+    def gain(self,value):
+
+        self.node_gain.SetValue(float(value))
+        self.gainlabel.configure(text="Gain: {}".format(round(self.node_gain.GetValue(),2)))
 
 
     def setup_live(self):
@@ -98,7 +134,7 @@ class CameraApp(tk.Frame):
         image_result.Release()
 
         if self.running == True:
-            self.after(1, self.imageloop)
+            self.after(30, self.imageloop)
         else:
             self.camera.EndAcquisition()
 
