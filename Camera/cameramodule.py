@@ -70,6 +70,9 @@ class CameraApp(tk.Frame):
         self.singleframe = tk.Button(self.rightframe, text="Single frame", command=self.capturesingleframe)
         self.singleframe.pack(side=tk.LEFT, ipadx=5, ipady=5, pady=20)
 
+        self.multiframe = tk.Button(self.rightframe, text="Summed multiframe image", command=self.capturemultiframe)
+        self.multiframe.pack(side=tk.LEFT, ipadx=5, ipady=5, pady=20)
+
         self.savearray = tk.Button(self.rightframe, text="Save as array", command=self.save_asarray, state=tk.DISABLED)
         self.savearray.pack(side=tk.RIGHT, ipadx=5,ipady=5, pady=20)
 
@@ -117,11 +120,23 @@ class CameraApp(tk.Frame):
 
     def setup_singleframe(self):
 
-        node_bufferhandling = PySpin.CEnumerationPtr(self.streamnodemap.GetNode('StreamBufferHandlingMode'))
+        node_bufferhandling = PySpin.CEnumerationPtr(self.streamnodemap.GetNode("StreamBufferHandlingMode"))
         node_bufferhandling.SetIntValue(node_bufferhandling.GetEntryByName("NewestOnly").GetValue())
 
-        node_acquisitionmode = PySpin.CEnumerationPtr(self.nodemap.GetNode('AcquisitionMode'))
+        node_acquisitionmode = PySpin.CEnumerationPtr(self.nodemap.GetNode("AcquisitionMode"))
         node_acquisitionmode.SetIntValue(1)
+
+
+    
+    def setup_multiframe(self):
+
+        node_bufferhandling = PySpin.CEnumerationPtr(self.streamnodemap.GetNode("StreamBufferHandlingMode"))
+        node_bufferhandling.SetIntValue(node_bufferhandling.GetEntryByName("NewestOnly").GetValue())
+
+        node_acquisitionmode = PySpin.CEnumerationPtr(self.nodemap.GetNode("AcquisitionMode"))
+        node_acquisitionmode.SetIntValue(2)
+        node_framecount = PySpin.CIntegerPtr(self.nodemap.GetNode("AcquisitionFrameCount"))
+        node_framecount.SetValue(int(self.sumimages.get()))
  
 
 
@@ -177,7 +192,7 @@ class CameraApp(tk.Frame):
     def capturesingleframe(self):
         
         self.setup_singleframe()
-        
+
         self.camera.BeginAcquisition()
         
         try:
@@ -197,20 +212,61 @@ class CameraApp(tk.Frame):
             return
 
         self.camera.EndAcquisition()
-        
+
         self.imagedisplay.clear()
         self.imagedisplay.imshow(self.image_data, cmap="gray")
         self.histogram.clear()
         self.histogram.plot(image_histogram)
         self.canvas.draw()
         self.savearray.configure(state=tk.NORMAL)
-        self.saveimage.configure(state=tk.NORMAL)
+        self.saveimage.configure(state=tk.NORMAL, command=self.save_asimage)
                 
         
         try:
             image_result.Release()
         except PySpin.SpinnakerException:
             pass
+
+
+
+    def capturemultiframe(self):
+
+        self.setup_multiframe()
+        self.sumimages.configure(state=tk.DISABLED)
+        
+        self.camera.BeginAcquisition()
+        sum_image = numpy.zeros((964,1288))
+
+        for i in range(int(self.sumimages.get())):
+
+            try:
+                image_result = self.camera.GetNextImage()
+                image_data = image_result.GetNDArray()
+                sum_image += image_data
+        
+            except PySpin.SpinnakerException as ex:
+            
+                try:
+                    self.camera.EndAcquisition()
+                except PySpin.SpinnakerException:
+                    pass
+                tk.messagebox.showerror("Error", "Stopped after {} images: {}".format(i,ex))
+                return
+
+            image_result.Release()
+
+        self.camera.EndAcquisition()
+        self.image_data = sum_image
+
+        self.imagedisplay.clear()
+        self.imagedisplay.imshow(self.image_data, vmin=0, vmax=255, cmap="gray")
+        self.histogram.clear()
+        self.canvas.draw()
+        self.savearray.configure(state=tk.NORMAL)
+        self.saveimage.configure(state=tk.NORMAL, command=self.save_assumimage)
+        
+        self.sumimages.configure(state=tk.NORMAL)
+
 
 
     def save_asimage(self):
@@ -223,6 +279,12 @@ class CameraApp(tk.Frame):
         
         filename = filedialog.asksaveasfilename(initialdir="C:/", title="Save array as:", filetypes=(("Binary numpy array file", "*.npy"),("All files","*.*")))
         numpy.save(filename, self.image_data)
+
+
+    def save_assumimage(self):
+
+        filename = filedialog.asksaveasfilename(initialdir="C:/", title="Save image as:", filetypes=(("PNG files", "*.png"),("All files","*.*")))
+        matplotlib.image.imsave(filename, self.image_data, vmin=0, vmax=255, cmap="gray")
 
 
     def quit_cameraapp(self):
