@@ -1,5 +1,7 @@
 import PySpin
 import tkinter as tk
+from tkinter import messagebox
+from tkinter import filedialog
 import numpy
 import matplotlib 
 matplotlib.use("TkAgg")
@@ -68,6 +70,12 @@ class CameraApp(tk.Frame):
         self.singleframe = tk.Button(self.rightframe, text="Single frame", command=self.capturesingleframe)
         self.singleframe.pack(side=tk.LEFT, ipadx=5, ipady=5, pady=20)
 
+        self.savearray = tk.Button(self.rightframe, text="Save as array", command=self.save_asarray, state=tk.DISABLED)
+        self.savearray.pack(side=tk.RIGHT, ipadx=5,ipady=5, pady=20)
+
+        self.saveimage = tk.Button(self.rightframe, text="Save image", command=self.save_asimage, state=tk.DISABLED)
+        self.saveimage.pack(side=tk.RIGHT,ipadx=5, ipady=5, pady=20)
+
     
     def camerasetup(self):
         
@@ -121,6 +129,8 @@ class CameraApp(tk.Frame):
         self.setup_live()
 
         self.startlive.configure(text="Stop", command=self.stop_liveacquisition)
+        self.savearray.configure(state=tk.DISABLED)
+        self.saveimage.configure(state=tk.DISABLED)
 
         self.running = True
         self.camera.BeginAcquisition()
@@ -143,7 +153,7 @@ class CameraApp(tk.Frame):
             except PySpin.SpinnakerException:
                 pass
             self.startlive.configure(text="Display live", command=self.start_liveacquisition)
-            tk.messagebox.showerror("Error", "{}".format(ex))
+            messagebox.showerror("Error", "{}".format(ex))
 
         self.imagedisplay.clear()
         self.imagedisplay.imshow(image_data, cmap="gray")
@@ -172,9 +182,10 @@ class CameraApp(tk.Frame):
         
         try:
             image_result = self.camera.GetNextImage()
-            image_data = image_result.GetNDArray()
+            self.image_data = image_result.GetNDArray()
             channel_stats = image_result.CalculateChannelStatistics(0)
             image_histogram = channel_stats.histogram
+            self.convertedimage = image_result.Convert(PySpin.PixelFormat_Mono8)
         
         except PySpin.SpinnakerException as ex:
             
@@ -183,20 +194,35 @@ class CameraApp(tk.Frame):
             except PySpin.SpinnakerException:
                 pass
             tk.messagebox.showerror("Error", "{}".format(ex))
+            return
 
         self.camera.EndAcquisition()
-
+        
         self.imagedisplay.clear()
-        self.imagedisplay.imshow(image_data, cmap="gray")
+        self.imagedisplay.imshow(self.image_data, cmap="gray")
         self.histogram.clear()
         self.histogram.plot(image_histogram)
         self.canvas.draw()
+        self.savearray.configure(state=tk.NORMAL)
+        self.saveimage.configure(state=tk.NORMAL)
+                
         
         try:
             image_result.Release()
         except PySpin.SpinnakerException:
             pass
 
+
+    def save_asimage(self):
+        
+        filename = filedialog.asksaveasfilename(initialdir="C:/", title="Save image as:", filetypes=(("PNG files", "*.png"),("All files","*.*")))
+        self.convertedimage.Save(filename)
+
+
+    def save_asarray(self):
+        
+        filename = filedialog.asksaveasfilename(initialdir="C:/", title="Save array as:", filetypes=(("Binary numpy array file", "*.npy"),("All files","*.*")))
+        numpy.save(filename, self.image_data)
 
 
     def quit_cameraapp(self):

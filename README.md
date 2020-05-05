@@ -52,6 +52,7 @@ Camera module that will contain the functions to operate the camera, using the P
 - Check if we saturate the camera at high signal by displaying the histogram/pixel value distribution
 - Read and set gain, exposure time
 - Take a single image/frame  
+- Save image as PNG or binary numpy array
 
 
 **Functionalties to add:**
