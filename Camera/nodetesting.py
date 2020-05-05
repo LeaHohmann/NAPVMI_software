@@ -3,6 +3,7 @@ import PySpin
 
 def nodetesting(camera):
     nodemap = camera.GetNodeMap()
+    streamnodemap = camera.GetTLStreamNodeMap()
 
     node_autoexposure = PySpin.CEnumerationPtr(nodemap.GetNode("ExposureAuto"))
     #node_autoexposure.SetIntValue(2)
@@ -19,11 +20,17 @@ def nodetesting(camera):
     autoexpocomp_status = node_autoexpocomp.GetCurrentEntry().GetDisplayName()
     print("Auto Exposure compensation: {}".format(autoexpocomp_status))
 
-    node_exposuretime = PySpin.CFloatPtr(nodemap.GetNode("ExposureTime"))
-    print(node_exposuretime.GetValue())
-    node_exposuretime.SetValue(25000.00)
-    print(node_exposuretime.GetValue())
+    node_bufferhandling = PySpin.CEnumerationPtr(streamnodemap.GetNode("StreamBufferHandlingMode"))
+    node_bufferhandling.SetIntValue(4)
+    bufferhandling_status = node_bufferhandling.GetCurrentEntry().GetDisplayName()
+    bhentrynumber = node_bufferhandling.GetCurrentEntry().GetValue()
+    print("Buffer handling: {},{}".format(bufferhandling_status, bhentrynumber))
 
+    node_acquisitionmode = PySpin.CEnumerationPtr(nodemap.GetNode("AcquisitionMode"))
+    node_acquisitionmode.SetIntValue(1)
+    acquisitionmode_status = node_acquisitionmode.GetCurrentEntry().GetDisplayName()
+    acmodeentrynumber = node_acquisitionmode.GetCurrentEntry().GetValue()
+    print("Acquisition Mode: {},{}".format(acquisitionmode_status, acmodeentrynumber))
 
 
 system = PySpin.System.GetInstance()

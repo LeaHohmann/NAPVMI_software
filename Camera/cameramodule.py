@@ -47,6 +47,12 @@ class CameraApp(tk.Frame):
         self.gainslider.set(self.node_gain.GetValue())
         self.gainslider.pack(side=tk.TOP, pady=(0,30))
 
+        self.sumimageslabel = tk.Label(self.leftframe, text="Number of images to sum:", anchor=tk.NW, font=("Helvetica,12"))
+        self.sumimageslabel.pack(side=tk.TOP, pady=5)
+
+        self.sumimages = tk.Entry(self.leftframe)
+        self.sumimages.pack(side=tk.TOP, pady=(0,30))
+
         self.figure = matplotlib.figure.Figure(figsize=[7.0,6.0])
         self.grid = self.figure.add_gridspec(ncols=1, nrows=2, height_ratios=[5,1])
         self.imagedisplay = self.figure.add_subplot(self.grid[0,0])
@@ -58,6 +64,9 @@ class CameraApp(tk.Frame):
         
         self.startlive = tk.Button(self.rightframe, text="Display live", command=self.start_liveacquisition)
         self.startlive.pack(side=tk.LEFT, ipadx=5, ipady=5, pady=20)
+
+        self.singleframe = tk.Button(self.rightframe, text="Single frame", command=self.capturesingleframe)
+        self.singleframe.pack(side=tk.LEFT, ipadx=5, ipady=5, pady=20)
 
     
     def camerasetup(self):
@@ -87,15 +96,25 @@ class CameraApp(tk.Frame):
         self.gainlabel.configure(text="Gain: {}".format(round(self.node_gain.GetValue(),2)))
 
 
+
     def setup_live(self):
 
         node_bufferhandling = PySpin.CEnumerationPtr(self.streamnodemap.GetNode('StreamBufferHandlingMode'))
-        node_newestonly = node_bufferhandling.GetEntryByName('NewestOnly')
-        node_bufferhandling.SetIntValue(node_newestonly.GetValue())
+        node_bufferhandling.SetIntValue(node_bufferhandling.GetEntryByName("NewestOnly").GetValue())
 
         node_acquisitionmode = PySpin.CEnumerationPtr(self.nodemap.GetNode('AcquisitionMode'))
-        node_continuous = node_acquisitionmode.GetEntryByName('Continuous')
-        node_acquisitionmode.SetIntValue(node_continuous.GetValue())
+        node_acquisitionmode.SetIntValue(0)
+
+
+
+    def setup_singleframe(self):
+
+        node_bufferhandling = PySpin.CEnumerationPtr(self.streamnodemap.GetNode('StreamBufferHandlingMode'))
+        node_bufferhandling.SetIntValue(node_bufferhandling.GetEntryByName("NewestOnly").GetValue())
+
+        node_acquisitionmode = PySpin.CEnumerationPtr(self.nodemap.GetNode('AcquisitionMode'))
+        node_acquisitionmode.SetIntValue(1)
+ 
 
 
     def start_liveacquisition(self):
@@ -143,6 +162,41 @@ class CameraApp(tk.Frame):
         self.running = False
 
         self.startlive.configure(text="Display live", command=self.start_liveacquisition)
+
+
+    def capturesingleframe(self):
+        
+        self.setup_singleframe()
+        
+        self.camera.BeginAcquisition()
+        
+        try:
+            image_result = self.camera.GetNextImage()
+            image_data = image_result.GetNDArray()
+            channel_stats = image_result.CalculateChannelStatistics(0)
+            image_histogram = channel_stats.histogram
+        
+        except PySpin.SpinnakerException as ex:
+            
+            try:
+                self.camera.EndAcquisition()
+            except PySpin.SpinnakerException:
+                pass
+            tk.messagebox.showerror("Error", "{}".format(ex))
+
+        self.camera.EndAcquisition()
+
+        self.imagedisplay.clear()
+        self.imagedisplay.imshow(image_data, cmap="gray")
+        self.histogram.clear()
+        self.histogram.plot(image_histogram)
+        self.canvas.draw()
+        
+        try:
+            image_result.Release()
+        except PySpin.SpinnakerException:
+            pass
+
 
 
     def quit_cameraapp(self):
