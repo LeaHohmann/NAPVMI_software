@@ -256,8 +256,9 @@ class CameraApp(tk.Frame):
             image_result.Release()
 
         self.camera.EndAcquisition()
-        self.image_data = sum_image
-
+        self.image_data = sum_image.astype(int)
+        
+        import pdb; pdb.set_trace()
         self.imagedisplay.clear()
         self.imagedisplay.imshow(self.image_data, vmin=0, vmax=255, cmap="gray")
         self.histogram.clear()
