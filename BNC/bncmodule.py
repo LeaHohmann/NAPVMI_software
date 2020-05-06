@@ -3,30 +3,16 @@ import tkinter as tk
 
 class DelayApp(tk.Frame):
 
-    def __init__(self,root,port,baudrate):
+    def __init__(self,root,unit):
+        
+        self.bnc = unit
+
         tk.Frame.__init__(self,root)
-        self.pack()
-        
-        self.port = port
-        self.baudrate = baudrate
-        
-        self.connect = tk.Button(self, Text="Connect to delay generator"i, command=self.connectbnc)
-        self.connect.pack(side=tk.TOP, ipadx=5, ipady=5, padx=5, pady=5)
-
-        self.message = tk.Label(self, Text="")
-        self.message.pack(side=tk.BOTTOM, padx=5, pady=5)
-
-    def connectbnc(self):
-        self.bnc = serial.Serial(self.port, baudrate=self.baudrate, bytesize=8, parity="N", stopbits=1, timeout=1)
-
-        self.message.configure(Text="Connected to BNC delay generator at interface {}".format(self.port))
         self.guiinit()
-        self.connect.configure(Text="Disconnect", command=quitbnc)
 
 
-    def quitbnc(self):
-        self.bnc.close()
-
+    def quitapp(self):
+    
         self.frameA.destroy()
         self.frameB.destroy()
         self.frameC.destroy()
@@ -36,7 +22,6 @@ class DelayApp(tk.Frame):
         self.frameG.destroy()
         self.frameH.destroy()
 
-        self.connect.configure(Text="Connect", command=connectbnc)
 
     def guiinit(self):
         self.frameA = tk.Frame(self)
@@ -69,7 +54,7 @@ class DelayApp(tk.Frame):
 
         self.frameH = tk.Frame(self)
         frameH.pack(side=tk.TOP)
-        ChH = Channel("H",8,frameH,seld.bnc)
+        ChH = Channel("H",8,frameH,self.bnc)
 
 
 class Channel():
@@ -79,7 +64,9 @@ class Channel():
         self.number = number
         self.delay = 0
         self.frame = frame
-        self.bnc = unit 
+        self.bnc = unit
+
+        self.timeunits = {"ms": 0.001, "us": 0.000001, "ns": 0.000000001}
 
         self.bncinit()
         self.guiinit()
@@ -88,30 +75,52 @@ class Channel():
         inputstring = ":PULS{}:DEL?\r\n".format(self.number)
         self.bnc.write(inputstring.encode("utf-8"))
         lastline = self.bnc.readline().decode("utf-8")
-        newdelay = lastline[:-3]
+        self.delay = lastline[:-3]
 
     def guiinit(self):
         self.namelabel = tk.Label(self.frame, text="Channel {}:".format(self.name))
         self.namelabel.pack(side=tk.LEFT, padx=5, pady=5)
         self.delaylabel = tk.Label(self.frame, text=self.delay)
         self.delaylabel.pack(side=tk.LEFT, padx=5, pady=5)
-        self.delayfield = tk.Entry(self.frame)
-        self.delayfield.pack(side=tk.LEFT,padx=5, pady=5)
-        self.setdelay = tk.Button(self.frame, text="Set", command=self.changedelay)
-        self.setdelay.pack(side=tk.LEFT, padx=5, pady=5)
+        self.incrementplus = tk.Button(self.frame, text="+", command=self.plus)
+        self.incrementplus.pack(side=tk.LEFT, padx=5, pady=5)
+        self.incrementminus = tk.Button(self.frame, text="-", command=self.minus)
+        self.incrementminus.pack(side=tk.LEFT, padx=5, pady=5)
+        self.stepsize = tk.IntVar(self)
+        self.timeunit = tk.StringVar(self)
+        self.stepdropdown = tk.OptionMenu(self, self.stepsize, 1, 10, 100)
+        self.stepdropdown.pack(side=tk.LEFT, pady=5, pady=5)
+        self.unitdropdown = tk.OptionMenu(self, self.timeunit, "ns", "us", "ms")
+        self.unitdropdown.pack(side=tk.LEFT, pady=5, pady=5)
+
 
     def guiupdate(self):
         self.delaylabel.configure(text=self.delay)
 
+    
+    def plus(self):
+        timefactor = self.timeunits[self.timeunit.get()]
+        self.increment = self.stepsize.get() * timefactor
+        self.changedelay()
+
+    
+    def minus(self):
+        timefactor = self.timeunits[self.timeunit.get()]
+        self.increment = self.stepsize.get() * timefactor * -1
+        self.changedelay()
+
+
     def changedelay(self):
-        newdelay = self.delayfield.get()
+        newdelay = self.delay + self.increment
         inputstring = ":PULS{}:DEL {}\r\n".format(self.number,newdelay)
         self.bnc.write(inputstring.encode("utf-8"))
         lastline = self.bnc.readline().decode("utf-8")
         inputstring = ":PULS{}:DEL?\r\n".format(self.number)
         self.bnc.write(inputstring.encode("utf-8"))
         lastline = self.bnc.readline().decode("utf-8")
-        newdelay = lastline[:-3]
+        self.delay = lastline[:-3]
         self.guiupdate()
+
+
 
 
