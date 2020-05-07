@@ -11,7 +11,7 @@ class Root(tk.Tk):
 
         self.protocol("WM_DELETE_WINDOW", self.quitgui)
 
-        self.connect = tk.Button(self, Text="Connect to Delay Generator", command=self.bncconnect)
+        self.connect = tk.Button(self, text="Connect to Delay Generator", command=self.bncconnect)
         self.connect.pack(side=tk.TOP, ipadx=5, ipady=5, pady=10)
         
         
@@ -30,8 +30,13 @@ class Root(tk.Tk):
 
     def quitgui(self):
 
-        self.bncgui.quitapp()
+        try:
+            self.bncgui.quitapp()
+        except:
+            pass
+        
         self.bnc.close()
+        self.quit()
 
 
 root = Root()

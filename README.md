@@ -28,8 +28,7 @@ Module that contains the Channels classes and other classes to interact with the
 **Current functionalities:**
 
 - Reading out and displaying the delay values from the BNC    
-- Set delays on BNC box  
-Delay changing might be disabled for the fixed channels (all but Molecular Beam 1) in the future  
+- Set delays on BNC box by different increments in different time regimes 
 
 **Functionalities to add:**
 
