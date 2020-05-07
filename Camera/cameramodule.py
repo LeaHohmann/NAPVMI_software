@@ -62,22 +62,25 @@ class CameraApp(tk.Frame):
 
         self.canvas = FigureCanvasTkAgg(self.figure, master=self.rightframe)
         self.canvas.draw()
-        self.canvas.get_tk_widget().pack(side=tk.TOP, expand=1, fill=tk.BOTH, pady=10)
+        self.canvas.get_tk_widget().pack(side=tk.TOP, expand=1, fill=tk.BOTH, pady=(10,5))
+
+        self.signalwarnings = tk.Label(self.rightframe, text="", font=("Helvetica,12"), background="white")
+        self.signalwarnings.pack(side=tk.TOP, expand=1, fill=tk.X, pady=(0,10))
         
         self.startlive = tk.Button(self.rightframe, text="Display live", command=self.start_liveacquisition)
-        self.startlive.pack(side=tk.LEFT, ipadx=5, ipady=5, pady=20)
+        self.startlive.pack(side=tk.LEFT, ipadx=5, ipady=5, pady=(0,10))
 
         self.singleframe = tk.Button(self.rightframe, text="Single frame", command=self.capturesingleframe)
-        self.singleframe.pack(side=tk.LEFT, ipadx=5, ipady=5, pady=20)
+        self.singleframe.pack(side=tk.LEFT, ipadx=5, ipady=5, pady=(0,10))
 
         self.multiframe = tk.Button(self.rightframe, text="Summed multiframe image", command=self.capturemultiframe)
-        self.multiframe.pack(side=tk.LEFT, ipadx=5, ipady=5, pady=20)
+        self.multiframe.pack(side=tk.LEFT, ipadx=5, ipady=5, pady=(0,10))
 
         self.savearray = tk.Button(self.rightframe, text="Save as array", command=self.save_asarray, state=tk.DISABLED)
-        self.savearray.pack(side=tk.RIGHT, ipadx=5,ipady=5, pady=20)
+        self.savearray.pack(side=tk.RIGHT, ipadx=5,ipady=5, pady=(0,10))
 
         self.saveimage = tk.Button(self.rightframe, text="Save image", command=self.save_asimage, state=tk.DISABLED)
-        self.saveimage.pack(side=tk.RIGHT,ipadx=5, ipady=5, pady=20)
+        self.saveimage.pack(side=tk.RIGHT,ipadx=5, ipady=5, pady=(0,10))
 
     
     def camerasetup(self):
@@ -146,6 +149,7 @@ class CameraApp(tk.Frame):
         self.startlive.configure(text="Stop", command=self.stop_liveacquisition)
         self.savearray.configure(state=tk.DISABLED)
         self.saveimage.configure(state=tk.DISABLED)
+        self.signalwarnings.configure(text="")
 
         self.running = True
         self.camera.BeginAcquisition()
@@ -158,8 +162,6 @@ class CameraApp(tk.Frame):
         try:
             image_result = self.camera.GetNextImage()
             image_data = image_result.GetNDArray()
-            channel_stats = image_result.CalculateChannelStatistics(0)
-            image_histogram = channel_stats.histogram
 
         except PySpin.SpinnakerException as ex:
             
@@ -170,17 +172,32 @@ class CameraApp(tk.Frame):
             self.startlive.configure(text="Display live", command=self.start_liveacquisition)
             messagebox.showerror("Error", "{}".format(ex))
 
+        histo, bin_steps = numpy.histogram(image_data, bins=[0,32,64,96,128,160,192,224,255], range=(0,256))
+        x = [16,48,80,112,144,176,208,240]
         self.imagedisplay.clear()
-        self.imagedisplay.imshow(image_data, cmap="gray")
+        self.imagedisplay.imshow(image_data, cmap="gray", vmin=0, vmax=255)
         self.histogram.clear()
-        self.histogram.plot(image_histogram)
+        self.histogram.bar(x,histo, width=10, align='center', log=True, tick_label=[0,32,64,96,128,160,192,224])
         self.canvas.draw()
+        if numpy.sum(histo[1:]) == 0:
+            self.signalwarnings.configure(text="No / low signal", anchor=tk.W, foreground="dark red")
+        elif numpy.sum(histo[3:]) < 10:
+            self.signalwarnings.configure(text="Low signal", anchor=tk.W, foreground="dark orange")
+        elif histo[7] >= 10:
+            self.signalwarnings.configure(text="Strong Oversaturation", anchor=tk.E, foreground="dark red")
+        elif numpy.sum(histo[6:]) >= 20:
+            self.signalwarnings.configure(text="Oversaturation", anchor=tk.E, foreground="dark orange")
+        else:
+            self.signalwarnings.configure(text="")
+        
+
         image_result.Release()
 
         if self.running == True:
             self.after(30, self.imageloop)
         else:
             self.camera.EndAcquisition()
+            self.signalwarnings.configure(text="")
 
 
     def stop_liveacquisition(self):
@@ -198,8 +215,6 @@ class CameraApp(tk.Frame):
         try:
             image_result = self.camera.GetNextImage()
             self.image_data = image_result.GetNDArray()
-            channel_stats = image_result.CalculateChannelStatistics(0)
-            image_histogram = channel_stats.histogram
             self.convertedimage = image_result.Convert(PySpin.PixelFormat_Mono8)
         
         except PySpin.SpinnakerException as ex:
@@ -212,14 +227,26 @@ class CameraApp(tk.Frame):
             return
 
         self.camera.EndAcquisition()
-
+        
+        histo, bin_steps = numpy.histogram(self.image_data, bins=[0,32,64,96,128,160,192,224,255], range=(0,256))
+        x = [16,48,80,112,144,176,208,240]
         self.imagedisplay.clear()
-        self.imagedisplay.imshow(self.image_data, cmap="gray")
+        self.imagedisplay.imshow(self.image_data, cmap="gray", vmin=0, vmax=255)
         self.histogram.clear()
-        self.histogram.plot(image_histogram)
+        self.histogram.bar(x,histo, width=10, align='center', log=True, tick_label=[0,32,64,96,128,160,192,224])
         self.canvas.draw()
         self.savearray.configure(state=tk.NORMAL)
         self.saveimage.configure(state=tk.NORMAL, command=self.save_asimage)
+        if numpy.sum(histo[1:]) == 0:
+            self.signalwarnings.configure(text="No / low signal", anchor=tk.W, foreground="dark red")
+        elif numpy.sum(histo[3:]) < 10:
+            self.signalwarnings.configure(text="Low signal", anchor=tk.W, foreground="dark orange")
+        elif histo[7] >= 10:
+            self.signalwarnings.configure(text="Strong Oversaturation", anchor=tk.E, foreground="dark red")
+        elif numpy.sum(histo[6:]) >= 20:
+            self.signalwarnings.configure(text="Oversaturation", anchor=tk.E, foreground="dark orange")
+        else:
+            self.signalwarnings.configure(text="")
                 
         
         try:
@@ -258,13 +285,25 @@ class CameraApp(tk.Frame):
         self.camera.EndAcquisition()
         self.image_data = sum_image.astype(int)
         
-        import pdb; pdb.set_trace()
+        histo, bin_steps = numpy.histogram(self.image_data, bins=[0,32,64,96,128,160,192,224,255], range=(0,256))
+        x = [16,48,80,112,144,176,208,240]
         self.imagedisplay.clear()
         self.imagedisplay.imshow(self.image_data, vmin=0, vmax=255, cmap="gray")
         self.histogram.clear()
+        self.histogram.bar(x,histo, width=10, align='center', log=True, tick_label=[0,32,64,96,128,160,192,224])
         self.canvas.draw()
         self.savearray.configure(state=tk.NORMAL)
         self.saveimage.configure(state=tk.NORMAL, command=self.save_assumimage)
+        if numpy.sum(histo[1:]) == 0:
+            self.signalwarnings.configure(text="No / low signal", anchor=tk.W, foreground="dark red")
+        elif numpy.sum(histo[3:]) < 10:
+            self.signalwarnings.configure(text="Low signal", anchor=tk.W, foreground="dark orange")
+        elif histo[7] >= 10:
+            self.signalwarnings.configure(text="Strong Oversaturation", anchor=tk.E, foreground="dark red")
+        elif numpy.sum(histo[6:]) >= 20:
+            self.signalwarnings.configure(text="Oversaturation", anchor=tk.E, foreground="dark orange")
+        else:
+            self.signalwarnings.configure(text="")
         
         self.sumimages.configure(state=tk.NORMAL)
 
