@@ -6,6 +6,7 @@ import numpy
 import matplotlib 
 matplotlib.use("TkAgg")
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import ast
 
 
 class CameraApp(tk.Frame):
@@ -56,6 +57,12 @@ class CameraApp(tk.Frame):
 
         self.sumimages = tk.Entry(self.leftframe)
         self.sumimages.pack(side=tk.TOP, pady=(0,30))
+
+        self.saveparameters = tk.Button(self.leftframe, text="Save parameter file", command=self.saveparameterfile)
+        self.saveparameters.pack(side=tk.LEFT, pady=(50,0))
+
+        self.loadparameters = tk.Button(self.leftframe, text="Load parameters", command=self.loadparameterfile)
+        self.loadparameters.pack(side=tk.LEFT, pady=(50,0))
 
         self.figure = matplotlib.figure.Figure(figsize=[7.0,6.0])
         self.grid = self.figure.add_gridspec(ncols=1, nrows=2, height_ratios=[5,1])
@@ -340,16 +347,50 @@ class CameraApp(tk.Frame):
         self.convertedimage.Save(filename)
 
 
+
     def save_asarray(self):
         
         filename = filedialog.asksaveasfilename(initialdir="C:/", title="Save array as:", filetypes=(("Binary numpy array file", "*.npy"),("All files","*.*")))
         numpy.save(filename, self.image_data)
 
 
+
     def save_assumimage(self):
 
         filename = filedialog.asksaveasfilename(initialdir="C:/", title="Save image as:", filetypes=(("PNG files", "*.png"),("All files","*.*")))
         matplotlib.image.imsave(filename, self.image_data, vmin=0, vmax=255, cmap="gray")
+
+
+
+    def saveparameterfile(self):
+
+        exposure = self.node_exposuretime.GetValue()
+        gain = self.node_gain.GetValue()
+
+        parameters = {"Exposure time": exposure, "Gain": gain}
+        filename = filedialog.asksaveasfilename(initialdir="C:/", title="Save parameters:", filetypes=(("Text files", "*.txt"),("All files", "*.*")))
+        f = open(filename, "w")
+        f.write(str(parameters))
+        f.close()
+
+
+
+    def loadparameterfile(self):
+
+        filename = filedialog.askopenfilename(initialdir="C:/", title="Open parameter file:", filetypes=(("Text files", "*.txt"), ("All files", "*.*")))
+        f = open(filename, "r")
+        parameters = ast.literal_eval(f.read())
+        f.close()
+
+        exposuretime = parameters["Exposure time"]
+        gain = parameters["Gain"]
+        self.node_exposuretime.SetValue(exposuretime)
+        self.exposureslider.set(self.node_exposuretime.GetValue())
+        self.exposurelabel.configure(text="Exposure time [us]: {}".format(round(self.node_exposuretime.GetValue(),2)))
+        self.node_gain.SetValue(gain)
+        self.gainslider.set(self.node_gain.GetValue())
+        self.gainlabel.configure(text="Gain: {}".format(round(self.node_gain.GetValue(),2)))
+
 
 
     def quit_cameraapp(self):

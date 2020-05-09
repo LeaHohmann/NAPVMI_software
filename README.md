@@ -55,12 +55,12 @@ Camera module that will contain the functions to operate the camera, using the P
 - Set the number of images to sum 
 - Acquire and display a summed image
 - Save image as PNG or binary numpy array
+- Save and load parameter files
 
 **Functionalties to add:**
 
 - Set the camera to trigger mode instead of  automatic and execute the acquisition and display functions in triggered mode
 - Set x and y pixels if we don't want to use the whole image   
-- Save and load parameter files
 
 **Issues to think about:**
 
