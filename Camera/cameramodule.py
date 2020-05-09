@@ -10,6 +10,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 class CameraApp(tk.Frame):
 
+
     def __init__(self,root,system,camera):
         tk.Frame.__init__(self,root)
         self.pack()
@@ -22,6 +23,7 @@ class CameraApp(tk.Frame):
 
         self.camerasetup()
         self.guiinit()
+
 
 
     def guiinit(self):
@@ -67,8 +69,11 @@ class CameraApp(tk.Frame):
         self.signalwarnings = tk.Label(self.rightframe, text="", font=("Helvetica,12"), background="white")
         self.signalwarnings.pack(side=tk.TOP, expand=1, fill=tk.X, pady=(0,10))
         
-        self.startlive = tk.Button(self.rightframe, text="Display live", command=self.start_liveacquisition)
+        self.startlive = tk.Button(self.rightframe, text="Display live", command=self.start_singleframelive)
         self.startlive.pack(side=tk.LEFT, ipadx=5, ipady=5, pady=(0,10))
+
+        self.summedlive = tk.Button(self.rightframe, text="Display multiframe live", command=self.start_multiframelive)
+        self.summedlive.pack(side=tk.LEFT, ipadx=5, ipady=5, pady=(0,10))
 
         self.singleframe = tk.Button(self.rightframe, text="Single frame", command=self.capturesingleframe)
         self.singleframe.pack(side=tk.LEFT, ipadx=5, ipady=5, pady=(0,10))
@@ -81,6 +86,7 @@ class CameraApp(tk.Frame):
 
         self.saveimage = tk.Button(self.rightframe, text="Save image", command=self.save_asimage, state=tk.DISABLED)
         self.saveimage.pack(side=tk.RIGHT,ipadx=5, ipady=5, pady=(0,10))
+
 
     
     def camerasetup(self):
@@ -98,10 +104,12 @@ class CameraApp(tk.Frame):
         self.node_gain = PySpin.CFloatPtr(self.nodemap.GetNode("Gain"))
 
 
+
     def exposuretime(self,value):
 
         self.node_exposuretime.SetValue(float(value))
         self.exposurelabel.configure(text="Exposure time [us] : {}".format(round(self.node_exposuretime.GetValue(),2)))
+
 
     
     def gain(self,value):
@@ -111,57 +119,57 @@ class CameraApp(tk.Frame):
 
 
 
-    def setup_live(self):
+    def setup_acquisition(self):
 
         node_bufferhandling = PySpin.CEnumerationPtr(self.streamnodemap.GetNode('StreamBufferHandlingMode'))
         node_bufferhandling.SetIntValue(node_bufferhandling.GetEntryByName("NewestOnly").GetValue())
 
-        node_acquisitionmode = PySpin.CEnumerationPtr(self.nodemap.GetNode('AcquisitionMode'))
-        node_acquisitionmode.SetIntValue(0)
+        self.node_acquisitionmode = PySpin.CEnumerationPtr(self.nodemap.GetNode('AcquisitionMode'))
+           
 
-
-
-    def setup_singleframe(self):
-
-        node_bufferhandling = PySpin.CEnumerationPtr(self.streamnodemap.GetNode("StreamBufferHandlingMode"))
-        node_bufferhandling.SetIntValue(node_bufferhandling.GetEntryByName("NewestOnly").GetValue())
-
-        node_acquisitionmode = PySpin.CEnumerationPtr(self.nodemap.GetNode("AcquisitionMode"))
-        node_acquisitionmode.SetIntValue(1)
-
-
-    
-    def setup_multiframe(self):
-
-        node_bufferhandling = PySpin.CEnumerationPtr(self.streamnodemap.GetNode("StreamBufferHandlingMode"))
-        node_bufferhandling.SetIntValue(node_bufferhandling.GetEntryByName("NewestOnly").GetValue())
-
-        node_acquisitionmode = PySpin.CEnumerationPtr(self.nodemap.GetNode("AcquisitionMode"))
-        node_acquisitionmode.SetIntValue(2)
-        node_framecount = PySpin.CIntegerPtr(self.nodemap.GetNode("AcquisitionFrameCount"))
-        node_framecount.SetValue(int(self.sumimages.get()))
- 
-
-
+       
     def start_liveacquisition(self):
-        self.setup_live()
+        self.setup_acquisition()
+        self.node_acquisitionmode.SetIntValue(0)
 
-        self.startlive.configure(text="Stop", command=self.stop_liveacquisition)
         self.savearray.configure(state=tk.DISABLED)
         self.saveimage.configure(state=tk.DISABLED)
         self.signalwarnings.configure(text="")
 
         self.running = True
         self.camera.BeginAcquisition()
+
+
+
+    def start_singleframelive(self):
+    
+        self.start_liveacquisition()
+        self.startlive.configure(text="Stop", command=self.stop_liveacquisition)
+        self.singleframe.configure(state=tk.DISABLED)
+        self.multiframe.configure(state=tk.DISABLED)
+        self.summedlive.configure(state=tk.DISABLED)
         
         self.imageloop()
+
+
+
+    def start_multiframelive(self):
+
+        self.start_liveacquisition()
+        self.summedlive.configure(text="Stop", command=self.stop_liveacquisition)
+        self.singleframe.configure(state=tk.DISABLED)
+        self.multiframe.configure(state=tk.DISABLED)
+        self.startlive.configure(state=tk.DISABLED)
+
+        self.multiframeloop()
+
 
 
     def imageloop(self):
         
         try:
             image_result = self.camera.GetNextImage()
-            image_data = image_result.GetNDArray()
+            self.image_data = image_result.GetNDArray()
 
         except PySpin.SpinnakerException as ex:
             
@@ -172,43 +180,59 @@ class CameraApp(tk.Frame):
             self.startlive.configure(text="Display live", command=self.start_liveacquisition)
             messagebox.showerror("Error", "{}".format(ex))
 
-        histo, bin_steps = numpy.histogram(image_data, bins=[0,32,64,96,128,160,192,224,255], range=(0,256))
-        x = [16,48,80,112,144,176,208,240]
-        self.imagedisplay.clear()
-        self.imagedisplay.imshow(image_data, cmap="gray", vmin=0, vmax=255)
-        self.histogram.clear()
-        self.histogram.bar(x,histo, width=10, align='center', log=True, tick_label=[0,32,64,96,128,160,192,224])
-        self.canvas.draw()
-        if numpy.sum(histo[1:]) == 0:
-            self.signalwarnings.configure(text="No / low signal", anchor=tk.W, foreground="dark red")
-        elif numpy.sum(histo[3:]) < 10:
-            self.signalwarnings.configure(text="Low signal", anchor=tk.W, foreground="dark orange")
-        elif histo[7] >= 10:
-            self.signalwarnings.configure(text="Strong Oversaturation", anchor=tk.E, foreground="dark red")
-        elif numpy.sum(histo[6:]) >= 20:
-            self.signalwarnings.configure(text="Oversaturation", anchor=tk.E, foreground="dark orange")
-        else:
-            self.signalwarnings.configure(text="")
-        
+        self.displayimage()
 
         image_result.Release()
 
         if self.running == True:
-            self.after(30, self.imageloop)
+            self.after(1, self.imageloop)
         else:
             self.camera.EndAcquisition()
             self.signalwarnings.configure(text="")
+            self.startlive.configure(text="Display live", command=self.start_singleframelive)
+            self.singleframe.configure(state=tk.NORMAL)
+            self.multiframe.configure(state=tk.NORMAL)
+            self.summedlive.configure(state=tk.NORMAL)
+
+
+
+    def multiframeloop(self):
+
+        try:
+            self.getmultiframeimage()
+        except ValueError:
+            messagebox.showerror("Error", "Choose a number of frames")
+            self.camera.EndAcquisition()
+            self.summedlive.configure(text="Display multiframe live", command=self.start_multiframelive)
+            self.startlive.configure(state=tk.NORMAL)
+            self.multiframe.configure(state=tk.NORMAL)
+            self.singleframe.configure(state=tk.NORMAL)
+            return
+ 
+        self.displayimage()
+
+        if self.running == True:
+            self.after(1, self.multiframeloop)
+        else:
+            self.camera.EndAcquisition()
+            self.signalwarnings.configure(text="")
+            self.summedlive.configure(text="Display multiframe live", command=self.start_multiframelive)
+            self.startlive.configure(state=tk.NORMAL)
+            self.multiframe.configure(state=tk.NORMAL)
+            self.singleframe.configure(state=tk.NORMAL)
+
 
 
     def stop_liveacquisition(self):
         self.running = False
 
-        self.startlive.configure(text="Display live", command=self.start_liveacquisition)
 
 
     def capturesingleframe(self):
-        
-        self.setup_singleframe()
+       
+        self.setup_acquisition()
+        self.node_acquisitionmode.SetIntValue(1)
+
 
         self.camera.BeginAcquisition()
         
@@ -227,27 +251,12 @@ class CameraApp(tk.Frame):
             return
 
         self.camera.EndAcquisition()
+
+        self.displayimage()
         
-        histo, bin_steps = numpy.histogram(self.image_data, bins=[0,32,64,96,128,160,192,224,255], range=(0,256))
-        x = [16,48,80,112,144,176,208,240]
-        self.imagedisplay.clear()
-        self.imagedisplay.imshow(self.image_data, cmap="gray", vmin=0, vmax=255)
-        self.histogram.clear()
-        self.histogram.bar(x,histo, width=10, align='center', log=True, tick_label=[0,32,64,96,128,160,192,224])
-        self.canvas.draw()
         self.savearray.configure(state=tk.NORMAL)
         self.saveimage.configure(state=tk.NORMAL, command=self.save_asimage)
-        if numpy.sum(histo[1:]) == 0:
-            self.signalwarnings.configure(text="No / low signal", anchor=tk.W, foreground="dark red")
-        elif numpy.sum(histo[3:]) < 10:
-            self.signalwarnings.configure(text="Low signal", anchor=tk.W, foreground="dark orange")
-        elif histo[7] >= 10:
-            self.signalwarnings.configure(text="Strong Oversaturation", anchor=tk.E, foreground="dark red")
-        elif numpy.sum(histo[6:]) >= 20:
-            self.signalwarnings.configure(text="Oversaturation", anchor=tk.E, foreground="dark orange")
-        else:
-            self.signalwarnings.configure(text="")
-                
+               
         
         try:
             image_result.Release()
@@ -258,18 +267,36 @@ class CameraApp(tk.Frame):
 
     def capturemultiframe(self):
 
-        self.setup_multiframe()
+        self.setup_acquisition()
+        self.node_acquisitionmode.SetIntValue(2)
+        node_framecount = PySpin.CIntegerPtr(self.nodemap.GetNode("AcquisitionFrameCount"))
+        node_framecount.SetValue(int(self.sumimages.get()))
+ 
         self.sumimages.configure(state=tk.DISABLED)
         
         self.camera.BeginAcquisition()
-        sum_image = numpy.zeros((964,1288))
+        self.getmultiframeimage()
+        self.camera.EndAcquisition()
+        
+        self.displayimage()
+
+        self.savearray.configure(state=tk.NORMAL)
+        self.saveimage.configure(state=tk.NORMAL, command=self.save_assumimage)
+       
+        self.sumimages.configure(state=tk.NORMAL)
+
+
+
+    def getmultiframeimage(self):
+
+        self.image_data = numpy.zeros((964,1288), int)
 
         for i in range(int(self.sumimages.get())):
 
             try:
                 image_result = self.camera.GetNextImage()
-                image_data = image_result.GetNDArray()
-                sum_image += image_data
+                frame_data = image_result.GetNDArray()
+                self.image_data += frame_data
         
             except PySpin.SpinnakerException as ex:
             
@@ -280,20 +307,20 @@ class CameraApp(tk.Frame):
                 tk.messagebox.showerror("Error", "Stopped after {} images: {}".format(i,ex))
                 return
 
-            image_result.Release()
+        image_result.Release()
 
-        self.camera.EndAcquisition()
-        self.image_data = sum_image.astype(int)
+
+
+    def displayimage(self):
         
         histo, bin_steps = numpy.histogram(self.image_data, bins=[0,32,64,96,128,160,192,224,255], range=(0,256))
         x = [16,48,80,112,144,176,208,240]
         self.imagedisplay.clear()
-        self.imagedisplay.imshow(self.image_data, vmin=0, vmax=255, cmap="gray")
+        self.imagedisplay.imshow(self.image_data, cmap="gray", vmin=0, vmax=255)
         self.histogram.clear()
-        self.histogram.bar(x,histo, width=10, align='center', log=True, tick_label=[0,32,64,96,128,160,192,224])
+        self.histogram.bar(x,histo, width=14, align='center', log=True, tick_label=["0-31","32-63","64-95","96-127","128-159","160-191","192-223","224-255"])
         self.canvas.draw()
-        self.savearray.configure(state=tk.NORMAL)
-        self.saveimage.configure(state=tk.NORMAL, command=self.save_assumimage)
+        
         if numpy.sum(histo[1:]) == 0:
             self.signalwarnings.configure(text="No / low signal", anchor=tk.W, foreground="dark red")
         elif numpy.sum(histo[3:]) < 10:
@@ -305,8 +332,6 @@ class CameraApp(tk.Frame):
         else:
             self.signalwarnings.configure(text="")
         
-        self.sumimages.configure(state=tk.NORMAL)
-
 
 
     def save_asimage(self):
