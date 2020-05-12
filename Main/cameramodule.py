@@ -53,11 +53,40 @@ class CameraApp(tk.Frame):
         self.gainslider.set(self.node_gain.GetValue())
         self.gainslider.pack(side=tk.TOP, pady=(0,30))
 
-        self.sumimageslabel = tk.Label(self.leftframe, text="Number of images to sum:", anchor=tk.NW, font=("Helvetica,12"))
+        self.sumimageslabel = tk.Message(self.leftframe, text="Number of frames to sum (single image acquisition, multiframe live):", anchor=tk.NW, font=("Helvetica,12"), width=250)
         self.sumimageslabel.pack(side=tk.TOP, pady=5)
 
-        self.sumimages = tk.Entry(self.leftframe)
+        self.numberofframes = tk.IntVar(self.leftframe, value=1)
+        self.sumimages = tk.Entry(self.leftframe, textvariable=self.numberofframes)
         self.sumimages.pack(side=tk.TOP, pady=(0,30))
+
+        self.xpixelframe = tk.Frame(self.leftframe)
+        self.xpixelframe.pack(side=tk.TOP, pady=(0,20))
+
+        self.xpixellabel = tk.Label(self.xpixelframe, text="X-range (whole frame: 0-1288):")
+        self.xpixellabel.pack(side=tk.LEFT)
+
+        self.xpixellower = tk.IntVar(self.xpixelframe, value=1)
+        self.xpixelstart = tk.Entry(self.xpixelframe, textvariable=self.xpixellower, width=10)
+        self.xpixelstart.pack(side=tk.LEFT)
+
+        self.xpixelupper = tk.IntVar(self.xpixelframe, value=1288)
+        self.xpixelend = tk.Entry(self.xpixelframe, textvariable=self.xpixelupper, width=10)
+        self.xpixelend.pack(side=tk.LEFT)
+
+        self.ypixelframe = tk.Frame(self.leftframe)
+        self.ypixelframe.pack(side=tk.TOP, pady=(0,30))
+
+        self.ypixellabel = tk.Label(self.ypixelframe, text="Y-range (whole frame: 0-964):")
+        self.ypixellabel.pack(side=tk.LEFT)
+
+        self.ypixellower = tk.IntVar(self.ypixelframe, value=1)
+        self.ypixelstart = tk.Entry(self.ypixelframe, textvariable=self.ypixellower, width=10)
+        self.ypixelstart.pack(side=tk.LEFT)
+
+        self.ypixelupper = tk.IntVar(self.ypixelframe, value=964)
+        self.ypixelend = tk.Entry(self.ypixelframe, textvariable=self.ypixelupper, width=10)
+        self.ypixelend.pack(side=tk.LEFT)
 
         self.saveparameters = tk.Button(self.leftframe, text="Save parameter file", command=self.saveparameterfile)
         self.saveparameters.pack(side=tk.LEFT, pady=(50,0))
@@ -72,24 +101,21 @@ class CameraApp(tk.Frame):
 
         self.canvas = FigureCanvasTkAgg(self.figure, master=self.rightframe)
         self.canvas.draw()
-        self.canvas.get_tk_widget().pack(side=tk.TOP, expand=1, fill=tk.BOTH, pady=(10,5))
+        self.canvas.get_tk_widget().pack(side=tk.TOP, expand=0, fill=tk.BOTH, pady=(10,5))
 
         self.signalwarnings = tk.Label(self.rightframe, text="", font=("Helvetica,12"), background="white")
         self.signalwarnings.pack(side=tk.TOP, expand=1, fill=tk.X, pady=(0,10))
         
-        self.startlive = tk.Button(self.rightframe, text="Display live", command=self.start_singleframelive)
+        self.startlive = tk.Button(self.rightframe, text="Live", command=self.start_singleframelive)
         self.startlive.pack(side=tk.LEFT, ipadx=5, ipady=5, pady=(0,10))
 
-        self.summedlive = tk.Button(self.rightframe, text="Display multiframe live", command=self.start_multiframelive)
+        self.summedlive = tk.Button(self.rightframe, text="Multiframe live", command=self.start_multiframelive)
         self.summedlive.pack(side=tk.LEFT, ipadx=5, ipady=5, pady=(0,10))
 
-        self.singleframe = tk.Button(self.rightframe, text="Single frame", command=self.capturesingleframe)
-        self.singleframe.pack(side=tk.LEFT, ipadx=5, ipady=5, pady=(0,10))
-
-        self.multiframe = tk.Button(self.rightframe, text="Summed multiframe image", command=self.capturemultiframe)
+        self.multiframe = tk.Button(self.rightframe, text="Single image", command=self.acquireimage)
         self.multiframe.pack(side=tk.LEFT, ipadx=5, ipady=5, pady=(0,10))
 
-        self.savearray = tk.Button(self.rightframe, text="Save as array", command=self.save_asarray, state=tk.DISABLED)
+        self.savearray = tk.Button(self.rightframe, text="Save array", command=self.save_asarray, state=tk.DISABLED)
         self.savearray.pack(side=tk.RIGHT, ipadx=5,ipady=5, pady=(0,10))
 
         self.saveimage = tk.Button(self.rightframe, text="Save image", command=self.save_asimage, state=tk.DISABLED)
@@ -185,7 +211,7 @@ class CameraApp(tk.Frame):
                 self.camera.EndAcquisition()
             except PySpin.SpinnakerException:
                 pass
-            self.startlive.configure(text="Display live", command=self.start_liveacquisition)
+            self.startlive.configure(text="Live", command=self.start_liveacquisition)
             messagebox.showerror("Error", "{}".format(ex))
 
         self.displayimage()
@@ -197,7 +223,7 @@ class CameraApp(tk.Frame):
         else:
             self.camera.EndAcquisition()
             self.signalwarnings.configure(text="")
-            self.startlive.configure(text="Display live", command=self.start_singleframelive)
+            self.startlive.configure(text="Live", command=self.start_singleframelive)
             self.singleframe.configure(state=tk.NORMAL)
             self.multiframe.configure(state=tk.NORMAL)
             self.summedlive.configure(state=tk.NORMAL)
@@ -211,7 +237,7 @@ class CameraApp(tk.Frame):
         except ValueError:
             messagebox.showerror("Error", "Choose a number of frames")
             self.camera.EndAcquisition()
-            self.summedlive.configure(text="Display multiframe live", command=self.start_multiframelive)
+            self.summedlive.configure(text="Multiframe live", command=self.start_multiframelive)
             self.startlive.configure(state=tk.NORMAL)
             self.multiframe.configure(state=tk.NORMAL)
             self.singleframe.configure(state=tk.NORMAL)
@@ -224,7 +250,7 @@ class CameraApp(tk.Frame):
         else:
             self.camera.EndAcquisition()
             self.signalwarnings.configure(text="")
-            self.summedlive.configure(text="Display multiframe live", command=self.start_multiframelive)
+            self.summedlive.configure(text="Multiframe live", command=self.start_multiframelive)
             self.startlive.configure(state=tk.NORMAL)
             self.multiframe.configure(state=tk.NORMAL)
             self.singleframe.configure(state=tk.NORMAL)
@@ -232,44 +258,21 @@ class CameraApp(tk.Frame):
 
 
     def stop_liveacquisition(self):
+
         self.running = False
 
 
+ 
+    def acquireimage(self):
 
-    def capturesingleframe(self):
-       
-        self.setup_acquisition()
-        self.node_acquisitionmode.SetIntValue(1)
-
-
-        self.camera.BeginAcquisition()
-        
-        try:
-            image_result = self.camera.GetNextImage()
-            self.image_data = image_result.GetNDArray()
-            self.convertedimage = image_result.Convert(PySpin.PixelFormat_Mono8)
-        
-        except PySpin.SpinnakerException as ex:
-            
-            try:
-                self.camera.EndAcquisition()
-            except PySpin.SpinnakerException:
-                pass
-            tk.messagebox.showerror("Error", "{}".format(ex))
-            return
-
-        self.camera.EndAcquisition()
+        self.capturemultiframe()
 
         self.displayimage()
-        
+
         self.savearray.configure(state=tk.NORMAL)
         self.saveimage.configure(state=tk.NORMAL, command=self.save_asimage)
-               
-        
-        try:
-            image_result.Release()
-        except PySpin.SpinnakerException:
-            pass
+       
+        self.sumimages.configure(state=tk.NORMAL)
 
 
 
@@ -284,27 +287,25 @@ class CameraApp(tk.Frame):
         
         self.camera.BeginAcquisition()
         self.getmultiframeimage()
+        xstart = int(self.xpixelstart.get()) - 1
+        xend = int(self.xpixelend.get())
+        ystart = int(self.ypixelstart.get()) - 1
+        yend = int(self.ypixelend.get())
+        self.image_data = self.sumimage[ystart:yend,xstart:xend]
         self.camera.EndAcquisition()
         
-        self.displayimage()
-
-        self.savearray.configure(state=tk.NORMAL)
-        self.saveimage.configure(state=tk.NORMAL, command=self.save_assumimage)
        
-        self.sumimages.configure(state=tk.NORMAL)
-
-
 
     def getmultiframeimage(self):
 
-        self.image_data = numpy.zeros((964,1288), int)
+        self.sumimage = numpy.zeros((964,1288), int)
 
         for i in range(int(self.sumimages.get())):
 
             try:
                 image_result = self.camera.GetNextImage()
                 frame_data = image_result.GetNDArray()
-                self.image_data += frame_data
+                self.sumimage += frame_data
         
             except PySpin.SpinnakerException as ex:
             
@@ -339,13 +340,6 @@ class CameraApp(tk.Frame):
             self.signalwarnings.configure(text="Oversaturation", anchor=tk.E, foreground="dark orange")
         else:
             self.signalwarnings.configure(text="")
-        
-
-
-    def save_asimage(self):
-        
-        filename = filedialog.asksaveasfilename(initialdir="C:/", title="Save image as:", filetypes=(("PNG files", "*.png"),("All files","*.*")))
-        self.convertedimage.Save(filename)
 
 
 
@@ -356,7 +350,7 @@ class CameraApp(tk.Frame):
 
 
 
-    def save_assumimage(self):
+    def save_asimage(self):
 
         filename = filedialog.asksaveasfilename(initialdir="C:/", title="Save image as:", filetypes=(("PNG files", "*.png"),("All files","*.*")))
         matplotlib.image.imsave(filename, self.image_data, vmin=0, vmax=255, cmap="gray")
@@ -367,8 +361,12 @@ class CameraApp(tk.Frame):
 
         exposure = self.node_exposuretime.GetValue()
         gain = self.node_gain.GetValue()
+        xstart = int(self.xpixelstart.get()) - 1
+        xend = int(self.xpixelend.get())
+        ystart = int(self.ypixelstart.get()) - 1
+        yend = int(self.ypixelend.get())
 
-        parameters = {"Exposure time": exposure, "Gain": gain}
+        parameters = {"Exposure time": exposure, "Gain": gain, "Lower end x": xstart, "Upper end x": xend, "Lower end y": ystart, "Upper end x": yend}
         filename = filedialog.asksaveasfilename(initialdir="C:/", title="Save parameters:", filetypes=(("Text files", "*.txt"),("All files", "*.*")))
         f = open(filename, "w")
         f.write(str(parameters))
