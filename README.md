@@ -3,7 +3,7 @@ Summary
 
 Program will contain the following modules:
 
-- Main (file to be created)  
+- Main (napvmi_main.py)  
 - Camera (cameramodule.py)  
 - Delay generator (bncmodule.py)
 - Kinetic series module (file to be created)
@@ -28,7 +28,7 @@ Module that contains the Channels classes and other classes to interact with the
 **Current functionalities:**
 
 - Reading out and displaying the delay values from the BNC    
-- Set delays on BNC box by different increments in different time regimes 
+- Set delays on BNC box by different increments in different time regime 
 
 **Functionalities to add:**
 

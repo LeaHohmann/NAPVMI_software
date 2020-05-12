@@ -58,10 +58,44 @@ class DelayApp(tk.Frame):
         self.frameH.pack(side=tk.TOP)
         ChH = Channel("H",8,self.frameH,self.bnc)
 
+        self.triggeringonoff = tk.Button(self, text="Run triggering", command=self.runtriggering)
+        self.triggeringonoff.pack(side=tk.TOP, ipadx=5, ipady=5, pady=20)
+        
+
+
+    def runtriggering(self):
+
+        inputstring = ":PULS0:STATE 1\r\n"
+        self.bnc.write(inputstring.encode("utf-8"))
+        lastline = self.bnc.readline().decode("utf-8")
+        inputstring = ":PULS0:STATE?\r\n"
+        self.bnc.write(inputstring.encode("utf-8"))
+        lastline = self.bnc.readline().decode("utf-8")
+        self.bncrunning = lastline[:-2]
+        if self.bncrunning == "1":
+            self.triggeringonoff.configure(text="Stop triggering", command=self.stoptriggering)
+
+
+
+    def stoptriggering(self):
+
+        inputstring = ":PULS0:STATE 0\r\n"
+        self.bnc.write(inputstring.encode("utf-8"))
+        lastline = self.bnc.readline().decode("utf-8")
+        inputstring = ":PULS0:STATE?\r\n"
+        self.bnc.write(inputstring.encode("utf-8"))
+        lastline = self.bnc.readline().decode("utf-8")
+        self.bncrunning = lastline[:-2]
+        if self.bncrunning == "0":
+            self.triggeringonoff.configure(text="Run triggering", command=self.runtriggering)
+    
+
+
 
 class Channel():
 
     def __init__(self, name, number, frame, unit):
+
         self.name = name
         self.number = number
         self.delay = "0"
@@ -74,13 +108,19 @@ class Channel():
         self.bncinit()
         self.guiinit()
 
+
+
     def bncinit(self):
+
         inputstring = ":PULS{}:DEL?\r\n".format(self.number)
         self.bnc.write(inputstring.encode("utf-8"))
         lastline = self.bnc.readline().decode("utf-8")
-        self.delay = lastline[:-3]
+        self.delay = lastline[:-2]
+
+
 
     def guiinit(self):
+
         self.namelabel = tk.Label(self.frame, text="Channel {}:".format(self.name))
         self.namelabel.pack(side=tk.LEFT, padx=5, pady=5)
         self.delaylabel = tk.Label(self.frame, text=self.delay)
@@ -97,18 +137,25 @@ class Channel():
         self.unitdropdown.pack(side=tk.LEFT, padx=5, pady=5)
 
 
+
     def guiupdate(self):
+
         self.delaylabel.configure(text=self.delay)
+
 
     
     def plus(self):
+
         self.increment = 1
         self.changedelay()
 
     
+
     def minus(self):
+
         self.increment = -1
         self.changedelay()
+
 
 
     def changedelay(self):
@@ -124,7 +171,7 @@ class Channel():
         inputstring = ":PULS{}:DEL?\r\n".format(self.number)
         self.bnc.write(inputstring.encode("utf-8"))
         lastline = self.bnc.readline().decode("utf-8")
-        self.delay = lastline[:-3]
+        self.delay = lastline[:-2]
         self.guiupdate()
 
 
