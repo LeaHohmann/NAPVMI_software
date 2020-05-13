@@ -63,28 +63,28 @@ class CameraApp(tk.Frame):
         self.xpixelframe = tk.Frame(self.leftframe)
         self.xpixelframe.pack(side=tk.TOP, pady=(0,20))
 
-        self.xpixellabel = tk.Label(self.xpixelframe, text="X-range (whole frame: 0-1288):")
+        self.xpixellabel = tk.Label(self.xpixelframe, text="X-range (whole frame: 0-1287):")
         self.xpixellabel.pack(side=tk.LEFT)
 
-        self.xpixellower = tk.IntVar(self.xpixelframe, value=1)
+        self.xpixellower = tk.IntVar(self.xpixelframe, value=0)
         self.xpixelstart = tk.Entry(self.xpixelframe, textvariable=self.xpixellower, width=10)
         self.xpixelstart.pack(side=tk.LEFT)
 
-        self.xpixelupper = tk.IntVar(self.xpixelframe, value=1288)
+        self.xpixelupper = tk.IntVar(self.xpixelframe, value=1287)
         self.xpixelend = tk.Entry(self.xpixelframe, textvariable=self.xpixelupper, width=10)
         self.xpixelend.pack(side=tk.LEFT)
 
         self.ypixelframe = tk.Frame(self.leftframe)
         self.ypixelframe.pack(side=tk.TOP, pady=(0,30))
 
-        self.ypixellabel = tk.Label(self.ypixelframe, text="Y-range (whole frame: 0-964):")
+        self.ypixellabel = tk.Label(self.ypixelframe, text="Y-range (whole frame: 0-963):")
         self.ypixellabel.pack(side=tk.LEFT)
 
-        self.ypixellower = tk.IntVar(self.ypixelframe, value=1)
+        self.ypixellower = tk.IntVar(self.ypixelframe, value=0)
         self.ypixelstart = tk.Entry(self.ypixelframe, textvariable=self.ypixellower, width=10)
         self.ypixelstart.pack(side=tk.LEFT)
 
-        self.ypixelupper = tk.IntVar(self.ypixelframe, value=964)
+        self.ypixelupper = tk.IntVar(self.ypixelframe, value=963)
         self.ypixelend = tk.Entry(self.ypixelframe, textvariable=self.ypixelupper, width=10)
         self.ypixelend.pack(side=tk.LEFT)
 
@@ -103,8 +103,11 @@ class CameraApp(tk.Frame):
         self.canvas.draw()
         self.canvas.get_tk_widget().pack(side=tk.TOP, expand=0, fill=tk.BOTH, pady=(10,5))
 
-        self.signalwarnings = tk.Label(self.rightframe, text="", font=("Helvetica,12"), background="white")
-        self.signalwarnings.pack(side=tk.TOP, expand=1, fill=tk.X, pady=(0,10))
+        self.signalwarnings = tk.Label(self.rightframe, text="", font=("Helvetica,11"), background="white")
+        self.signalwarnings.pack(side=tk.TOP, expand=1, fill=tk.X, pady=(0,5))
+
+        self.signallabel = tk.Label(self.rightframe, text="Total signal:", font=("Helvetica,11"), anchor=tk.E, background="White")
+        self.signallabel.pack(side=tk.TOP,expand=1, fill=tk.X, pady=(0,10))
         
         self.startlive = tk.Button(self.rightframe, text="Live", command=self.start_singleframelive)
         self.startlive.pack(side=tk.LEFT, ipadx=5, ipady=5, pady=(0,10))
@@ -115,12 +118,22 @@ class CameraApp(tk.Frame):
         self.multiframe = tk.Button(self.rightframe, text="Single image", command=self.acquireimage)
         self.multiframe.pack(side=tk.LEFT, ipadx=5, ipady=5, pady=(0,10))
 
+        self.takexslice = tk.Button(self.rightframe, text="X slice", command=self.acquirexslice)
+        self.takexslice.pack(side=tk.LEFT, ipadx=5, ipady=5, pady=(0,10))
+
+        self.takeyslice = tk.Button(self.rightframe, text="Y slice", command=self.acquireyslice)
+        self.takeyslice.pack(side=tk.LEFT, ipadx=5, ipady=5, pady=(0,10))
+
+        self.saveslice = tk.Button(self.rightframe, text="Save slice", command=self.save_slice, state=tk.DISABLED)
+        self.saveslice.pack(side=tk.RIGHT, ipadx=5, ipady=5, pady=(0,10))
+
         self.savearray = tk.Button(self.rightframe, text="Save array", command=self.save_asarray, state=tk.DISABLED)
         self.savearray.pack(side=tk.RIGHT, ipadx=5,ipady=5, pady=(0,10))
 
         self.saveimage = tk.Button(self.rightframe, text="Save image", command=self.save_asimage, state=tk.DISABLED)
         self.saveimage.pack(side=tk.RIGHT,ipadx=5, ipady=5, pady=(0,10))
 
+        
 
     
     def camerasetup(self):
@@ -168,6 +181,7 @@ class CameraApp(tk.Frame):
 
         self.savearray.configure(state=tk.DISABLED)
         self.saveimage.configure(state=tk.DISABLED)
+        self.saveslice.configure(state=tk.DISABLED)
         self.signalwarnings.configure(text="")
 
         self.running = True
@@ -179,9 +193,10 @@ class CameraApp(tk.Frame):
     
         self.start_liveacquisition()
         self.startlive.configure(text="Stop", command=self.stop_liveacquisition)
-        self.singleframe.configure(state=tk.DISABLED)
         self.multiframe.configure(state=tk.DISABLED)
         self.summedlive.configure(state=tk.DISABLED)
+        self.takexslice.configure(state=tk.DISABLED)
+        self.takeyslice.configure(state=tk.DISABLED)
         
         self.imageloop()
 
@@ -191,7 +206,6 @@ class CameraApp(tk.Frame):
 
         self.start_liveacquisition()
         self.summedlive.configure(text="Stop", command=self.stop_liveacquisition)
-        self.singleframe.configure(state=tk.DISABLED)
         self.multiframe.configure(state=tk.DISABLED)
         self.startlive.configure(state=tk.DISABLED)
 
@@ -215,6 +229,7 @@ class CameraApp(tk.Frame):
             messagebox.showerror("Error", "{}".format(ex))
 
         self.displayimage()
+        self.integrateimage()
 
         image_result.Release()
 
@@ -224,9 +239,10 @@ class CameraApp(tk.Frame):
             self.camera.EndAcquisition()
             self.signalwarnings.configure(text="")
             self.startlive.configure(text="Live", command=self.start_singleframelive)
-            self.singleframe.configure(state=tk.NORMAL)
             self.multiframe.configure(state=tk.NORMAL)
             self.summedlive.configure(state=tk.NORMAL)
+            self.takexslice.configure(state=tk.NORMAL)
+            self.takeyslice.configure(state=tk.NORMAL)
 
 
 
@@ -235,15 +251,17 @@ class CameraApp(tk.Frame):
         try:
             self.getmultiframeimage()
         except ValueError:
-            messagebox.showerror("Error", "Choose a number of frames")
+            messagebox.showerror("Error", "Set number of frames as integer number")
             self.camera.EndAcquisition()
             self.summedlive.configure(text="Multiframe live", command=self.start_multiframelive)
             self.startlive.configure(state=tk.NORMAL)
             self.multiframe.configure(state=tk.NORMAL)
-            self.singleframe.configure(state=tk.NORMAL)
+            self.takexslice.configure(state=tk.NORMAL)
+            self.takeyslice.configure(state=tk.NORMAL)
             return
  
         self.displayimage()
+        self.integrateimage()
 
         if self.running == True:
             self.after(1, self.multiframeloop)
@@ -253,7 +271,8 @@ class CameraApp(tk.Frame):
             self.summedlive.configure(text="Multiframe live", command=self.start_multiframelive)
             self.startlive.configure(state=tk.NORMAL)
             self.multiframe.configure(state=tk.NORMAL)
-            self.singleframe.configure(state=tk.NORMAL)
+            self.takexslice.configure(state=tk.NORMAL)
+            self.takeyslice.configure(state=tk.NORMAL)
 
 
 
@@ -268,11 +287,42 @@ class CameraApp(tk.Frame):
         self.capturemultiframe()
 
         self.displayimage()
+        self.integrateimage()
 
         self.savearray.configure(state=tk.NORMAL)
         self.saveimage.configure(state=tk.NORMAL, command=self.save_asimage)
-       
-        self.sumimages.configure(state=tk.NORMAL)
+
+
+
+    def acquirexslice(self):
+
+        self.savearray.configure(state=tk.DISABLED)
+        self.saveimage.configure(state=tk.DISABLED)
+        
+        self.capturemultiframe()
+
+        self.slice = numpy.sum(self.image_data, axis=0, dtype=int)
+        self.pixelvalues = numpy.arange(self.xstart,self.xend, dtype=int)
+
+        self.displayslice()
+
+        self.saveslice.configure(state=tk.NORMAL, text="Save X-slice")
+
+
+    
+    def acquireyslice(self):
+
+        self.savearray.configure(state=tk.DISABLED)
+        self.saveimage.configure(state=tk.DISABLED)
+        
+        self.capturemultiframe()
+
+        self.slice = numpy.sum(self.image_data, axis=1, dtype=int)
+        self.pixelvalues = numpy.arange(self.ystart,self.yend, dtype=int)
+
+        self.displayslice()
+        
+        self.saveslice.configure(state=tk.NORMAL, text="Save Y-slice")
 
 
 
@@ -284,16 +334,19 @@ class CameraApp(tk.Frame):
         node_framecount.SetValue(int(self.sumimages.get()))
  
         self.sumimages.configure(state=tk.DISABLED)
+        self.saveslice.configure(state=tk.DISABLED)
         
         self.camera.BeginAcquisition()
         self.getmultiframeimage()
-        xstart = int(self.xpixelstart.get()) - 1
-        xend = int(self.xpixelend.get())
-        ystart = int(self.ypixelstart.get()) - 1
-        yend = int(self.ypixelend.get())
-        self.image_data = self.sumimage[ystart:yend,xstart:xend]
+        self.xstart = int(self.xpixelstart.get()) 
+        self.xend = int(self.xpixelend.get()) + 1
+        self.ystart = int(self.ypixelstart.get())
+        self.yend = int(self.ypixelend.get()) +1
+        self.image_data = self.sumimage[self.ystart:self.yend,self.xstart:self.xend]
         self.camera.EndAcquisition()
-        
+
+        self.sumimages.configure(state=tk.NORMAL)
+
        
 
     def getmultiframeimage(self):
@@ -313,7 +366,7 @@ class CameraApp(tk.Frame):
                     self.camera.EndAcquisition()
                 except PySpin.SpinnakerException:
                     pass
-                tk.messagebox.showerror("Error", "Stopped after {} images: {}".format(i,ex))
+                messagebox.showerror("Error", "Stopped after {} images: {}".format(i,ex))
                 return
 
         image_result.Release()
@@ -326,6 +379,10 @@ class CameraApp(tk.Frame):
         x = [16,48,80,112,144,176,208,240]
         self.imagedisplay.clear()
         self.imagedisplay.imshow(self.image_data, cmap="gray", vmin=0, vmax=255)
+        self.imagedisplay.axhline(y=int(self.ypixelstart.get()), color="red", linewidth=0.3)
+        self.imagedisplay.axhline(y=int(self.ypixelend.get()), color="red", linewidth=0.3)
+        self.imagedisplay.axvline(x=int(self.xpixelstart.get()), color="red", linewidth=0.3)
+        self.imagedisplay.axvline(x=int(self.xpixelend.get()), color="red", linewidth=0.3)
         self.histogram.clear()
         self.histogram.bar(x,histo, width=14, align='center', log=True, tick_label=["0-31","32-63","64-95","96-127","128-159","160-191","192-223","224-255"])
         self.canvas.draw()
@@ -343,6 +400,23 @@ class CameraApp(tk.Frame):
 
 
 
+    def displayslice(self):
+
+        self.imagedisplay.set_aspect("auto")
+        self.imagedisplay.clear()
+        self.imagedisplay.plot(self.pixelvalues, self.slice)
+        self.histogram.clear()
+        self.canvas.draw()
+
+
+    
+    def integrateimage(self):
+
+        self.totalsignal = numpy.sum(self.image_data)
+        self.signallabel.configure(text="Total signal: {}".format(self.totalsignal))
+
+
+
     def save_asarray(self):
         
         filename = filedialog.asksaveasfilename(initialdir="C:/", title="Save array as:", filetypes=(("Binary numpy array file", "*.npy"),("All files","*.*")))
@@ -353,7 +427,22 @@ class CameraApp(tk.Frame):
     def save_asimage(self):
 
         filename = filedialog.asksaveasfilename(initialdir="C:/", title="Save image as:", filetypes=(("PNG files", "*.png"),("All files","*.*")))
-        matplotlib.image.imsave(filename, self.image_data, vmin=0, vmax=255, cmap="gray")
+        matplotlib.image.imsave(filename, self.image_data, vmin=0, cmap="gray")
+
+
+
+    def save_slice(self):
+
+        filename = filedialog.asksaveasfilename(initialdir="C:/", title="Save image as:", filetypes=(("Binary numpy array file", "*.npy"),("Text files","*.txt"),("All files", "*.*")))
+        self.slicearray = numpy.empty((len(self.pixelvalues), 2), dtype=int)
+        self.slicearray[:,0] = self.pixelvalues
+        self.slicearray[:,1] = self.slice
+        if filename[-3:] == "txt":
+            numpy.savetxt(filename, self.slicearray, fmt="%i")
+        elif filename[-3:] == "npy":
+            numpy.save(filename, self.slicearray)
+        else:
+            messagebox.showerror("Error", "Please specify file extension (.txt, .npy)")
 
 
 
@@ -361,10 +450,10 @@ class CameraApp(tk.Frame):
 
         exposure = self.node_exposuretime.GetValue()
         gain = self.node_gain.GetValue()
-        xstart = int(self.xpixelstart.get()) - 1
-        xend = int(self.xpixelend.get())
-        ystart = int(self.ypixelstart.get()) - 1
-        yend = int(self.ypixelend.get())
+        xstart = int(self.xpixelstart.get()) 
+        xend = int(self.xpixelend.get()) + 1
+        ystart = int(self.ypixelstart.get()) 
+        yend = int(self.ypixelend.get()) + 1
 
         parameters = {"Exposure time": exposure, "Gain": gain, "Lower end x": xstart, "Upper end x": xend, "Lower end y": ystart, "Upper end x": yend}
         filename = filedialog.asksaveasfilename(initialdir="C:/", title="Save parameters:", filetypes=(("Text files", "*.txt"),("All files", "*.*")))

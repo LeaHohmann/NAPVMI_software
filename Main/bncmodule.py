@@ -102,7 +102,7 @@ class Channel():
         self.frame = frame
         self.bnc = unit
 
-        self.timeunits = {"ms": 8, "us": 5, "ns": 2}
+        self.timeunits = {"ms": 9, "us": 6, "ns": 3}
         self.steps = {1: 0, 10: 1, 100: 2}
 
         self.bncinit()
