@@ -1,5 +1,7 @@
 import serial
 import tkinter as tk
+from tkinter import messagebox
+
 
 class DelayApp(tk.Frame):
 
@@ -11,55 +13,57 @@ class DelayApp(tk.Frame):
         self.pack()
 
         self.guiinit()
+        self.initialquery()
 
+        self.bncrunning = "0"
 
-    def quitapp(self):
+        self.channelnumbers = {"A": 1, "B": 2, "C": 3, "D": 4, "E": 5, "F": 6, "G": 7, "H": 8}
+
     
-        self.frameA.destroy()
-        self.frameB.destroy()
-        self.frameC.destroy()
-        self.frameD.destroy()
-        self.frameE.destroy()
-        self.frameF.destroy()
-        self.frameG.destroy()
-        self.frameH.destroy()
+    
+    def initialquery(self):
+
+        inputstring = ":PULS0:STATE?\r\n"
+        self.bnc.write(inputstring.encode("utf-8"))
+        lastline = self.bnc.readline().decode("utf-8")
+        self.bncrunning = lastline[:-2]
+        if self.bncrunning == "1":
+            self.triggeringonoff.configure(text="Stop triggering", command=self.stoptriggering)
+            messagebox.showinfo("Note:", "Delay generator is currently triggering")
+
 
 
     def guiinit(self):
-        self.frameA = tk.Frame(self)
-        self.frameA.pack(side=tk.TOP)
-        ChA = Channel("A",1,self.frameA,self.bnc)
 
-        self.frameB = tk.Frame(self)
-        self.frameB.pack(side = tk.TOP)
-        ChB = Channel("B",2,self.frameB,self.bnc)
+        self.tunerframe = tk.Frame(self)
+        self.tunerframe.pack(side=tk.TOP)
 
-        self.frameC = tk.Frame(self)
-        self.frameC.pack(side=tk.TOP)
-        ChC = Channel("C",3,self.frameC,self.bnc)
+        self.channelname = tk.StringVar(self.tunerframe)
+        self.channeltuner = tk.OptionMenu(self.tunerframe, self.channelname, "A", "B", "C", "D", "E", "F", "G", "H")
+        self.channeltuner.pack(side=tk.LEFT, pady=(10,5), padx=(0,10))
 
-        self.frameD = tk.Frame(self)
-        self.frameD.pack(side=tk.TOP)
-        ChD = Channel("D",4,self.frameD,self.bnc)
+        self.channelset = tk.Button(self.tunerframe, text="Set Channel", command=self.setchannel)
+        self.channelset.pack(side=tk.LEFT, pady=(10,5))
 
-        self.frameE = tk.Frame(self)
-        self.frameE.pack(side=tk.TOP)
-        ChE = Channel("E",5,self.frameE,self.bnc)
-
-        self.frameF = tk.Frame(self)
-        self.frameF.pack(side=tk.TOP)
-        ChF = Channel("F",6,self.frameF,self.bnc)
-
-        self.frameG = tk.Frame(self)
-        self.frameG.pack(side=tk.TOP)
-        ChG = Channel("G",7,self.frameG,self.bnc)
-
-        self.frameH = tk.Frame(self)
-        self.frameH.pack(side=tk.TOP)
-        ChH = Channel("H",8,self.frameH,self.bnc)
+        self.channelframe = tk.Frame(self)
+        self.channelframe.pack(side=tk.TOP)
 
         self.triggeringonoff = tk.Button(self, text="Run triggering", command=self.runtriggering)
-        self.triggeringonoff.pack(side=tk.TOP, ipadx=5, ipady=5, pady=20)
+        self.triggeringonoff.pack(side=tk.TOP, ipadx=5, ipady=5, pady=(30,10))
+
+
+
+    def setchannel(self):
+        
+        try:
+            self.channel.destroy()
+        except AttributeError:
+            pass
+        
+        channelname = self.channelname.get()
+        channelnumber = self.channelnumbers[channelname]
+
+        self.channel = Channel(channelname, channelnumber, self.channelframe, self.bnc) 
         
 
 
@@ -88,18 +92,28 @@ class DelayApp(tk.Frame):
         self.bncrunning = lastline[:-2]
         if self.bncrunning == "0":
             self.triggeringonoff.configure(text="Run triggering", command=self.runtriggering)
+
+
+
+    def quitapp(self):
     
+        if self.bncrunning == "1":
+            self.stoptriggering()
 
 
 
-class Channel():
 
-    def __init__(self, name, number, frame, unit):
 
+class Channel(tk.Frame):
+
+    def __init__(self, name, number, master, unit):
+
+        tk.Frame.__init__(self,master)
+        self.pack()
+        
         self.name = name
         self.number = number
         self.delay = "0"
-        self.frame = frame
         self.bnc = unit
 
         self.timeunits = {"ms": 9, "us": 6, "ns": 3}
@@ -121,20 +135,23 @@ class Channel():
 
     def guiinit(self):
 
-        self.namelabel = tk.Label(self.frame, text="Channel {}:".format(self.name))
-        self.namelabel.pack(side=tk.LEFT, padx=5, pady=5)
-        self.delaylabel = tk.Label(self.frame, text=self.delay)
-        self.delaylabel.pack(side=tk.LEFT, padx=5, pady=5)
-        self.incrementplus = tk.Button(self.frame, text="+", command=self.plus)
+        self.namelabel = tk.Label(self, text="Channel {}:".format(self.name), font=("Helvetica", 12))
+        self.namelabel.pack(side=tk.TOP, padx=5, pady=(10,5))
+        self.delaylabel = tk.Label(self, text=self.delay, font=("Helvetica", 12))
+        self.delaylabel.pack(side=tk.TOP, padx=5, pady=5)
+        self.incrementplus = tk.Button(self, text="+", command=self.plus, font=("Arial", 12))
         self.incrementplus.pack(side=tk.LEFT, padx=5, pady=5)
-        self.incrementminus = tk.Button(self.frame, text="-", command=self.minus)
+        self.incrementminus = tk.Button(self, text=u"\u2212", command=self.minus, font=("Arial", 12))
         self.incrementminus.pack(side=tk.LEFT, padx=5, pady=5)
-        self.stepsize = tk.IntVar(self.frame)
-        self.timeunit = tk.StringVar(self.frame)
-        self.stepdropdown = tk.OptionMenu(self.frame, self.stepsize, 1, 10, 100)
+        self.stepsize = tk.IntVar(self)
+        self.timeunit = tk.StringVar(self)
+        self.stepdropdown = tk.OptionMenu(self, self.stepsize, 1, 10, 100)
         self.stepdropdown.pack(side=tk.LEFT, padx=5, pady=5)
-        self.unitdropdown = tk.OptionMenu(self.frame, self.timeunit, "ns", "us", "ms")
+        self.stepdropdown.configure(height=2)
+        self.unitdropdown = tk.OptionMenu(self, self.timeunit, "ns", "us", "ms")
         self.unitdropdown.pack(side=tk.LEFT, padx=5, pady=5)
+        self.unitdropdown.configure(height=2)
+
 
 
 
@@ -159,20 +176,33 @@ class Channel():
 
 
     def changedelay(self):
-        
-        timefactor = self.timeunits[self.timeunit.get()]
-        step = self.steps[self.stepsize.get()]
-        delayindex = step + timefactor
-        newdigit = int(self.delay[-delayindex]) + self.increment
-        newdelay = self.delay[:-delayindex] + str(newdigit) + self.delay[-delayindex+1:]
-        inputstring = ":PULS{}:DEL {}\r\n".format(self.number,newdelay)
-        self.bnc.write(inputstring.encode("utf-8"))
-        lastline = self.bnc.readline().decode("utf-8")
+
         inputstring = ":PULS{}:DEL?\r\n".format(self.number)
         self.bnc.write(inputstring.encode("utf-8"))
         lastline = self.bnc.readline().decode("utf-8")
-        self.delay = lastline[:-2]
-        self.guiupdate()
+        if lastline[:-2] != self.delay:
+            messagebox.showerror("Error:", "Delay was out of sync due to manual change. No incrementing performed. Delay will be updated to the current value and can be altered again after.")
+            self.delay = lastline[:-2]
+            self.guiupdate()
+            return
+        
+        try:
+            timefactor = self.timeunits[self.timeunit.get()]
+            step = self.steps[self.stepsize.get()]
+            delayindex = step + timefactor
+            newdigit = int(self.delay[-delayindex]) + self.increment
+            newdelay = self.delay[:-delayindex] + str(newdigit) + self.delay[-delayindex+1:]
+            inputstring = ":PULS{}:DEL {}\r\n".format(self.number,newdelay)
+            self.bnc.write(inputstring.encode("utf-8"))
+            lastline = self.bnc.readline().decode("utf-8")
+            inputstring = ":PULS{}:DEL?\r\n".format(self.number)
+            self.bnc.write(inputstring.encode("utf-8"))
+            lastline = self.bnc.readline().decode("utf-8")
+            self.delay = lastline[:-2]
+            self.guiupdate()
+
+        except KeyError:
+            messagebox.showerror("Error", "Please set an increment and a time unit")
 
 
 
