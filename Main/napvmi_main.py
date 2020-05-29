@@ -18,6 +18,7 @@ class Root(tk.Tk):
         self.camera = ""
         self.camerastatus = "disconnected"
         self.bncstatus = "disconnected"
+        self.connectionstatus = 0
 
         self.bncframe = tk.Frame(self)
         self.bncframe.pack(side=tk.LEFT, padx=30)
@@ -28,6 +29,11 @@ class Root(tk.Tk):
         self.cameraframe.pack(side=tk.LEFT, padx=30)
         self.connectcamera = tk.Button(self.cameraframe, text="Connect to camera", command=self.cameraconnect)
         self.connectcamera.pack(side=tk.TOP, ipadx=5, ipady=5)
+
+        self.startexperimentframe = tk.Frame(self)
+        self.startexperimentframe.pack(side=tk.BOTTOM, pady=20)
+        self.startintegration = tk.Button(self.startexperimentframe, text="Delay integration experiment", background="green", command=self.startdelayint, state=tk.DISABLED)
+        #self.startintegration.pack(side=tk.CENTER, ipadx=5, ipady=5)
 
 
 
@@ -42,6 +48,10 @@ class Root(tk.Tk):
         self.connectbnc.destroy()
         self.bncstatus = "connected"
         self.bncinit()
+        
+        self.connectionstatus += 1
+        if self.connectionstatus == 2:
+            self.startintegration.configure(state=tk.NORMAL)
 
 
 
@@ -71,6 +81,11 @@ class Root(tk.Tk):
             self.connectcamera.destroy()
             self.camerainit()
 
+            self.connectionstatus += 1
+            if self.connectionstatus == 2:
+                self.startintegration.configure(state=tk.NORMAL)
+
+
 
 
     def cameraident(self):
@@ -92,6 +107,21 @@ class Root(tk.Tk):
     def camerainit(self):
 
         self.cameragui = cameramodule.CameraApp(self.cameraframe,self.system,self.camera)
+
+
+
+    def startdelayint(self):
+
+        channelnumbersvector = [1,3,4,5,6,7,8]
+        delaysvector = []
+        for i in channelnumbersvector:
+            inputstring = ":PULS{}:DEL?\r\n".format(i)
+            self.bnc.write(inputstring.encode("utf-8"))
+            lastline = self.bnc.readline().decode("utf-8")
+            delaysvector.append(lastline[:-2])
+
+        self.bncframe.pack_forget()
+        self.cameraframe.pack_forget()
 
 
 

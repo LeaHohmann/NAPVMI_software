@@ -39,6 +39,9 @@ class CameraApp(tk.Frame):
         self.settingslabel = tk.Label(self.leftframe, text="Camera settings", anchor=tk.NW, font=("Helvetica", 18))
         self.settingslabel.pack(side=tk.TOP, pady=(10,30))
 
+        self.triggerbutton = tk.Button(self.leftframe, text="Triggered acquisition: OFF", background="red", command=self.settrigger)
+        self.triggerbutton.pack(side=tk.TOP, pady=(5,30))
+
         self.exposurelabel = tk.Label(self.leftframe, text="Exposure time [us] : {}".format(round(self.node_exposuretime.GetValue(),2)), anchor=tk.NW, font=("Helvetica",12))
         self.exposurelabel.pack(side=tk.TOP, pady=5)
 
@@ -150,6 +153,20 @@ class CameraApp(tk.Frame):
         self.node_exposuretime = PySpin.CFloatPtr(self.nodemap.GetNode("ExposureTime"))
         self.node_gain = PySpin.CFloatPtr(self.nodemap.GetNode("Gain"))
 
+        self.node_triggermode = PySpin.CEnumerationPtr(self.nodemap.GetNode("TriggerMode"))
+        self.node_triggermode.SetIntValue(0)
+        self.node_triggerselector = PySpin.CEnumerationPtr(self.nodemap.GetNode("TriggerSelector"))
+        if not PySpin.IsReadable(self.node_triggerselector) or not PySpin.IsWritable(self.node_triggerselector):
+            messagebox.showerror("Error", "Couldn't configure camera, trigger selector could not be set. Close program and try again")
+            return
+        self.node_triggerselector.SetIntValue(self.node_triggerselector.GetEntryByName("FrameStart").GetValue())
+        self.node_triggersource = PySpin.CEnumerationPtr(self.nodemap.GetNode("TriggerSource"))
+        if not PySpin.IsReadable(self.node_triggerselector) or not PySpin.IsWritable(self.node_triggerselector):
+            messagebox.showerror("Error", "Couldn't configure camera, trigger selector could not be set. Close program and try again")
+            return
+        self.node_triggersource.SetIntValue(self.node_triggersource.GetEntryByName("Line0").GetValue())
+
+
 
 
     def exposuretime(self,value):
@@ -163,6 +180,22 @@ class CameraApp(tk.Frame):
 
         self.node_gain.SetValue(float(value))
         self.gainlabel.configure(text="Gain: {}".format(round(self.node_gain.GetValue(),2)))
+
+
+    
+    def settrigger(self):
+
+        self.node_triggermode.SetIntValue(1)
+        
+        self.triggerbutton.configure(text="Triggered acquisition: ON", background="green", command=self.stoptrigger)
+
+
+
+    def stoptrigger(self):
+
+        self.node_triggermode.SetIntValue(0)
+
+        self.triggerbutton.configure(text="Triggered acquisition: OFF", background="red", command=self.settrigger)
 
 
 
@@ -208,6 +241,8 @@ class CameraApp(tk.Frame):
         self.summedlive.configure(text="Stop", command=self.stop_liveacquisition)
         self.multiframe.configure(state=tk.DISABLED)
         self.startlive.configure(state=tk.DISABLED)
+        self.takexslice.configure(state=tk.DISABLED)
+        self.takeyslice.configure(state=tk.DISABLED)
 
         self.multiframeloop()
 
@@ -216,17 +251,20 @@ class CameraApp(tk.Frame):
     def imageloop(self):
         
         try:
-            image_result = self.camera.GetNextImage()
+            image_result = self.camera.GetNextImage(5000)
             self.image_data = image_result.GetNDArray()
 
         except PySpin.SpinnakerException as ex:
             
-            try:
-                self.camera.EndAcquisition()
-            except PySpin.SpinnakerException:
-                pass
-            self.startlive.configure(text="Live", command=self.start_liveacquisition)
+            
+            self.camera.EndAcquisition()
+            self.startlive.configure(text="Live", command=self.start_singleframelive)
+            self.multiframe.configure(state=tk.NORMAL)
+            self.summedlive.configure(state=tk.NORMAL)
+            self.takexslice.configure(state=tk.NORMAL)
+            self.takeyslice.configure(state=tk.NORMAL)
             messagebox.showerror("Error", "{}".format(ex))
+            return
 
         self.displayimage()
         self.integrateimage()
@@ -248,6 +286,8 @@ class CameraApp(tk.Frame):
 
     def multiframeloop(self):
 
+        self.captureexception = False
+
         try:
             self.getmultiframeimage()
         except ValueError:
@@ -260,13 +300,19 @@ class CameraApp(tk.Frame):
             self.takeyslice.configure(state=tk.NORMAL)
             return
  
-        self.displayimage()
-        self.integrateimage()
+        if self.captureexception == False:
 
-        if self.running == True:
+            self.image_data = self.sumimage
+            self.displayimage()
+            self.integrateimage()
+
+        if self.running == True and self.captureexception == False:
             self.after(1, self.multiframeloop)
         else:
-            self.camera.EndAcquisition()
+            try:
+                self.camera.EndAcquisition()
+            except PySpin.SpinnakerException:
+                pass
             self.signalwarnings.configure(text="")
             self.summedlive.configure(text="Multiframe live", command=self.start_multiframelive)
             self.startlive.configure(state=tk.NORMAL)
@@ -284,45 +330,57 @@ class CameraApp(tk.Frame):
  
     def acquireimage(self):
 
+        self.captureexception = False
+        
         self.capturemultiframe()
 
-        self.displayimage()
-        self.integrateimage()
+        if self.captureexception == False:
 
-        self.savearray.configure(state=tk.NORMAL)
-        self.saveimage.configure(state=tk.NORMAL, command=self.save_asimage)
+            self.displayimage()
+            self.integrateimage()
+
+            self.savearray.configure(state=tk.NORMAL)
+            self.saveimage.configure(state=tk.NORMAL, command=self.save_asimage)
 
 
 
     def acquirexslice(self):
 
+        self.captureexception = False
+
         self.savearray.configure(state=tk.DISABLED)
         self.saveimage.configure(state=tk.DISABLED)
         
         self.capturemultiframe()
 
-        self.slice = numpy.sum(self.image_data, axis=0, dtype=int)
-        self.pixelvalues = numpy.arange(self.xstart,self.xend, dtype=int)
+        if self.captureexception == False:
 
-        self.displayslice()
+            self.slice = numpy.sum(self.image_data, axis=0, dtype=int)
+            self.pixelvalues = numpy.arange(self.xstart,self.xend, dtype=int)
 
-        self.saveslice.configure(state=tk.NORMAL, text="Save X-slice")
+            self.displayslice()
+
+            self.saveslice.configure(state=tk.NORMAL, text="Save X-slice")
 
 
     
     def acquireyslice(self):
 
+        self.captureexception = False
+
         self.savearray.configure(state=tk.DISABLED)
         self.saveimage.configure(state=tk.DISABLED)
         
         self.capturemultiframe()
 
-        self.slice = numpy.sum(self.image_data, axis=1, dtype=int)
-        self.pixelvalues = numpy.arange(self.ystart,self.yend, dtype=int)
+        if self.captureexception == False:
 
-        self.displayslice()
+            self.slice = numpy.sum(self.image_data, axis=1, dtype=int)
+            self.pixelvalues = numpy.arange(self.ystart,self.yend, dtype=int)
+
+            self.displayslice()
         
-        self.saveslice.configure(state=tk.NORMAL, text="Save Y-slice")
+            self.saveslice.configure(state=tk.NORMAL, text="Save Y-slice")
 
 
 
@@ -338,12 +396,14 @@ class CameraApp(tk.Frame):
         
         self.camera.BeginAcquisition()
         self.getmultiframeimage()
-        self.xstart = int(self.xpixelstart.get()) 
-        self.xend = int(self.xpixelend.get()) + 1
-        self.ystart = int(self.ypixelstart.get())
-        self.yend = int(self.ypixelend.get()) +1
-        self.image_data = self.sumimage[self.ystart:self.yend,self.xstart:self.xend]
-        self.camera.EndAcquisition()
+
+        if self.captureexception == False:
+            self.xstart = int(self.xpixelstart.get()) 
+            self.xend = int(self.xpixelend.get()) + 1
+            self.ystart = int(self.ypixelstart.get())
+            self.yend = int(self.ypixelend.get()) +1
+            self.image_data = self.sumimage[self.ystart:self.yend,self.xstart:self.xend]
+            self.camera.EndAcquisition()
 
         self.sumimages.configure(state=tk.NORMAL)
 
@@ -356,7 +416,7 @@ class CameraApp(tk.Frame):
         for i in range(int(self.sumimages.get())):
 
             try:
-                image_result = self.camera.GetNextImage()
+                image_result = self.camera.GetNextImage(2000)
                 frame_data = image_result.GetNDArray()
                 self.sumimage += frame_data
         
@@ -367,6 +427,7 @@ class CameraApp(tk.Frame):
                 except PySpin.SpinnakerException:
                     pass
                 messagebox.showerror("Error", "Stopped after {} images: {}".format(i,ex))
+                self.captureexception = True
                 return
 
         image_result.Release()

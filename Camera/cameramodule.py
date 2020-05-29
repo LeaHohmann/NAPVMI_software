@@ -56,7 +56,7 @@ class CameraApp(tk.Frame):
         self.gainslider.set(self.node_gain.GetValue())
         self.gainslider.pack(side=tk.TOP, pady=(0,30))
 
-        self.sumimageslabel = tk.Message(self.leftframe, text="Number of frames to sum (single image acquisition, multiframe live):", anchor=tk.NW, font=("Helvetica,12"), width=250)
+        self.sumimageslabel = tk.Message(self.leftframe, text="Number of frames to sum (single image acquisition, multiframe live):", anchor=tk.NW, font=("Helvetica",12), width=250)
         self.sumimageslabel.pack(side=tk.TOP, pady=5)
 
         self.numberofframes = tk.IntVar(self.leftframe, value=1)
