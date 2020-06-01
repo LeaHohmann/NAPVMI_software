@@ -25,6 +25,8 @@ class IntegrationGui(tk.Toplevel):
         self.rootbncframe = rootbndframe
         self.rootcameraframe = rootcameraframe
 
+        self.erroroccurrence = False
+
         self.guiinit()
 
 
@@ -67,27 +69,76 @@ class IntegrationGui(tk.Toplevel):
     def startacquisition(self):
 
         self.node_triggermode = PySpin.CEnumerationPtr(self.nodemap.GetNode("TriggerMode"))
-        self.node_triggermode.SetIntValue(1) 
+        self.node_triggermode.SetIntValue(1)
+
+        self.startbutton.configure(state=tk.DISABLED)
 
         self.filename = filedialog.asksaveasfilename(initialdir="C:/", title="Choose image file name", filetypes=(("binary numpy array file","*.npy"),("All files","*.*")))
         self.parameterfilename = filedialog.asksaveasfilename(initialdir="C:/", title="Choose parameter file name", filetypes=(("Text files","*.txt"),("All files","*.*")))
 
         delayscanrange = numpy.arange(self.delayrangelower, self.delayrangeupper + 1, self.increment)
+
+        try:
+            self.numberofframes = int(self.framenumber.get())
+        except ValueError:
+            messagebox.showerror("Error", "Please enter an integer number of frames")
+            self.startbutton.configure(state=tk.NORMAL)
+            return
         
-        #make empty image
+        self.integratedimage = numpy.zeros((964,1288), int)
+        
+        self.camera.BeginAcquisition()
 
         for i in delayscanrange:
+            inputstring = "PULS2:DEL {}\r\n".format(i)
+            self.bnc.write(inputstring.encode("utf-8"))
+            lastline = self.bnc.readline().decode("utf-8")
+
             self.imageloop(i)
-            #add result to final image
+            if self.erroroccurrence == True:
+                break 
 
-        #save image under filaname
-        #make dictionary for parameters
-        #save parameters under parameter filename
+            self.integratedimage += self.sumimage
+
+        try:
+            self.camera.EndAcquisition()
+        except PySpin.SpinnakerException:
+            pass
+
+        if self.erroroccurrence == True:
+            self.startbutton.configure(state=tk.NORMAL)
+            return
+
+        numpy.save(self.filename, self.integratedimage)
+
+        self.parameters = {"Exposure time": self.exposure, "Gain": self.gain, "Number of frames per delay": self.numberofframes, "Delay start": self.delayrangelower, "Delay end": self.delayrangeupper, "Delay increment": self.increment, "Delay A": self.delaysvector[0], "Delay C": self.delaysvector[1], "Delay D": self.delaysvector[2], "Delay E": self.delaysvector[3], "Delay F": self.delaysvector[4], "Delay G": self.delaysvector[5], "Delay H": self.delaysvector[6]}
+        
+        f = open(self.parameterfilename, "w")
+        f.write(str(self.parameters))
+        f.close
+
+        self.startbutton.configure(state=tk.NORMAL)
+
+        self.messagebx.showinfo("Measurement finished", "Image has been saved under: {}, parameters under {}".format(self.filename, self.parameterfilename))
 
 
 
-    #imageloop function
+    def imageloop(self):
 
+        self.sumimage = numpy.zeros((964,1288), int)
+
+        for i in range(self.numberofframes):
+
+            try:
+                image_result = self.camera.GetNextImage(5000)
+                image_data = image_result.GetNDArray()
+                self.sumimage += image_data
+
+            except PySpin.SpinnakerException as ex:
+                self.camera.EndAcquisition()
+                self.erroroccurrence = True
+                messagebox.showerror("Error","{}".format(ex))
+            
 
     
     def closegui(self):
