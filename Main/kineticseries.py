@@ -9,10 +9,10 @@ matplotlib.use("TkAgg")
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 
-class IntegrationGui(tk.Toplevel):
+class SeriesGui(tk.Toplevel):
 
 
-    def __init__(self,root,bnc,system,camera,nodemap,exposuretime,gain,delaysvector,rootcameraframe,rootbncframe,rootstartbutton):
+    def __init__(self,root,bnc,system,camera,nodemap,exposuretime,gain,delaysvector,rootcameraframe,rootbncframe):
 
         tk.Toplevel.__init__(self,root)
         self.title("Acquisition: Delay integration")
@@ -28,7 +28,6 @@ class IntegrationGui(tk.Toplevel):
         self.delaysvector = delaysvector
         self.rootbncframe = rootbncframe
         self.rootcameraframe = rootcameraframe
-        self.rootstartbutton = rootstartbutton
 
         self.rootbncframe.pack_forget()
         self.rootcameraframe.pack_forget()
@@ -47,7 +46,7 @@ class IntegrationGui(tk.Toplevel):
         self.rightframe = tk.Frame(self)
         self.rightframe.pack(side=tk.LEFT, padx=10)
 
-        self.description = tk.Message(self.leftframe, text="Integrates over a range of delays. Please specify delay range, increment and number of frames per delay.", font=("Helvetica",11), width=250)
+        self.description = tk.Message(self.leftframe, text="Kinetic series over a range of delays. Please specify delay range, increment and number of frames per delay.", font=("Helvetica",11), width=250)
         self.description.pack(side=tk.TOP, pady=10)
 
         self.delayrangelabel = tk.Label(self.leftframe, text="Delay range in microseconds (min 0 - max 2000):", font=("Helvetica",12))
@@ -83,8 +82,8 @@ class IntegrationGui(tk.Toplevel):
 
         self.fig = matplotlib.figure.Figure(figsize=[4.6,7.2])
         self.grid = self.fig.add_gridspec(ncols=1, nrows=2)
-        self.integrateddisplay = self.fig.add_subplot(self.grid[0,0])
-        self.lastdelaydisplay = self.fig.add_subplot(self.grid[1,0])
+        self.lastdelaydisplay = self.fig.add_subplot(self.grid[0,0])
+        self.intensityvtime = self.fig.add_subplot(self.grid[1,0])
 
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.rightframe)
         self.canvas.draw()
@@ -99,8 +98,7 @@ class IntegrationGui(tk.Toplevel):
 
         self.startbutton.configure(state=tk.DISABLED)
 
-        self.filename = filedialog.asksaveasfilename(initialdir="C:/", title="Choose image file name", filetypes=(("binary numpy array file","*.npy"),("All files","*.*")))
-        self.parameterfilename = filedialog.asksaveasfilename(initialdir="C:/", title="Choose parameter file name", filetypes=(("Text files","*.txt"),("All files","*.*")))
+        self.directory = filedialog.askdirectory(mustexist=False)
 
         delayscanrange = numpy.arange(int(self.delayrangestart.get()), int(self.delayrangeend.get()) + 1, int(self.incremententry.get()))
 
@@ -110,8 +108,6 @@ class IntegrationGui(tk.Toplevel):
             messagebox.showerror("Error", "Please enter an integer number of frames")
             self.startbutton.configure(state=tk.NORMAL)
             return
-        
-        self.integratedimage = numpy.zeros((964,1288), int)
         
         self.camera.BeginAcquisition()
 
@@ -125,12 +121,14 @@ class IntegrationGui(tk.Toplevel):
             if self.erroroccurrence == True:
                 break 
 
-            self.integratedimage += self.sumimage
+            self.filename = self.directory + "/" + str(i) + ".npy"
+            numpy.save(self.filename, self.sumimage)
 
-            self.integrateddisplay.clear()
-            self.integrateddisplay.imshow(self.integratedimage, cmap="gray", vmin=0)
             self.lastdelaydisplay.clear()
             self.lastdelaydisplay.imshow(self.sumimage, cmap="gray", vmin=0)
+            #self.intensityvtime.clear()
+            #self.intensityvtime.imshow(self.sumimage, cmap="gray", vmin=0)
+            #plot the integrated intensity v delay time (growing dataset)
         
 
         try:
@@ -142,10 +140,10 @@ class IntegrationGui(tk.Toplevel):
             self.startbutton.configure(state=tk.NORMAL)
             return
 
-        numpy.save(self.filename, self.integratedimage)
-
+        
         self.parameters = {"Exposure time": self.exposure, "Gain": self.gain, "Number of frames per delay": self.numberofframes, "Delay start": self.delayrangelower, "Delay end": self.delayrangeupper, "Delay increment": self.increment, "Delay A": self.delaysvector[0], "Delay C": self.delaysvector[1], "Delay D": self.delaysvector[2], "Delay E": self.delaysvector[3], "Delay F": self.delaysvector[4], "Delay G": self.delaysvector[5], "Delay H": self.delaysvector[6]}
         
+        self.parameterfilename = self.directory + "/parameters.txt"
         f = open(self.parameterfilename, "w")
         f.write(str(self.parameters))
         f.close
@@ -181,6 +179,5 @@ class IntegrationGui(tk.Toplevel):
 
         self.rootbncframe.pack(side=tk.LEFT)
         self.rootcameraframe.pack(side=tk.LEFT)
-        self.rootstartbutton.configure(state=tk.NORMAL)
 
         self.destroy()

@@ -6,8 +6,8 @@ Program will contain the following modules:
 - Main (napvmi_main.py)  
 - Camera (cameramodule.py)  
 - Delay generator (bncmodule.py)
-- Kinetic series module (file to be created)
-- Delay integration scan (file to be created) 
+- Kinetic series module (kineticseries.py)
+- Delay integration scan (delayintegration.py) 
 - Laser (file to be created) 
  
 
@@ -73,9 +73,12 @@ Kinetic series
 
 In setup GUI, there are separate modules for the BNC and the camera where delays/camera settings can be changed. It should also be possible to acquire single images/summed images and display the live (while the camera is being triggered) in the camera module itself. However, during a kinetic series, the program needs to access both at the same time (to give the current delay value) and cycle the delay values continuously, which can hang the GUI since it is a long-term ongoing process. Therefore the delay series should be a separate module that cycles the delay and can pass the value to both the camera (for image labeling/ file names) and the delay generator (to change the image). The setup GUI should be locked during the execution of this module so that nothing can be changed. The module needs access to the delay generator COM port connection and the system instance and camera pointer in PySpin (connections cannot be interrupted!!). Therefore the connections need to be made in the main GUI and then passed to the respective modules instead of creating them within the modules. It might be necessary to use threading to not hang the GUI while executing the kinetic series module (not sure though).
 
-**Functionalities to add:**
+**Current functionalities:**
 
-- Do a kinetic scan with a new image at each step of the delay generator scan, link delay value to frame (absolute top priority once hardware is working but not the first thing to do for the software  
+- Do a kinetic scan with a new image at each step of the delay generator scan, link delay value to frame, takes directory input and saves images under their corresponding delay
+
+**Functionalities to add:**
+- Display last delay image and total intensity v delay time plot
 
 
 
@@ -84,9 +87,11 @@ Delay intergration scan
 
 As above, except for taking one single summed image over all the scanned delays (only 1 image file results)
 
-**Functionalities to add:**
+**Current functionalities:**
+- Takes as input a delay range, increment and number of frames per delay, changes the delay incrementally and takes a summed image for each, sums all images to one integrated image 
+- Displays last delay image and integrated image
+(UNTESTED: Hardware trigger missing)
 
-- Take a single summed image while scanning the MB delay to integrate over the speed distribution in the incident beam  
 
 
 

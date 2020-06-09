@@ -4,6 +4,7 @@ import serial
 import PySpin
 import cameramodule
 import bncmodule
+import delayintegration
 
 
 class Root(tk.Tk):
@@ -20,20 +21,23 @@ class Root(tk.Tk):
         self.bncstatus = "disconnected"
         self.connectionstatus = 0
 
-        self.bncframe = tk.Frame(self)
+        self.moduleframe = tk.Frame(self)
+        self.moduleframe.pack(side=tk.TOP)
+
+        self.bncframe = tk.Frame(self.moduleframe)
         self.bncframe.pack(side=tk.LEFT, padx=30)
         self.connectbnc = tk.Button(self.bncframe, text="Connect to delay generator", command=self.bncconnect)
         self.connectbnc.pack(side=tk.TOP, ipadx=5, ipady=5)
 
-        self.cameraframe = tk.Frame(self)
+        self.cameraframe = tk.Frame(self.moduleframe)
         self.cameraframe.pack(side=tk.LEFT, padx=30)
         self.connectcamera = tk.Button(self.cameraframe, text="Connect to camera", command=self.cameraconnect)
         self.connectcamera.pack(side=tk.TOP, ipadx=5, ipady=5)
 
         self.startexperimentframe = tk.Frame(self)
-        self.startexperimentframe.pack(side=tk.BOTTOM, pady=20)
-        self.startintegration = tk.Button(self.startexperimentframe, text="Delay integration experiment", background="green", command=self.startdelayint, state=tk.DISABLED)
-        #self.startintegration.pack(side=tk.CENTER, ipadx=5, ipady=5)
+        self.startexperimentframe.pack(side=tk.TOP, pady=(30,10))
+        self.startintegration = tk.Button(self.startexperimentframe, text="Delay integration experiment", command=self.startdelayint, state=tk.DISABLED)
+        self.startintegration.pack(side=tk.BOTTOM, ipadx=5, ipady=5)
 
 
 
@@ -51,7 +55,7 @@ class Root(tk.Tk):
         
         self.connectionstatus += 1
         if self.connectionstatus == 2:
-            self.startintegration.configure(state=tk.NORMAL)
+            self.startintegration.configure(state=tk.NORMAL, background="green")
 
 
 
@@ -83,7 +87,7 @@ class Root(tk.Tk):
 
             self.connectionstatus += 1
             if self.connectionstatus == 2:
-                self.startintegration.configure(state=tk.NORMAL)
+                self.startintegration.configure(state=tk.NORMAL, background="green")
 
 
 
@@ -120,8 +124,12 @@ class Root(tk.Tk):
             lastline = self.bnc.readline().decode("utf-8")
             delaysvector.append(lastline[:-2])
 
-        self.bncframe.pack_forget()
-        self.cameraframe.pack_forget()
+        exposure = self.cameragui.node_exposuretime.GetValue()
+        gain = self.cameragui.node_gain.GetValue()
+
+        self.startintegration.configure(state=tk.DISABLED)
+
+        self.delayintegrationgui = delayintegration.IntegrationGui(self,self.bnc,self.system,self.camera,self.cameragui.nodemap,exposure,gain,delaysvector,self.cameraframe,self.bncframe,self.startintegration)
 
 
 
