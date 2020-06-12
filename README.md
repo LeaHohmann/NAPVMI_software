@@ -9,97 +9,42 @@ Program will contain the following modules:
 - Kinetic series module (kineticseries.py)
 - Delay integration scan (delayintegration.py) 
 - Laser (file to be created) 
- 
-
-The modules are described in more detail below
 
 
 Main
 ----
 
-Main module that will contain the GUI root, define important global variables (e.g. establish serial port connection to the delay generator, establish PySpin system instance and connection to the camera, pass the connections to the other modules as class variables)
-
-
-Delay generator
----------------
-
-Module that contains the Channels classes and other classes to interact with the delay generator (connection needs to be established in mains)
-
-**Current functionalities:**
-
-- Reading out and displaying the delay values from the BNC    
-- Set delays on BNC box by different increments in different time regime 
-
-**Functionalities to add:**
-
-- Choose one value to scan (MB1 delay), set initial and final, step size (alternative would be number of steps but then you get weird step sizes)    
-
-**Issues to think about:**
-
-- Make sure USB connection is stable!!  
+Main module containing the GUI root. Sets up the connection to the camera and the delay generator and imports the corresponding GUIs from the other modules. Kinetic series and Delay integrationa acquisition scans can be started from main module and open in separate windows
 
 
 Camera
 ------
 
-Camera module that will contain the functions to operate the camera, using the PySpin python wrapper from FLIR  
+Camera module (containing camera GUI). Functionalities: Setting the camera parameters (gain, exposure, region of interest, etc), displaying live images and taking individual shots, starting the triggering mode, saving individual images (as .npy or .png) and parameter files, importing previously used parameter files
 
-**Current functionalities:**
 
-- Scanning for a connected cameras, if "our" camera is among it, connecting to it 
-- Display the live footage
-- For low signal: Display rolling average of last x shots? 
-- Check if we saturate the camera at high signal by displaying the histogram/pixel value distribution
-- Read and set gain, exposure time
-- Take a single image/frame  
-- Set the number of images to sum 
-- Acquire and display a summed image
-- Save image as PNG or binary numpy array
-- Save and load parameter files
+Delay generator
+---------------
 
-**Functionalties to add:**
+Delay generator module (containing bnc control GUI). Functionalities: Choosing a channel & setting the delay (plus reads out current delay), starting & stopping triggering
 
-- Set the camera to trigger mode instead of  automatic and execute the acquisition and display functions in triggered mode
-- Set x and y pixels if we don't want to use the whole image   
 
-**Issues to think about:**
+Delay integration
+-----------------
 
-- Image file format  
-
+Module to start up a delay integration acquisition (summing over a range of delays). Module opens in new window and disables the other GUIs. Functionalities: Choose delay range & increments and number of frames per delay, as well as filename for the experiment. Upon start, incrementally changes the delay and takes an image, sums all images into a single image and saves as .npy, saves the camera parameters and other delays in parameter file
 
 
 Kinetic series
 --------------
 
-In setup GUI, there are separate modules for the BNC and the camera where delays/camera settings can be changed. It should also be possible to acquire single images/summed images and display the live (while the camera is being triggered) in the camera module itself. However, during a kinetic series, the program needs to access both at the same time (to give the current delay value) and cycle the delay values continuously, which can hang the GUI since it is a long-term ongoing process. Therefore the delay series should be a separate module that cycles the delay and can pass the value to both the camera (for image labeling/ file names) and the delay generator (to change the image). The setup GUI should be locked during the execution of this module so that nothing can be changed. The module needs access to the delay generator COM port connection and the system instance and camera pointer in PySpin (connections cannot be interrupted!!). Therefore the connections need to be made in the main GUI and then passed to the respective modules instead of creating them within the modules. It might be necessary to use threading to not hang the GUI while executing the kinetic series module (not sure though).
+Module to start up a kinetic series acquisition (scanning a range of delays and taking one image each). Module opens in new window and disables the other GUIs. Functionalities: Choose delay range & increments, no of frames per delay and filename for the experiment. Upon start, scans through the delay range and takes one image (consisting of multiple frames if more than 1 frame per delay was set) per delay. Saves the images as numpy arrays in a compressed numpy zip file (.npz) as well as a parameter file with camera parameters and other delays
 
-**Current functionalities:**
-
-- Do a kinetic scan with a new image at each step of the delay generator scan, link delay value to frame, takes directory input and saves images under their corresponding delay
-
-- Display latest delay imagen and total intensity v time plot
-
-(UNTESTED! Hardware trigger missing)
-
-
-
-Delay intergration scan
------------------------
-
-As above, except for taking one single summed image over all the scanned delays (only 1 image file results)
-
-**Current functionalities:**
-- Takes as input a delay range, increment and number of frames per delay, changes the delay incrementally and takes a summed image for each, sums all images to one integrated image 
-- Displays last delay image and integrated image
-(UNTESTED: Hardware trigger missing)
-
-
-
-
+  
 Laser
 -----
 
-Module that will contain the functions to interact with the laser
+LEF TO DO Module that will contain the functions to interact with the laser
 
 **Functionalities to add:**
 
@@ -109,4 +54,60 @@ Module that will contain the functions to interact with the laser
 **Issues to think about:**
 
 What is the laser software interface??
- 
+
+
+
+
+Software Requirements
+---------------------
+
+Windows: Windows 10 was used for testing the code, it has not been tested on other OS but earlier Windows might work if they can support the required python versions (some of the code is possibly Windows specific and might not work on Linux or Mac)
+
+Python: Python >=3.4 (modules were written in and tested with Python 3.7)
+
+Python modules:\\
+- numpy\\
+- tkinter\\
+- matplotlib\\
+- pySerial\\
+- PySpin (Spinnaker Python wrapper, available from FLIRs website)
+
+Camera drivers:\\
+(Add link to the drivers! From document)
+
+BNC drivers:\\
+[FTDI Virtual COM port drivers](https://www.ftdichip.com/Drivers/VCP.htm)
+
+
+
+Hardware Requirements
+---------------------
+
+Camera:\\
+Camera can be replaced but it should be a camera that can be controlled using the Spinnaker software (several camera series by FLIR)
+
+Delay generator:\\
+Needs to be able to take SCPI commands via (virtual) serial COMM port
+Written for BNC model 577
+
+Connections:\\
+Camera: USB3\\
+Delay generator: USB (with virtual serial port drivers) or COM
+
+
+
+Setup and hardware replacement
+------------------------------
+
+Camera:\\
+- Install drivers (see above) and connect camera via USB3\\
+- The code recognizes the camera by serial number (to avoid the program trying to access eventual other cameras or devices that are connected to the computer). If a new camera is used, the serial number needs to be changed in the napvmi_main module: change the self.serialnumber attribute in the `root.__init__()` function and in the "camera not found" error message string in the `root.cameraconnect()` function.\\
+
+BNC:\\
+- Install VCP drivers (see above)\\
+- Connect BNC via USB\\
+- Check the name/number of the virtual COM port (under serial ports in the Windows device manager). If it is not COM5, the code in the napvmi_main.py module has to be edited: Change the name to the correct one in the `root.bncconnect()` function (in the arguments of `serial.Serial()`).\\
+- Check that the baudrate specified on the delay generator is correct (115200). If a different delay generator is used and this baudrate is not available, it has to be changed in the `root.bncconnect()` function in order to match
+- If the delay generator is replaces by a different model, ensure that it can understand the same SCPI commands 
+
+
