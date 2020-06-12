@@ -77,8 +77,9 @@ In setup GUI, there are separate modules for the BNC and the camera where delays
 
 - Do a kinetic scan with a new image at each step of the delay generator scan, link delay value to frame, takes directory input and saves images under their corresponding delay
 
-**Functionalities to add:**
-- Display last delay image and total intensity v delay time plot
+- Display latest delay imagen and total intensity v time plot
+
+(UNTESTED! Hardware trigger missing)
 
 
 

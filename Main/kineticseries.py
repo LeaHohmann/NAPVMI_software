@@ -12,7 +12,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 class SeriesGui(tk.Toplevel):
 
 
-    def __init__(self,root,bnc,system,camera,nodemap,exposuretime,gain,delaysvector,rootcameraframe,rootbncframe):
+    def __init__(self,root,bnc,system,camera,nodemap,exposuretime,gain,delaysvector,rootcameraframe,rootbncframe,rootstartintegration,rootstartseries):
 
         tk.Toplevel.__init__(self,root)
         self.title("Acquisition: Delay integration")
@@ -28,6 +28,8 @@ class SeriesGui(tk.Toplevel):
         self.delaysvector = delaysvector
         self.rootbncframe = rootbncframe
         self.rootcameraframe = rootcameraframe
+        self.rootstartintegration = rootstartintegration
+        self.rootstartseries = rootstartseries
 
         self.rootbncframe.pack_forget()
         self.rootcameraframe.pack_forget()
@@ -98,7 +100,18 @@ class SeriesGui(tk.Toplevel):
 
         self.startbutton.configure(state=tk.DISABLED)
 
-        self.directory = filedialog.askdirectory(mustexist=False)
+        self.filename = filedialog.asksaveasfilename(initialdir="C:/", title="Choose experiment file name", filetypes=(("numpy zip archive", "*.npz"),("All files", "*.*")))
+        if self.filename[-4:] =/= ".npz":
+            self.filename += ".npz"
+
+        self.parameterfilename = self.filename - ".npz" + "_parameters.txt"
+
+        self.imageseries = {}
+
+        self.delaylist = []
+        self.totalintensities = []
+
+        self.intensityvtime.set_xlim(self.delayrangestart.get()-5, self.delayrangeend.get()+5)
 
         delayscanrange = numpy.arange(int(self.delayrangestart.get()), int(self.delayrangeend.get()) + 1, int(self.incremententry.get()))
 
@@ -121,14 +134,14 @@ class SeriesGui(tk.Toplevel):
             if self.erroroccurrence == True:
                 break 
 
-            self.filename = self.directory + "/" + str(i) + ".npy"
-            numpy.save(self.filename, self.sumimage)
+            self.imageseries[str(i)] = self.sumimage
+            self.delaylist.append(i)
+            self.totalintensities.append(sum(sumimage))
 
             self.lastdelaydisplay.clear()
             self.lastdelaydisplay.imshow(self.sumimage, cmap="gray", vmin=0)
-            #self.intensityvtime.clear()
-            #self.intensityvtime.imshow(self.sumimage, cmap="gray", vmin=0)
-            #plot the integrated intensity v delay time (growing dataset)
+            self.intensityvtime.clear()
+            self.intensityvtime.plot(self.delaylist, self.totalintensities)
         
 
         try:
@@ -141,9 +154,10 @@ class SeriesGui(tk.Toplevel):
             return
 
         
+        numpy.savez_compressed(self.filename, **self.imageseries)
+
         self.parameters = {"Exposure time": self.exposure, "Gain": self.gain, "Number of frames per delay": self.numberofframes, "Delay start": self.delayrangelower, "Delay end": self.delayrangeupper, "Delay increment": self.increment, "Delay A": self.delaysvector[0], "Delay C": self.delaysvector[1], "Delay D": self.delaysvector[2], "Delay E": self.delaysvector[3], "Delay F": self.delaysvector[4], "Delay G": self.delaysvector[5], "Delay H": self.delaysvector[6]}
         
-        self.parameterfilename = self.directory + "/parameters.txt"
         f = open(self.parameterfilename, "w")
         f.write(str(self.parameters))
         f.close
@@ -179,5 +193,8 @@ class SeriesGui(tk.Toplevel):
 
         self.rootbncframe.pack(side=tk.LEFT)
         self.rootcameraframe.pack(side=tk.LEFT)
+
+        self.rootstartintegration.configure(state=tk.NORMAL)
+        self.rootstartseries.configure(state=tk.NORMAL)
 
         self.destroy()

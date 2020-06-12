@@ -12,7 +12,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 class IntegrationGui(tk.Toplevel):
 
 
-    def __init__(self,root,bnc,system,camera,nodemap,exposuretime,gain,delaysvector,rootcameraframe,rootbncframe,rootstartbutton):
+    def __init__(self,root,bnc,system,camera,nodemap,exposuretime,gain,delaysvector,rootcameraframe,rootbncframe,rootstartintegration, rootstartseries):
 
         tk.Toplevel.__init__(self,root)
         self.title("Acquisition: Delay integration")
@@ -28,7 +28,8 @@ class IntegrationGui(tk.Toplevel):
         self.delaysvector = delaysvector
         self.rootbncframe = rootbncframe
         self.rootcameraframe = rootcameraframe
-        self.rootstartbutton = rootstartbutton
+        self.rootstartintegration = rootstartintegration
+        self.rootstartseries = rootstartseries
 
         self.rootbncframe.pack_forget()
         self.rootcameraframe.pack_forget()
@@ -100,7 +101,10 @@ class IntegrationGui(tk.Toplevel):
         self.startbutton.configure(state=tk.DISABLED)
 
         self.filename = filedialog.asksaveasfilename(initialdir="C:/", title="Choose image file name", filetypes=(("binary numpy array file","*.npy"),("All files","*.*")))
-        self.parameterfilename = filedialog.asksaveasfilename(initialdir="C:/", title="Choose parameter file name", filetypes=(("Text files","*.txt"),("All files","*.*")))
+        if self.filename[-4:] =/= ".npy":
+            self.filename += ".npy"
+
+        self.parameterfilename = self.filename - ".npy" + "_parameters.txt"
 
         delayscanrange = numpy.arange(int(self.delayrangestart.get()), int(self.delayrangeend.get()) + 1, int(self.incremententry.get()))
 
@@ -181,6 +185,7 @@ class IntegrationGui(tk.Toplevel):
 
         self.rootbncframe.pack(side=tk.LEFT)
         self.rootcameraframe.pack(side=tk.LEFT)
-        self.rootstartbutton.configure(state=tk.NORMAL)
+        self.rootstartintegration.configure(state=tk.NORMAL)
+        self.rootstartseries.configure(state=tk.NORMAL)
 
         self.destroy()

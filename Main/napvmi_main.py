@@ -5,6 +5,7 @@ import PySpin
 import cameramodule
 import bncmodule
 import delayintegration
+import kineticseries
 
 
 class Root(tk.Tk):
@@ -36,8 +37,9 @@ class Root(tk.Tk):
 
         self.startexperimentframe = tk.Frame(self)
         self.startexperimentframe.pack(side=tk.TOP, pady=(30,10))
-        self.startintegration = tk.Button(self.startexperimentframe, text="Delay integration experiment", command=self.startdelayint, state=tk.DISABLED)
+        self.startintegration = tk.Button(self.startexperimentframe, text="Delay integration acquisition", command=self.startdelayint, state=tk.DISABLED)
         self.startintegration.pack(side=tk.BOTTOM, ipadx=5, ipady=5)
+        self.startseries = tk.Buttin(self.startexperimentframe, text="Kinetic series acquisition", command=self.startkineticseries, state=tk.DISABLED)
 
 
 
@@ -56,6 +58,7 @@ class Root(tk.Tk):
         self.connectionstatus += 1
         if self.connectionstatus == 2:
             self.startintegration.configure(state=tk.NORMAL, background="green")
+            self.startseries.configure(state=tk.NORMAL, background="green")
 
 
 
@@ -88,6 +91,7 @@ class Root(tk.Tk):
             self.connectionstatus += 1
             if self.connectionstatus == 2:
                 self.startintegration.configure(state=tk.NORMAL, background="green")
+                self.startseries.configures(state=tk.NORMAL, background="green")
 
 
 
@@ -108,28 +112,54 @@ class Root(tk.Tk):
 
 
 
+
     def camerainit(self):
 
         self.cameragui = cameramodule.CameraApp(self.cameraframe,self.system,self.camera)
 
 
 
+
     def startdelayint(self):
 
-        channelnumbersvector = [1,3,4,5,6,7,8]
-        delaysvector = []
-        for i in channelnumbersvector:
-            inputstring = ":PULS{}:DEL?\r\n".format(i)
-            self.bnc.write(inputstring.encode("utf-8"))
-            lastline = self.bnc.readline().decode("utf-8")
-            delaysvector.append(lastline[:-2])
+        self.checkdelays()
 
         exposure = self.cameragui.node_exposuretime.GetValue()
         gain = self.cameragui.node_gain.GetValue()
 
         self.startintegration.configure(state=tk.DISABLED)
+        self.startseries.configure(state=tk.DISABLED)
 
-        self.delayintegrationgui = delayintegration.IntegrationGui(self,self.bnc,self.system,self.camera,self.cameragui.nodemap,exposure,gain,delaysvector,self.cameraframe,self.bncframe,self.startintegration)
+        self.delayintegrationgui = delayintegration.IntegrationGui(self,self.bnc,self.system,self.camera,self.cameragui.nodemap,exposure,gain,self.delaysvector,self.cameraframe,self.bncframe,self.startintegration, self.startseries)
+
+
+
+
+    def startkineticseries(self):
+        
+        self.checkdelays()
+        
+        exposure = self.cameragui.node_exposuretime.GetValue()
+        gain = self.cameragui.node_gain.GetValue()
+
+        self.startseries.configure(state=tk.DISABLED)
+        self.startintegration.configure(state=tk.DISABLED)
+
+        self.kineticseriesgui = kineticseries.SeriesGui(self, self.bnc, self.system, self.camera, self.camergui.nodemap, exposure, gain, self.delaysvector, self.cameraframe, self.bncframe, self.startintegration, self.startseries)
+
+
+
+
+    def checkdelays(self):
+
+        channelnumbersvector = [1,3,4,5,6,7,8]
+        self.delaysvector = []
+        for i in channelnumbersvector:
+            inputstring = ":PULS{}:DEL?\r\n".format(i)
+            self.bnc.write(inputstring.encode("utf-8"))
+            lastline = self.bnc.readline().decode("utf-8")
+            self.delaysvector.append(lastline[:-2])
+
 
 
 
