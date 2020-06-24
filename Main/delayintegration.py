@@ -12,7 +12,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 class IntegrationGui(tk.Toplevel):
 
 
-    def __init__(self,root,bnc,system,camera,nodemap,exposuretime,gain,delaysvector,rootcameraframe,rootbncframe,rootstartintegration, rootstartseries):
+    def __init__(self,root,bnc,system,camera,nodemap,streamnodemap,exposuretime,gain,delaysvector,rootcameraframe,rootbncframe,rootstartintegration, rootstartseries):
 
         tk.Toplevel.__init__(self,root)
         self.title("Acquisition: Delay integration")
@@ -36,12 +36,15 @@ class IntegrationGui(tk.Toplevel):
 
         self.erroroccurrence = False
 
+        node_bufferhandling = PySpin.CEnumerationPtr(streamnodemap.GetNode("StreamBufferHandlingMode"))
+        node_bufferhandling.SetIntValue(node_bufferhandling.GetEntryByName("NewestOnly").GetValue())
+
         self.guiinit()
 
 
 
     def guiinit(self):
-
+        
         self.leftframe = tk.Frame(self)
         self.leftframe.pack(side=tk.LEFT, padx=10)
 
@@ -104,9 +107,9 @@ class IntegrationGui(tk.Toplevel):
         if self.filename[-4:] != ".npy":
             self.filename += ".npy"
 
-        self.parameterfilename = self.filename[:-4] + "_parameters.txt"
+        self.attributes("-topmost", "true")
 
-        import pdb; pdb.set_trace()
+        self.parameterfilename = self.filename[:-4] + "_parameters.txt"
 
         delayscanrange = numpy.arange(int(self.delayrangestart.get()), int(self.delayrangeend.get()) + 1, int(self.incremententry.get()))
 
@@ -118,8 +121,6 @@ class IntegrationGui(tk.Toplevel):
             return
         
         self.integratedimage = numpy.zeros((964,1288), int)
-        
-        self.camera.BeginAcquisition()
 
         for i in delayscanrange:
             if i < 1000:
@@ -130,7 +131,7 @@ class IntegrationGui(tk.Toplevel):
                 messagebox.showerror("Error", "Maximum delay is 2000us")
                 self.startbutton.configure(state=tk.NORMAL)
                 return
-            inputstring = "PULS2:DEL {}\r\n".format(currentdelay)
+            inputstring = ":PULS2:DEL {}\r\n".format(currentdelay)
             self.bnc.write(inputstring.encode("utf-8"))
             lastline = self.bnc.readline().decode("utf-8")
 
@@ -145,13 +146,8 @@ class IntegrationGui(tk.Toplevel):
             self.integrateddisplay.imshow(self.integratedimage, cmap="gray", vmin=0)
             self.lastdelaydisplay.clear()
             self.lastdelaydisplay.imshow(self.sumimage, cmap="gray", vmin=0)
+            self.canvas.draw()
         
-
-        try:
-            self.camera.EndAcquisition()
-        except PySpin.SpinnakerException:
-            pass
-
         if self.erroroccurrence == True:
             self.startbutton.configure(state=tk.NORMAL)
             return
@@ -172,6 +168,8 @@ class IntegrationGui(tk.Toplevel):
 
         self.sumimage = numpy.zeros((964,1288), int)
 
+        self.camera.BeginAcquisition()
+
         for i in range(self.numberofframes):
 
             try:
@@ -184,7 +182,12 @@ class IntegrationGui(tk.Toplevel):
                 self.erroroccurrence = True
                 messagebox.showerror("Error","{}".format(ex))
                 return
-            
+        
+        try:
+            self.camera.EndAcquisition()
+        except PySpin.SpinnakerException:
+            pass
+    
 
     
 

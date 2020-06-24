@@ -38,8 +38,9 @@ class Root(tk.Tk):
         self.startexperimentframe = tk.Frame(self)
         self.startexperimentframe.pack(side=tk.TOP, pady=(30,10))
         self.startintegration = tk.Button(self.startexperimentframe, text="Delay integration acquisition", command=self.startdelayint, state=tk.DISABLED)
-        self.startintegration.pack(side=tk.BOTTOM, ipadx=5, ipady=5)
-        self.startseries = tk.Buttin(self.startexperimentframe, text="Kinetic series acquisition", command=self.startkineticseries, state=tk.DISABLED)
+        self.startintegration.pack(side=tk.LEFT, ipadx=5, ipady=5)
+        self.startseries = tk.Button(self.startexperimentframe, text="Kinetic series acquisition", command=self.startkineticseries, state=tk.DISABLED)
+        self.startseries.pack(side=tk.LEFT, ipadx=5, ipady=5)
 
 
 
@@ -91,7 +92,7 @@ class Root(tk.Tk):
             self.connectionstatus += 1
             if self.connectionstatus == 2:
                 self.startintegration.configure(state=tk.NORMAL, background="green")
-                self.startseries.configures(state=tk.NORMAL, background="green")
+                self.startseries.configure(state=tk.NORMAL, background="green")
 
 
 
@@ -122,6 +123,14 @@ class Root(tk.Tk):
 
     def startdelayint(self):
 
+        try:
+            self.camera.BeginAcquisition()
+            self.camera.EndAcquisition()
+
+        except PySpin.SpinnakerException:
+            messagebox.showerror("Error", "Camera is already streaming. Stop current acquisition and try again.")
+            return
+        
         self.checkdelays()
 
         exposure = self.cameragui.node_exposuretime.GetValue()
@@ -130,12 +139,21 @@ class Root(tk.Tk):
         self.startintegration.configure(state=tk.DISABLED)
         self.startseries.configure(state=tk.DISABLED)
 
-        self.delayintegrationgui = delayintegration.IntegrationGui(self,self.bnc,self.system,self.camera,self.cameragui.nodemap,exposure,gain,self.delaysvector,self.cameraframe,self.bncframe,self.startintegration, self.startseries)
+        self.delayintegrationgui = delayintegration.IntegrationGui(self,self.bnc,self.system,self.camera,self.cameragui.nodemap, self.cameragui.streamnodemap, exposure,gain,self.delaysvector,self.cameraframe,self.bncframe,self.startintegration, self.startseries)
 
 
 
 
     def startkineticseries(self):
+
+        try:
+            self.camera.BeginAcquisition()
+            self.camera.EndAcquisition()
+
+        except PySpin.SpinnakerException:
+            messagebox.showerror("Error", "Camera is already streaming. Stop current acquisition and try again.")
+            return
+
         
         self.checkdelays()
         
@@ -145,7 +163,7 @@ class Root(tk.Tk):
         self.startseries.configure(state=tk.DISABLED)
         self.startintegration.configure(state=tk.DISABLED)
 
-        self.kineticseriesgui = kineticseries.SeriesGui(self, self.bnc, self.system, self.camera, self.camergui.nodemap, exposure, gain, self.delaysvector, self.cameraframe, self.bncframe, self.startintegration, self.startseries)
+        self.kineticseriesgui = kineticseries.SeriesGui(self, self.bnc, self.system, self.camera, self.cameragui.nodemap, self.cameragui.streamnodemap, exposure, gain, self.delaysvector, self.cameraframe, self.bncframe, self.startintegration, self.startseries)
 
 
 

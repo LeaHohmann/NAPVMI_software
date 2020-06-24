@@ -12,7 +12,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 class SeriesGui(tk.Toplevel):
 
 
-    def __init__(self,root,bnc,system,camera,nodemap,exposuretime,gain,delaysvector,rootcameraframe,rootbncframe,rootstartintegration,rootstartseries):
+    def __init__(self,root,bnc,system,camera,nodemap,streamnodemap,exposuretime,gain,delaysvector,rootcameraframe,rootbncframe,rootstartintegration,rootstartseries):
 
         tk.Toplevel.__init__(self,root)
         self.title("Acquisition: Delay integration")
@@ -33,6 +33,9 @@ class SeriesGui(tk.Toplevel):
 
         self.rootbncframe.pack_forget()
         self.rootcameraframe.pack_forget()
+
+        node_bufferhandling = PySpin.CEnumerationPtr(streamnodemap.GetNode("StreamBufferHandlingMode"))
+        node_bufferhandling.SetIntValue(node_bufferhandling.GetEntryByName("NewestOnly").GetValue())
 
         self.erroroccurrence = False
 
@@ -104,6 +107,8 @@ class SeriesGui(tk.Toplevel):
         if self.filename[-4:] != ".npz":
             self.filename += ".npz"
 
+        self.attributes("-topmost", "true")
+
         self.parameterfilename = self.filename[:-4] + "_parameters.txt"
 
         self.imageseries = {}
@@ -121,8 +126,6 @@ class SeriesGui(tk.Toplevel):
             messagebox.showerror("Error", "Please enter an integer number of frames")
             self.startbutton.configure(state=tk.NORMAL)
             return
-        
-        self.camera.BeginAcquisition()
 
         for i in delayscanrange:
             if i < 1000:
@@ -133,7 +136,7 @@ class SeriesGui(tk.Toplevel):
                 messagebox.showerror("Error", "Maximum delay is 2000us")
                 self.startbutton.configure(state=tk.NORMAL)
                 return
-            inputstring = "PULS2:DEL {}\r\n".format(currentdelay)
+            inputstring = ":PULS2:DEL {}\r\n".format(currentdelay)
             self.bnc.write(inputstring.encode("utf-8"))
             lastline = self.bnc.readline().decode("utf-8")
 
@@ -144,18 +147,14 @@ class SeriesGui(tk.Toplevel):
 
             self.imageseries[str(i)] = self.sumimage
             self.delaylist.append(i)
-            self.totalintensities.append(sum(sumimage))
+            self.totalintensities.append(numpy.sum(self.sumimage))
 
             self.lastdelaydisplay.clear()
             self.lastdelaydisplay.imshow(self.sumimage, cmap="gray", vmin=0)
             self.intensityvtime.clear()
             self.intensityvtime.plot(self.delaylist, self.totalintensities)
+            self.canvas.draw()
         
-
-        try:
-            self.camera.EndAcquisition()
-        except PySpin.SpinnakerException:
-            pass
 
         if self.erroroccurrence == True:
             self.startbutton.configure(state=tk.NORMAL)
@@ -178,6 +177,8 @@ class SeriesGui(tk.Toplevel):
 
         self.sumimage = numpy.zeros((964,1288), int)
 
+        self.camera.BeginAcquisition()
+
         for i in range(self.numberofframes):
 
             try:
@@ -191,6 +192,11 @@ class SeriesGui(tk.Toplevel):
                 messagebox.showerror("Error","{}".format(ex))
                 return
             
+        try:
+            self.camera.EndAcquisition()
+        except PySpin.SpinnakerException:
+            pass
+
 
     
 
