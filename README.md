@@ -65,17 +65,17 @@ Windows: Windows 10 was used for testing the code, it has not been tested on oth
 
 Python: Python >=3.4 (modules were written in and tested with Python 3.7)
 
-Python modules:\\
-- numpy\\
-- tkinter\\
-- matplotlib\\
-- pySerial\\
+Python modules:\
+- numpy
+- tkinter
+- matplotlib
+- pySerial
 - PySpin (Spinnaker Python wrapper, available from FLIRs website)
 
-Camera drivers:\\
+Camera drivers:\
 (Add link to the drivers! From document)
 
-BNC drivers:\\
+BNC drivers:\
 [FTDI Virtual COM port drivers](https://www.ftdichip.com/Drivers/VCP.htm)
 
 
@@ -83,15 +83,15 @@ BNC drivers:\\
 Hardware Requirements
 ---------------------
 
-Camera:\\
+Camera:\
 Camera can be replaced but it should be a camera that can be controlled using the Spinnaker software (several camera series by FLIR)
 
-Delay generator:\\
+Delay generator:\
 Needs to be able to take SCPI commands via (virtual) serial COMM port
 Written for BNC model 577
 
-Connections:\\
-Camera: USB3\\
+Connections:\
+Camera: USB3\
 Delay generator: USB (with virtual serial port drivers) or COM
 
 
@@ -99,14 +99,14 @@ Delay generator: USB (with virtual serial port drivers) or COM
 Setup and hardware replacement
 ------------------------------
 
-Camera:\\
-- Install drivers (see above) and connect camera via USB3\\
-- The code recognizes the camera by serial number (to avoid the program trying to access eventual other cameras or devices that are connected to the computer). If a new camera is used, the serial number needs to be changed in the napvmi_main module: change the self.serialnumber attribute in the `root.__init__()` function and in the "camera not found" error message string in the `root.cameraconnect()` function.\\
+Camera:\
+- Install drivers (see above) and connect camera via USB3
+- The code recognizes the camera by serial number (to avoid the program trying to access eventual other cameras or devices that are connected to the computer). If a new camera is used, the serial number needs to be changed in the napvmi_main module: change the self.serialnumber attribute in the `root.__init__()` function and in the "camera not found" error message string in the `root.cameraconnect()` function.
 
-BNC:\\
-- Install VCP drivers (see above)\\
-- Connect BNC via USB\\
-- Check the name/number of the virtual COM port (under serial ports in the Windows device manager). If it is not COM5, the code in the napvmi_main.py module has to be edited: Change the name to the correct one in the `root.bncconnect()` function (in the arguments of `serial.Serial()`).\\
+BNC:\
+- Install VCP drivers (see above)\
+- Connect BNC via USB\
+- Check the name/number of the virtual COM port (under serial ports in the Windows device manager). If it is not COM5, the code in the napvmi_main.py module has to be edited: Change the name to the correct one in the `root.bncconnect()` function (in the arguments of `serial.Serial()`).
 - Check that the baudrate specified on the delay generator is correct (115200). If a different delay generator is used and this baudrate is not available, it has to be changed in the `root.bncconnect()` function in order to match
 - If the delay generator is replaces by a different model, ensure that it can understand the same SCPI commands 
 

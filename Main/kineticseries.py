@@ -23,7 +23,7 @@ class SeriesGui(tk.Toplevel):
         self.system = system
         self.camera = camera
         self.nodemap = nodemap
-        self.exposuretime = exposuretime
+        self.exposure = exposuretime
         self.gain = gain
         self.delaysvector = delaysvector
         self.rootbncframe = rootbncframe
@@ -96,22 +96,22 @@ class SeriesGui(tk.Toplevel):
     def startacquisition(self):
 
         self.node_triggermode = PySpin.CEnumerationPtr(self.nodemap.GetNode("TriggerMode"))
-        self.node_triggermode.SetIntValue(1)
+        self.node_triggermode.SetIntValue(0)
 
         self.startbutton.configure(state=tk.DISABLED)
 
         self.filename = filedialog.asksaveasfilename(initialdir="C:/", title="Choose experiment file name", filetypes=(("numpy zip archive", "*.npz"),("All files", "*.*")))
-        if self.filename[-4:] =/= ".npz":
+        if self.filename[-4:] != ".npz":
             self.filename += ".npz"
 
-        self.parameterfilename = self.filename - ".npz" + "_parameters.txt"
+        self.parameterfilename = self.filename[:-4] + "_parameters.txt"
 
         self.imageseries = {}
 
         self.delaylist = []
         self.totalintensities = []
 
-        self.intensityvtime.set_xlim(self.delayrangestart.get()-5, self.delayrangeend.get()+5)
+        self.intensityvtime.set_xlim(int(self.delayrangestart.get())-5, int(self.delayrangeend.get())+5)
 
         delayscanrange = numpy.arange(int(self.delayrangestart.get()), int(self.delayrangeend.get()) + 1, int(self.incremententry.get()))
 
@@ -125,7 +125,15 @@ class SeriesGui(tk.Toplevel):
         self.camera.BeginAcquisition()
 
         for i in delayscanrange:
-            inputstring = "PULS2:DEL {}\r\n".format(i)
+            if i < 1000:
+                currentdelay = "0.000" + str(i) + "00000"
+            elif i <= 2000:
+                currentdelay = "0.00" + str(i) + "00000"
+            else:
+                messagebox.showerror("Error", "Maximum delay is 2000us")
+                self.startbutton.configure(state=tk.NORMAL)
+                return
+            inputstring = "PULS2:DEL {}\r\n".format(currentdelay)
             self.bnc.write(inputstring.encode("utf-8"))
             lastline = self.bnc.readline().decode("utf-8")
 
@@ -156,13 +164,13 @@ class SeriesGui(tk.Toplevel):
         
         numpy.savez_compressed(self.filename, **self.imageseries)
 
-        self.parameters = {"Exposure time": self.exposure, "Gain": self.gain, "Number of frames per delay": self.numberofframes, "Delay start": self.delayrangelower, "Delay end": self.delayrangeupper, "Delay increment": self.increment, "Delay A": self.delaysvector[0], "Delay C": self.delaysvector[1], "Delay D": self.delaysvector[2], "Delay E": self.delaysvector[3], "Delay F": self.delaysvector[4], "Delay G": self.delaysvector[5], "Delay H": self.delaysvector[6]}
+        self.parameters = {"Exposure time": self.exposure, "Gain": self.gain, "Number of frames per delay": self.numberofframes, "Delay start": int(self.delayrangestart.get()), "Delay end": int(self.delayrangeend.get()), "Delay increment": int(self.incremententry.get()), "Delay A": self.delaysvector[0], "Delay C": self.delaysvector[1], "Delay D": self.delaysvector[2], "Delay E": self.delaysvector[3], "Delay F": self.delaysvector[4], "Delay G": self.delaysvector[5], "Delay H": self.delaysvector[6]}
         
         f = open(self.parameterfilename, "w")
         f.write(str(self.parameters))
         f.close
 
-        self.messagebx.showinfo("Measurement finished", "Image has been saved under: {}, parameters under {}".format(self.filename, self.parameterfilename))
+        messagebox.showinfo("Measurement finished", "Image has been saved under: {}, parameters under {}".format(self.filename, self.parameterfilename))
 
 
 
