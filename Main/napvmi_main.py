@@ -15,6 +15,8 @@ class Root(tk.Tk):
         tk.Tk.__init__(self)
         self.protocol("WM_DELETE_WINDOW", self.quitgui)
 
+        self.title("NAP-VMI Experiment")
+
         self.system = PySpin.System.GetInstance()
         self.serialnumber = "18479311"
         self.camera = ""
@@ -28,12 +30,12 @@ class Root(tk.Tk):
         self.bncframe = tk.Frame(self.moduleframe)
         self.bncframe.pack(side=tk.LEFT, padx=30)
         self.connectbnc = tk.Button(self.bncframe, text="Connect to delay generator", command=self.bncconnect)
-        self.connectbnc.pack(side=tk.TOP, ipadx=5, ipady=5)
+        self.connectbnc.pack(side=tk.TOP, ipadx=5, ipady=5, pady=(10,0))
 
         self.cameraframe = tk.Frame(self.moduleframe)
         self.cameraframe.pack(side=tk.LEFT, padx=30)
         self.connectcamera = tk.Button(self.cameraframe, text="Connect to camera", command=self.cameraconnect)
-        self.connectcamera.pack(side=tk.TOP, ipadx=5, ipady=5)
+        self.connectcamera.pack(side=tk.TOP, ipadx=5, ipady=5, pady=(10,0))
 
         self.startexperimentframe = tk.Frame(self)
         self.startexperimentframe.pack(side=tk.TOP, pady=(30,10))

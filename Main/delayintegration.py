@@ -3,6 +3,7 @@ import serial
 import PySpin
 import numpy
 import matplotlib
+import time
 from tkinter import filedialog
 from tkinter import messagebox
 matplotlib.use("TkAgg")
@@ -99,7 +100,19 @@ class IntegrationGui(tk.Toplevel):
     def startacquisition(self):
 
         self.node_triggermode = PySpin.CEnumerationPtr(self.nodemap.GetNode("TriggerMode"))
-        self.node_triggermode.SetIntValue(0)
+        self.node_triggermode.SetIntValue(1)
+
+        try:
+            self.numberofframes = int(self.framenumber.get())
+        except ValueError:
+            messagebox.showerror("Error", "Please enter an integer number of frames")
+            self.startbutton.configure(state=tk.NORMAL)
+            return
+
+        self.node_acquisitionmode = PySpin.CEnumerationPtr(self.nodemap.GetNode("AcquisitionMode"))
+        self.node_acquisitionmode.SetIntValue(2)
+        self.node_framecount = PySpin.CIntegerPtr(self.nodemap.GetNode("AcquisitionFrameCount"))
+        self.node_framecount.SetValue(self.numberofframes)
 
         self.startbutton.configure(state=tk.DISABLED)
 
@@ -112,14 +125,7 @@ class IntegrationGui(tk.Toplevel):
         self.parameterfilename = self.filename[:-4] + "_parameters.txt"
 
         delayscanrange = numpy.arange(int(self.delayrangestart.get()), int(self.delayrangeend.get()) + 1, int(self.incremententry.get()))
-
-        try:
-            self.numberofframes = int(self.framenumber.get())
-        except ValueError:
-            messagebox.showerror("Error", "Please enter an integer number of frames")
-            self.startbutton.configure(state=tk.NORMAL)
-            return
-        
+                
         self.integratedimage = numpy.zeros((964,1288), int)
 
         for i in delayscanrange:
@@ -134,6 +140,8 @@ class IntegrationGui(tk.Toplevel):
             inputstring = ":PULS2:DEL {}\r\n".format(currentdelay)
             self.bnc.write(inputstring.encode("utf-8"))
             lastline = self.bnc.readline().decode("utf-8")
+
+            time.sleep(0.1)
 
             self.imageloop()
 

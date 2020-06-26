@@ -73,7 +73,8 @@ Python modules:\
 - PySpin (Spinnaker Python wrapper, available from FLIRs website)
 
 Camera drivers:\
-(Add link to the drivers! From document)
+[Download Spinnaker from the FLIR website](https://www.flir.com/support-center/iis/machine-vision/downloads/spinnaker-sdk-flycapture-and-firmware-download/)\
+Install according to camera instructions
 
 BNC drivers:\
 [FTDI Virtual COM port drivers](https://www.ftdichip.com/Drivers/VCP.htm)
@@ -110,4 +111,5 @@ BNC:\
 - Check that the baudrate specified on the delay generator is correct (115200). If a different delay generator is used and this baudrate is not available, it has to be changed in the `root.bncconnect()` function in order to match
 - If the delay generator is replaces by a different model, ensure that it can understand the same SCPI commands 
 
-
+File system:\
+In cameramodule.py, kineticseries.py and delayintegration.py, it may be useful to change the default directory for loading or saving files

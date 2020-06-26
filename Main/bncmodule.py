@@ -28,12 +28,15 @@ class DelayApp(tk.Frame):
         lastline = self.bnc.readline().decode("utf-8")
         self.bncrunning = lastline[:-2]
         if self.bncrunning == "1":
-            self.triggeringonoff.configure(text="Stop triggering", command=self.stoptriggering)
+            self.triggeringonoff.configure(text="Stop triggering", background="red", command=self.stoptriggering)
             messagebox.showinfo("Note:", "Delay generator is currently triggering")
 
 
 
     def guiinit(self):
+
+        self.bnclabel = tk.Label(self, text="Delay Channel Control", anchor=tk.NW, font=("Helvetica", 18))
+        self.bnclabel.pack(pady=(10,30))
 
         self.tunerframe = tk.Frame(self)
         self.tunerframe.pack(side=tk.TOP)
@@ -48,7 +51,7 @@ class DelayApp(tk.Frame):
         self.channelframe = tk.Frame(self)
         self.channelframe.pack(side=tk.TOP)
 
-        self.triggeringonoff = tk.Button(self, text="Run triggering", command=self.runtriggering)
+        self.triggeringonoff = tk.Button(self, text="Run triggering", background="green", command=self.runtriggering)
         self.triggeringonoff.pack(side=tk.TOP, ipadx=5, ipady=5, pady=(30,10))
 
 
@@ -77,7 +80,7 @@ class DelayApp(tk.Frame):
         lastline = self.bnc.readline().decode("utf-8")
         self.bncrunning = lastline[:-2]
         if self.bncrunning == "1":
-            self.triggeringonoff.configure(text="Stop triggering", command=self.stoptriggering)
+            self.triggeringonoff.configure(text="Stop triggering", background="red", command=self.stoptriggering)
 
 
 
@@ -91,7 +94,7 @@ class DelayApp(tk.Frame):
         lastline = self.bnc.readline().decode("utf-8")
         self.bncrunning = lastline[:-2]
         if self.bncrunning == "0":
-            self.triggeringonoff.configure(text="Run triggering", command=self.runtriggering)
+            self.triggeringonoff.configure(text="Run triggering", background="green", command=self.runtriggering)
 
 
 

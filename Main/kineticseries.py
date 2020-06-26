@@ -3,6 +3,7 @@ import serial
 import PySpin
 import numpy
 import matplotlib
+import time
 from tkinter import filedialog
 from tkinter import messagebox
 matplotlib.use("TkAgg")
@@ -99,7 +100,19 @@ class SeriesGui(tk.Toplevel):
     def startacquisition(self):
 
         self.node_triggermode = PySpin.CEnumerationPtr(self.nodemap.GetNode("TriggerMode"))
-        self.node_triggermode.SetIntValue(0)
+        self.node_triggermode.SetIntValue(1)
+
+        try:
+            self.numberofframes = int(self.framenumber.get())
+        except ValueError:
+            messagebox.showerror("Error", "Please enter an integer number of frames")
+            self.startbutton.configure(state=tk.NORMAL)
+            return
+
+        self.node_acquisitionmode = PySpin.CEnumerationPtr(self.nodemap.GetNode("AcquisitionMode"))
+        self.node_acquisitionmode.SetIntValue(2)
+        self.node_framecount = PySpin.CIntegerPtr(self.nodemap.GetNode("AcquisitionFrameCount"))
+        self.node_framecount.SetValue(self.numberofframes)
 
         self.startbutton.configure(state=tk.DISABLED)
 
@@ -120,13 +133,6 @@ class SeriesGui(tk.Toplevel):
 
         delayscanrange = numpy.arange(int(self.delayrangestart.get()), int(self.delayrangeend.get()) + 1, int(self.incremententry.get()))
 
-        try:
-            self.numberofframes = int(self.framenumber.get())
-        except ValueError:
-            messagebox.showerror("Error", "Please enter an integer number of frames")
-            self.startbutton.configure(state=tk.NORMAL)
-            return
-
         for i in delayscanrange:
             if i < 1000:
                 currentdelay = "0.000" + str(i) + "00000"
@@ -139,6 +145,8 @@ class SeriesGui(tk.Toplevel):
             inputstring = ":PULS2:DEL {}\r\n".format(currentdelay)
             self.bnc.write(inputstring.encode("utf-8"))
             lastline = self.bnc.readline().decode("utf-8")
+
+            time.sleep(0.100)
 
             self.imageloop()
 
@@ -182,9 +190,10 @@ class SeriesGui(tk.Toplevel):
         for i in range(self.numberofframes):
 
             try:
-                image_result = self.camera.GetNextImage(5000)
+                image_result = self.camera.GetNextImage(2000)
                 image_data = image_result.GetNDArray()
                 self.sumimage += image_data
+                image_result.Release()
 
             except PySpin.SpinnakerException as ex:
                 self.camera.EndAcquisition()
