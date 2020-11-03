@@ -13,7 +13,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 class IntegrationGui(tk.Toplevel):
 
 
-    def __init__(self,root,bnc,system,camera,nodemap,streamnodemap,exposuretime,gain,delaysvector,rootcameraframe,rootbncframe,rootstartintegration, rootstartseries):
+    def __init__(self,root,bnc,system,camera,nodemap,streamnodemap,exposuretime,gain,delaysvector,rootcameraframe,rootbncframe,rootstartintegration, rootstartseries, rootstartwavelength, rootconnectstatus):
 
         tk.Toplevel.__init__(self,root)
         self.title("Acquisition: Delay integration")
@@ -31,6 +31,8 @@ class IntegrationGui(tk.Toplevel):
         self.rootcameraframe = rootcameraframe
         self.rootstartintegration = rootstartintegration
         self.rootstartseries = rootstartseries
+        self.rootstartwavelength = rootstartwavelength
+        self.rootconnectstatus
 
         self.rootbncframe.pack_forget()
         self.rootcameraframe.pack_forget()
@@ -208,5 +210,7 @@ class IntegrationGui(tk.Toplevel):
         self.rootcameraframe.pack(side=tk.LEFT)
         self.rootstartintegration.configure(state=tk.NORMAL)
         self.rootstartseries.configure(state=tk.NORMAL)
+        if self.rootconnectstatus == 5:
+            self.rootstartwavelength.configure(state=tk.NORMAL)
 
         self.destroy()

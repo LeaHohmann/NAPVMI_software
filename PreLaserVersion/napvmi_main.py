@@ -22,16 +22,10 @@ class Root(tk.Tk):
         self.camera = ""
         self.camerastatus = "disconnected"
         self.bncstatus = "disconnected"
-        self.laserstatus = "disconnected"
         self.connectionstatus = 0
 
         self.moduleframe = tk.Frame(self)
         self.moduleframe.pack(side=tk.TOP)
-
-        self.laserframe = tk.Frame(self.moduleframe)
-        self.laserframe.pack(side=tk.LEFT, padx=30)
-        self.connectlaser = tk.Button(self.laserframe, text="Connect to laser", command=self.laserconnect)
-        self.connectlaser.pack(side=tk.TOP, ipadx=5, ipady=5, pady=(10,0))
 
         self.bncframe = tk.Frame(self.moduleframe)
         self.bncframe.pack(side=tk.LEFT, padx=30)
@@ -49,8 +43,6 @@ class Root(tk.Tk):
         self.startintegration.pack(side=tk.LEFT, ipadx=5, ipady=5)
         self.startseries = tk.Button(self.startexperimentframe, text="Kinetic series acquisition", command=self.startkineticseries, state=tk.DISABLED)
         self.startseries.pack(side=tk.LEFT, ipadx=5, ipady=5)
-        self.startlambdaseries = tk.Button(self.startexperimentframe, text="Wavelength series acquisition", command=self.startwavelengthseries, state=tk.DISABLED)
-        self.startlambdaseries.pack(side=tk.LEFT, ipadx=5, ipady=5)
 
 
 
@@ -67,11 +59,9 @@ class Root(tk.Tk):
         self.bncinit()
         
         self.connectionstatus += 1
-        if self.connectionstatus == 2 or self.connectionstatuss == 5:
+        if self.connectionstatus == 2:
             self.startintegration.configure(state=tk.NORMAL, background="green")
             self.startseries.configure(state=tk.NORMAL, background="green")
-        if self.connectionstatus == 5:
-            self.startlambdaseries.configure(state=tk.NORMAL, background="green")
 
 
 
@@ -102,11 +92,9 @@ class Root(tk.Tk):
             self.camerainit()
 
             self.connectionstatus += 1
-            if self.connectionstatus == 2 or self.connectionstatus == 5:
+            if self.connectionstatus == 2:
                 self.startintegration.configure(state=tk.NORMAL, background="green")
                 self.startseries.configure(state=tk.NORMAL, background="green")
-            if self.connectionstatus == 5:
-                self.startlambdaseries.configure(state=tk.NORMAL, background="green")
 
 
 
@@ -134,34 +122,6 @@ class Root(tk.Tk):
 
 
 
-    
-    def laserconnect(self):
-
-        self.laser = "disconnected"
-
-        #connect to laser onboard computer - how? USB?
-
-        if self.laser == "disconnected":
-            messagebox.showerror("Error", "Could not connect to laser. Endpoint unknown.")
-            return
-
-        else:
-            self.connectlaser.destroy()
-            self.laserinit()
-
-            self.connectionstatus += 3
-            if self.connectionstatus == 5:
-                self.startlambdaseries.configure(state=tk.NORMAL, background="green")
-
-
-
-
-    def laserinit(self):
-
-        self.lasergui = lasermodule.LaserApp(self.laserframe, self.laser)
-
-
-
 
     def startdelayint(self):
 
@@ -180,9 +140,8 @@ class Root(tk.Tk):
 
         self.startintegration.configure(state=tk.DISABLED)
         self.startseries.configure(state=tk.DISABLED)
-        self.startlambdaseries.configure(state=tk.DISABLED)
 
-        self.delayintegrationgui = delayintegration.IntegrationGui(self,self.bnc,self.system,self.camera,self.cameragui.nodemap, self.cameragui.streamnodemap, exposure,gain,self.delaysvector,self.cameraframe,self.bncframe,self.startintegration, self.startseries, self.startlambdaseries,self.connectionstatus)
+        self.delayintegrationgui = delayintegration.IntegrationGui(self,self.bnc,self.system,self.camera,self.cameragui.nodemap, self.cameragui.streamnodemap, exposure,gain,self.delaysvector,self.cameraframe,self.bncframe,self.startintegration, self.startseries)
 
 
 
@@ -197,6 +156,7 @@ class Root(tk.Tk):
             messagebox.showerror("Error", "Camera is already streaming. Stop current acquisition and try again.")
             return
 
+        
         self.checkdelays()
         
         exposure = self.cameragui.node_exposuretime.GetValue()
@@ -204,34 +164,10 @@ class Root(tk.Tk):
 
         self.startseries.configure(state=tk.DISABLED)
         self.startintegration.configure(state=tk.DISABLED)
-        self.startlambdaseries.configure(state=tk.DISABLED)
 
-        self.kineticseriesgui = kineticseries.SeriesGui(self, self.bnc, self.system, self.camera, self.cameragui.nodemap, self.cameragui.streamnodemap, exposure, gain, self.delaysvector, self.cameraframe, self.bncframe, self.startintegration, self.startseries, self.startlambdaseries, self.connectionstatus)
-
+        self.kineticseriesgui = kineticseries.SeriesGui(self, self.bnc, self.system, self.camera, self.cameragui.nodemap, self.cameragui.streamnodemap, exposure, gain, self.delaysvector, self.cameraframe, self.bncframe, self.startintegration, self.startseries)
 
 
-    
-    def startwavelengthseries(self):
-
-        try:
-            self.camera.BeginAcquisition()
-            self.camera.EndAcquisition()
-
-        except PySpin.SpinnaerException:
-            messagebox.showerror("Error","Camera is already streaming. Stop current acquisition and try again.")
-
-        self.checkdelays()
-        
-        exposure = self.cameragui.node_exposuretime.GetValue()
-        gain = self.cameragui.node_gain.GetValue()
-
-        self.startseries.configure(state=tk.DISABLED)
-        self.startintegration.configure(state=tk.DISABLED)
-        self.startlambdaseries.configure(state=tk.DISABLED)
-
-        self.wavelengthseriesgui = wavelengthseries.WavelengthGui(self, self.bnc, self.system, self.camera, self.cameragui.nodemap, self.cameragui.streamnodemap, exposure, gain, self.delaysvector, self.cameraframe, self.bncframe, self.startintegration, self.startseries, self.startlambdaseries)
-
-    
 
 
     def checkdelays(self):
