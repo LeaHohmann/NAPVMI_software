@@ -16,7 +16,7 @@ class SeriesGui(tk.Toplevel):
     def __init__(self,root,bnc,system,camera,nodemap,streamnodemap,exposuretime,gain,delaysvector,rootcameraframe,rootbncframe,rootstartintegration,rootstartseries):
 
         tk.Toplevel.__init__(self,root)
-        self.title("Acquisition: Delay integration")
+        self.title("Acquisition: Kinetic series")
 
         self.protocol("WM_DELETE_WINDOW", self.closegui)
 

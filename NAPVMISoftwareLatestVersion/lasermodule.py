@@ -77,6 +77,7 @@ def changewavelength(self):
             return
         else:
             #send the new wavelength to laser
+            string = str(self.newlambda)
 
     except KeyError:
         messagebox.showerror("Error", "Please set an increment value and retry")

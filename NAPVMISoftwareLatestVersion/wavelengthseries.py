@@ -141,16 +141,17 @@ class WavelengthGui(tk.Toplevel):
         inputstring = ":PULS2:DEL {}\r\n".format(self.currentdelay)
         self.bnc.write(inputstring.encode("utf-8"))
  
-        self.startinpm = int(self.lambdarangestart.get())) * 1000
-        self.stopinpm = int(self.lambdarangeend.get())) * 1000
+        self.startinpm = int(self.lambdarangestart.get()) * 1000
+        self.stopinpm = int(self.lambdarangeend.get()) * 1000
 
         self.intensityvtime.set_xlim(self.startinpm-500, self.stopinpm+500)
 
         lambdascanrange = numpy.arange(self.startinpm, self.stopinpm + 1, int(self.incremententry.get()))
 
         for i in lambdascanrange:
-            if i => 200000 and i <= 230000:
+            if i >= 200000 and i <= 230000:
                 #change the wavelength on the laser - figure this out once we have laser software
+                string = str(i)
             else:
                 messagebox.showerror("Error", "The entered wavelength values are out of range")
                 self.startbutton.configure(state=tk.NORMAL)
