@@ -13,7 +13,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 class WavelengthGui(tk.Toplevel):
 
 
-    def __init__(self,root,bnc,system,camera,nodemap,streamnodemap,exposuretime,gain,delaysvector,rootcameraframe,rootbncframe,rootstartintegration,rootstartseries,rootstartwavelength):
+    def __init__(self,root,bnc,system,camera,nodemap,streamnodemap,exposuretime,gain,delaysvector,rootcameraframe,rootbncframe,rootlaserframe,rootstartintegration,rootstartseries,rootstartwavelength):
 
         tk.Toplevel.__init__(self,root)
         self.title("Acquisition: Wavelength series")
@@ -35,6 +35,7 @@ class WavelengthGui(tk.Toplevel):
 
         self.rootbncframe.pack_forget()
         self.rootcameraframe.pack_forget()
+        self.rootlaserframe.pack_forget()
 
         node_bufferhandling = PySpin.CEnumerationPtr(streamnodemap.GetNode("StreamBufferHandlingMode"))
         node_bufferhandling.SetIntValue(node_bufferhandling.GetEntryByName("NewestOnly").GetValue())
@@ -226,6 +227,7 @@ class WavelengthGui(tk.Toplevel):
         self.nodemap = ""
         self.camera = ""
 
+        self.rootlaserframe.pack(side=tk.LEFT)
         self.rootbncframe.pack(side=tk.LEFT)
         self.rootcameraframe.pack(side=tk.LEFT)
 

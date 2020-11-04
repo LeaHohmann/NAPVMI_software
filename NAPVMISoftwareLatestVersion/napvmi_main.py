@@ -182,7 +182,7 @@ class Root(tk.Tk):
         self.startseries.configure(state=tk.DISABLED)
         self.startlambdaseries.configure(state=tk.DISABLED)
 
-        self.delayintegrationgui = delayintegration.IntegrationGui(self,self.bnc,self.system,self.camera,self.cameragui.nodemap, self.cameragui.streamnodemap, exposure,gain,self.delaysvector,self.cameraframe,self.bncframe,self.startintegration, self.startseries, self.startlambdaseries,self.connectionstatus)
+        self.delayintegrationgui = delayintegration.IntegrationGui(self,self.bnc,self.system,self.camera,self.cameragui.nodemap, self.cameragui.streamnodemap, exposure,gain,self.delaysvector,self.cameraframe,self.bncframe,self.laserframe,self.startintegration, self.startseries, self.startlambdaseries,self.connectionstatus)
 
 
 
@@ -206,7 +206,7 @@ class Root(tk.Tk):
         self.startintegration.configure(state=tk.DISABLED)
         self.startlambdaseries.configure(state=tk.DISABLED)
 
-        self.kineticseriesgui = kineticseries.SeriesGui(self, self.bnc, self.system, self.camera, self.cameragui.nodemap, self.cameragui.streamnodemap, exposure, gain, self.delaysvector, self.cameraframe, self.bncframe, self.startintegration, self.startseries, self.startlambdaseries, self.connectionstatus)
+        self.kineticseriesgui = kineticseries.SeriesGui(self, self.bnc, self.system, self.camera, self.cameragui.nodemap, self.cameragui.streamnodemap, exposure, gain, self.delaysvector, self.cameraframe, self.bncframe, self.laserframe, self.startintegration, self.startseries, self.startlambdaseries, self.connectionstatus)
 
 
 
@@ -229,7 +229,7 @@ class Root(tk.Tk):
         self.startintegration.configure(state=tk.DISABLED)
         self.startlambdaseries.configure(state=tk.DISABLED)
 
-        self.wavelengthseriesgui = wavelengthseries.WavelengthGui(self, self.bnc, self.system, self.camera, self.cameragui.nodemap, self.cameragui.streamnodemap, exposure, gain, self.delaysvector, self.cameraframe, self.bncframe, self.startintegration, self.startseries, self.startlambdaseries)
+        self.wavelengthseriesgui = wavelengthseries.WavelengthGui(self, self.bnc, self.system, self.camera, self.cameragui.nodemap, self.cameragui.streamnodemap, exposure, gain, self.delaysvector, self.cameraframe, self.bncframe, self.laserframe, self.startintegration, self.startseries, self.startlambdaseries)
 
     
 
