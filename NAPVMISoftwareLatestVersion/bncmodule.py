@@ -1,6 +1,8 @@
 import serial
 import tkinter as tk
 from tkinter import messagebox
+from tkinter import filedialog
+import ast
 
 
 class DelayApp(tk.Frame):
@@ -19,7 +21,7 @@ class DelayApp(tk.Frame):
 
         self.channelnumbers = {"A": 1, "B": 2, "C": 3, "D": 4, "E": 5, "F": 6, "G": 7, "H": 8}
 
-    
+        
     
     def initialquery(self):
 
@@ -53,6 +55,15 @@ class DelayApp(tk.Frame):
 
         self.triggeringonoff = tk.Button(self, text="Run triggering", background="green", command=self.runtriggering)
         self.triggeringonoff.pack(side=tk.TOP, ipadx=5, ipady=5, pady=(30,10))
+
+        self.delayfileframe = tk.Frame(self)
+        self.delayfileframe.pack(side=tk.TOP, pady=(10,5))
+
+        self.savedelays = tk.Button(self.delayfileframe, text="Save current delays to file", command=self.savedelayfile)
+        self.savedelays.pack(side=tk.LEFT, padx=5)
+
+        self.laoddelays = tk.Button(self.delayfileframe, text="Load delays from file", command=self.loaddelayfile)
+        self.loaddelays.pack(side=tk.LEFT, padx=5)
 
 
 
@@ -96,13 +107,56 @@ class DelayApp(tk.Frame):
         if self.bncrunning == "0":
             self.triggeringonoff.configure(text="Run triggering", background="green", command=self.runtriggering)
 
+    
+
+    def savedelayfile(self):
+        
+        delaydict = {}
+
+        for i in self.channelnumbers:
+            number = self.channelnumbers[i]
+            inputstring = ":PULS{}:DEL?\r\n".format(number)
+            self.bnc.write(inputstring.encode("utf-8"))
+            lastline = self.bnc.readline().decode("utf-8")
+            self.delay = lastline[:-2]
+            delaydict[i] = self.delay
+
+        filename = filedialog.asksaveasfilename(initialdir="C:/", title="Save delay settings:", filetypes=(("Text files", "*.txt"),("All files", "*.*")))
+        f = open(filename, "w")
+        f.write(str(delaydict))
+        f.close()
+
+
+
+    def loaddelayfile(self):
+
+        filename = filedialog.askopenfilename(initialdir="C:/", title="Load delay settings from file:", filetypes=(("Text files", "*.txt"),("All files", "*.*")))
+        f = open(filename, "r")
+        delaydict = ast.literal_eval(f.read())
+
+        for i in delaydict:
+            newdelay = delaydict[i]
+            inputstring = ":PULS{}:DEL {}\r\n".format(i,newdelay)
+            self.bnc.write(inputstring.encode("utf-8"))
+            lastline = self.bnc.readline().decode("utf-8")
+        
+        try:
+            inputstring = ":PULS{}:DEL?\r\n".format(self.channel.number)
+            self.bnc.write(inputstring.encode("utf-8"))
+            lastline = self.bnc.readline().decode("utf-8")
+            self.channel.delay = lastline[:-2]
+            self.channel.guiupdate()
+        except AttributeError:
+            pass
+        
+        messagebox.showinfo("File loaded", "All channel delays updated from file.")
+
 
 
     def quitapp(self):
     
         if self.bncrunning == "1":
             self.stoptriggering()
-
 
 
 

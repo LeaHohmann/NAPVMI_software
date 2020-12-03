@@ -137,21 +137,20 @@ class Root(tk.Tk):
     
     def laserconnect(self):
 
-        self.laser = "disconnected"
-
-        #connect to laser onboard computer - how? USB?
-
-        if self.laser == "disconnected":
-            messagebox.showerror("Error", "Could not connect to laser. Endpoint unknown.")
+        try:
+            self.laser = serial.Serial("COM1", baudrate=9600, bytesize=8, parity="N", stopbits=1, timeout=1)
+        except:
+            messagebox.showerror("Error", "Could not connect to laser. Check connection, port number and baudrate and retry")
             return
 
-        else:
-            self.connectlaser.destroy()
-            self.laserinit()
 
-            self.connectionstatus += 3
-            if self.connectionstatus == 5:
-                self.startlambdaseries.configure(state=tk.NORMAL, background="green")
+        self.connectlaser.destroy()
+        self.laserinit()
+        self.laserstatus = "connected"
+
+        self.connectionstatus += 3
+        if self.connectionstatus == 5:
+            self.startlambdaseries.configure(state=tk.NORMAL, background="green")
 
 
 
@@ -270,6 +269,14 @@ class Root(tk.Tk):
 
         self.camera = ""
         self.system.ReleaseInstance()
+        
+        if self.laserstatus == "connected":
+            MsgBox = messagebox.askquestion("Shutdown", "Do you want to shut down the laser controls before closing the program? This will save the current motor positions and send a shutdown command to the laser. If you choose no, make sure to send a shutdown command via the keyboard controls before turning off the laser, otherwise motor positions will be lost.")
+            if MsgBox == "yes":
+                inputstring = "SD\r\n"
+                self.laser.write(inputstring.encode("utf-8"))
+                lastline = self.laser.readline().decode("utf-8")
+
         self.quit()
 
 

@@ -1,3 +1,4 @@
+import serial
 import tkinter as tk
 from tkinter import messagebox
 
@@ -19,9 +20,12 @@ class LaserApp(tk.Frame):
 
     def initialquery(self):
 
-        self.wavelength = 000000
+        self.wavelength = ""
 
-        #query the laser to determine initial wavelength, update self.wavelength
+        inputstring = "GLC\r\n"
+        self.laser.write(inputstring.encode("utf-8"))
+        lastline = self.laser.readline().decode("utf-8")
+        self.wavelength = lastline[:-2]
 
 
 
@@ -50,38 +54,45 @@ class LaserApp(tk.Frame):
 
 
 
-def plus(self):
+    def plus(self):
 
-    self.increment = 1
-    self.changewavelength()
-
-
-
-def minus(self):
-
-    self.increment = -1
-    self.changewavelength()
+        self.increment = 1
+        self.changewavelength()
 
 
 
-def changewavelength(self):
+    def minus(self):
 
-    #check the wavelength synchro & display out of sync warning if not
+        self.increment = -1
+        self.changewavelength()
 
-    try:
-        self.stepvalue = self.stepvalues[self.step.get()]
-        self.summand = self.stepvalue * self.increment
-        self.newlambda = self.wavelength + self.summand
-        if self.newlambda >= 240000 or self.newlambda <= 190000:
-            messagebox.showerror("Error", "Value outside allowed wavelength range (190-240nm)")
+
+
+    def changewavelength(self):
+
+        inputstring = "GLC\r\n"
+        self.laser.write(inputstring.encode("utf-8"))
+        lastline = self.laser.readline().decode("utf-8")
+        
+        if self.laser != lastline[:-2]:
+            self.laser = lastline[:-2]
+            messagebox.showerror("Warning", "Wavelength out of sync due to manual change on the instrument. Wavelength was not changed, instead updated with current value. Check the current value and retry.")
             return
-        else:
-            #send the new wavelength to laser
-            string = str(self.newlambda)
 
-    except KeyError:
-        messagebox.showerror("Error", "Please set an increment value and retry")
+        try:
+            self.stepvalue = self.stepvalues[self.step.get()]
+            self.summand = self.stepvalue * self.increment
+            self.newlambda = self.wavelength + self.summand
+            if self.newlambda >= 240000 or self.newlambda <= 190000:
+                messagebox.showerror("Error", "Value outside allowed wavelength range (190-240nm)")
+                return
 
+            else:
+                #send the new wavelength to laser
+                string = str(self.newlambda)
 
+        except KeyError:
+            messagebox.showerror("Error", "Please set an increment value and retry")
 
+            
 
