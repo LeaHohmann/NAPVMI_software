@@ -8,7 +8,7 @@ class LaserApp(tk.Frame):
     def __init__(self, root, laser):
 
         self.laser = laser
-        self.stepvalues = {"10 nm": 10000, "1 nm": 1000, "100 pm": 100, "10 pm": 10}
+        self.stepvalues = {"10 nm": "10.000", "1 nm": "1.000", "100 pm": "0.100", "10 pm": "0.010", "5 pm": "0.005"}
 
         tk.Frame.__init__(self,root)
         self.pack()
@@ -48,9 +48,15 @@ class LaserApp(tk.Frame):
 
         self.step = tk.StringVar(self)
 
-        self.stepdropdown = tk.OptionMenu(self, self.step, "10 nm", "1 nm", "100 pm", "10 pm")
+        self.stepdropdown = tk.OptionMenu(self, self.step, "10 nm", "1 nm", "100 pm", "10 pm", "5 pm")
         self.stepdropdown.pack(tk.LEFT, padx=5, pady=5)
         self.stepdropdown.configure(height=2)
+
+    
+    
+    def guiupdate(self):
+
+        self.currentlambda.configure(text=self.wavelength)
 
 
 
@@ -74,22 +80,30 @@ class LaserApp(tk.Frame):
         self.laser.write(inputstring.encode("utf-8"))
         lastline = self.laser.readline().decode("utf-8")
         
-        if self.laser != lastline[:-2]:
-            self.laser = lastline[:-2]
+        if self.wavelength != lastline[:-2]:
+            self.wavelength = lastline[:-2]
             messagebox.showerror("Warning", "Wavelength out of sync due to manual change on the instrument. Wavelength was not changed, instead updated with current value. Check the current value and retry.")
             return
 
         try:
             self.stepvalue = self.stepvalues[self.step.get()]
-            self.summand = self.stepvalue * self.increment
-            self.newlambda = self.wavelength + self.summand
-            if self.newlambda >= 240000 or self.newlambda <= 190000:
-                messagebox.showerror("Error", "Value outside allowed wavelength range (190-240nm)")
-                return
+            
+            inputstring = "WL {}\r\n".format(self.stepvalue)
+            self.laser.write(inputstring.encode("utf-8"))
+            lastline = self.laser.readline.decode("utf-8")
 
-            else:
-                #send the new wavelength to laser
-                string = str(self.newlambda)
+            if self.increment == 1:
+                
+                inputstring = "LU\r\n"
+                self.laser.write(inputstring.encode("utf-8"))
+                lastline = self.laser.readline().decode("utf-8")
+
+            inputstring = "GLC\r\n"
+            self.laser.write(inputstring.encode("utf-8"))
+            lastline = self.laser.readline().decode("utf-8")
+            self.delay = lastline[:-2]
+            self.guiupdate()
+
 
         except KeyError:
             messagebox.showerror("Error", "Please set an increment value and retry")

@@ -13,7 +13,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 class WavelengthGui(tk.Toplevel):
 
 
-    def __init__(self,root,bnc,system,camera,nodemap,streamnodemap,exposuretime,gain,delaysvector,rootcameraframe,rootbncframe,rootlaserframe,rootstartintegration,rootstartseries,rootstartwavelength):
+    def __init__(self,root,bnc,laser,system,camera,nodemap,streamnodemap,exposuretime,gain,delaysvector,rootcameraframe,rootbncframe,rootlaserframe,rootstartintegration,rootstartseries,rootstartwavelength):
 
         tk.Toplevel.__init__(self,root)
         self.title("Acquisition: Wavelength series")
@@ -21,6 +21,7 @@ class WavelengthGui(tk.Toplevel):
         self.protocol("WM_DELETE_WINDOW", self.closegui)
 
         self.bnc = bnc
+        self.laser = laser
         self.system = system
         self.camera = camera
         self.nodemap = nodemap
@@ -57,21 +58,21 @@ class WavelengthGui(tk.Toplevel):
         self.description = tk.Message(self.leftframe, text="Series over a range of wavelengths. Please specify wavelength range, increment, number of frames per wavelength and beam-laser delay for the experiment.", font=("Helvetica",11), width=250)
         self.description.pack(side=tk.TOP, pady=10)
 
-        self.lambdarangelabel = tk.Label(self.leftframe, text="Wavelength range in nm (min 200 - max 230):", font=("Helvetica",12))
+        self.lambdarangelabel = tk.Label(self.leftframe, text="Wavelength range in nm in the format XXX.XXX (min 200.000 - max 230.000):", font=("Helvetica",12))
         self.lambdarangelabel.pack(side=tk.TOP, pady=(20,5))
 
         self.lambdarangeframe = tk.Frame(self.leftframe)
         self.lambdarangeframe.pack(side=tk.TOP)
 
-        self.lambdarangelower = tk.IntVar(self.lambdarangeframe, value=200)
-        self.lambdarangestart = tk.Entry(self.lambdarangeframe, textvariable=self.delayrangelower, width=10)
+        self.lambdarangelower = tk.StrVar(self.lambdarangeframe, value="200.000")
+        self.lambdarangestart = tk.Entry(self.lambdarangeframe, textvariable=self.lambdarangelower, width=10)
         self.lambdarangestart.pack(side=tk.LEFT)
 
-        self.lambdarangeupper = tk.IntVar(self.lambdarangeframe, value=230)
-        self.lambdarangeend = tk.Entry(self.lambdarangeframe, textvariable=self.delayrangeupper, width=10)
+        self.lambdarangeupper = tk.StrVar(self.lambdarangeframe, value="230.000")
+        self.lambdarangeend = tk.Entry(self.lambdarangeframe, textvariable=self.lambdarangeupper, width=10)
         self.lambdarangeend.pack(side=tk.LEFT)
 
-        self.incrementlabel = tk.Label(self.leftframe, text="Wavelength scanning increment in picometer:", font=("Helvetica",12))
+        self.incrementlabel = tk.Label(self.leftframe, text="Wavelength scanning increment in nm (min 0.005, max 1):", font=("Helvetica",12))
         self.incrementlabel.pack(side=tk.TOP, pady=(40,5))
 
         self.increment = tk.StringVar(self.leftframe, value=10)
@@ -138,25 +139,65 @@ class WavelengthGui(tk.Toplevel):
         self.lambdalist = []
         self.totalintensities = []
 
-        self.currentdelay = "0.000" + str(self.delayBentry.get()) + "00000"
-        inputstring = ":PULS2:DEL {}\r\n".format(self.currentdelay)
-        self.bnc.write(inputstring.encode("utf-8"))
+        self.usdelay = self.delayBentry.get()
+        
+        if self.usdelay <= 999:
+            self.currentdelay = "0.000" + str(self.usdelay) + "00000"
+            inputstring = ":PULS2:DEL {}\r\n".format(self.currentdelay)
+            self.bnc.write(inputstring.encode("utf-8"))
+
+        elif self.usdelay <= 2000:
+            self.currentdelay = "0.00" + str(self.usdelay) + "00000"
+            inputstring = ":PULS2:Del {}\r\n".format(self.currentdelay)
+            self.bnc.write(inputstring.encode("utf-8"))
+
+        else:
+            messagebox.showerror("Error", "Please choose a delay between 0 and 2000us")
+            self.startbutton.configure(state=tk.NORMAL)
+            return
  
-        self.startinpm = int(self.lambdarangestart.get()) * 1000
-        self.stopinpm = int(self.lambdarangeend.get()) * 1000
+        self.startstring = str(self.lambdarangestart.get())
+        self.stopstring = str(self.lambdarangeend.get())
+
+        if len(self.startstring) != 7 and len(self.stopstring) != 7:
+            messagebox.showerror("Error", "Please enter the wavelength bounds in nm in the format XXX.XXX")
+            return
+
 
         self.intensityvtime.set_xlim(self.startinpm-500, self.stopinpm+500)
+        
+        self.wlincrement = str(self.incremententry.get())
+        self.incrementpm = int(self.wlincrement[:3])*1000 + self.wlincrement[4:]
+        lambdascanrange = numpy.arange(self.startinpm + increment, self.stopinpm + increment, increment)
 
-        lambdascanrange = numpy.arange(self.startinpm, self.stopinpm + 1, int(self.incremententry.get()))
-
-        for i in lambdascanrange:
-            if i >= 200000 and i <= 230000:
-                #change the wavelength on the laser - figure this out once we have laser software
-                string = str(i)
-            else:
-                messagebox.showerror("Error", "The entered wavelength values are out of range")
+        if int(self.startstring[:3]) < 200 or int(self.startstring[:3] > 230:
+                messagebox.showerror("Error", "Wavelength bounds are out of range. Please enter values between 200 and 230nm")
                 self.startbutton.configure(state=tk.NORMAL)
                 return
+
+        inputstring = "SL {}\r\n".format(self.startstring)
+        self.laser.write(inputstring.encode("utf-8"))
+        lastline = self.laser.readline.decode("utf-8")
+        inputstring = "WL {}\r\n".format(self.wlincrement)
+        self.laser.write(inputstring.encode("utf-8"))
+        lastline = self.laser.readline.decode("utf-8")
+
+        time.sleep(0.100)
+
+        self.imageloop()
+
+        lambdanm = self.startstring 
+        self.imageseries[lambdanm] = self.sumimage
+        lambdapm = int(self.startstring[:3])*1000 + int(self.startstring[4:])
+        self.lambdalist.append(lambdapm)
+        self.totalintensities.append(numpy.sum(self.sumimage))
+
+
+        while running == True:
+            
+            inputstring = "LU\r\n"
+            self.laser.write(inputstring.encode("utf-8"))
+            lastline = self.laser.readline.decode("utf-8")
 
             time.sleep(0.100)
 
@@ -165,9 +206,11 @@ class WavelengthGui(tk.Toplevel):
             if self.erroroccurrence == True:
                 break 
             
-            lambdanm = str(i)[:3] + "." + str(i)[3:]
+            lambdapm += incrementpm
+            lambdastring = str(lambdapm)
+            lambdanm = lambdastring[:3] + "." + lambdastring[4:]
             self.imageseries[lambdanm] = self.sumimage
-            self.lambdalist.append(i)
+            self.lambdalist.append(lambdapm)
             self.totalintensities.append(numpy.sum(self.sumimage))
 
             self.lastdelaydisplay.clear()
@@ -175,6 +218,9 @@ class WavelengthGui(tk.Toplevel):
             self.intensityvtime.clear()
             self.intensityvtime.plot(self.lambdalist, self.totalintensities)
             self.canvas.draw()
+
+            if lambdanm == stopstring:
+                running = False
         
 
         if self.erroroccurrence == True:
