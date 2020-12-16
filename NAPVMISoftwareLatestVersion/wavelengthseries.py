@@ -72,10 +72,10 @@ class WavelengthGui(tk.Toplevel):
         self.lambdarangeend = tk.Entry(self.lambdarangeframe, textvariable=self.lambdarangeupper, width=10)
         self.lambdarangeend.pack(side=tk.LEFT)
 
-        self.incrementlabel = tk.Label(self.leftframe, text="Wavelength scanning increment in nm (min 0.005, max 1):", font=("Helvetica",12))
+        self.incrementlabel = tk.Label(self.leftframe, text="Wavelength scanning increment in picometer (min 5, max 1000 (1nm)):", font=("Helvetica",12))
         self.incrementlabel.pack(side=tk.TOP, pady=(40,5))
 
-        self.increment = tk.StringVar(self.leftframe, value=10)
+        self.increment = tk.IntVar(self.leftframe, value=10)
         self.incremententry = tk.Entry(self.leftframe, textvariable=self.increment, width=10)
         self.incremententry.pack(side=tk.TOP, pady=(0,20))
 
@@ -136,6 +136,7 @@ class WavelengthGui(tk.Toplevel):
 
         self.imageseries = {}
 
+        self.fundamentalist = []
         self.lambdalist = []
         self.totalintensities = []
 
@@ -145,51 +146,73 @@ class WavelengthGui(tk.Toplevel):
             self.currentdelay = "0.000" + str(self.usdelay) + "00000"
             inputstring = ":PULS2:DEL {}\r\n".format(self.currentdelay)
             self.bnc.write(inputstring.encode("utf-8"))
+            self.bnc.reset_input_buffer()
 
         elif self.usdelay <= 2000:
             self.currentdelay = "0.00" + str(self.usdelay) + "00000"
             inputstring = ":PULS2:Del {}\r\n".format(self.currentdelay)
             self.bnc.write(inputstring.encode("utf-8"))
+            self.bnc.reset_input_buffer()
 
         else:
             messagebox.showerror("Error", "Please choose a delay between 0 and 2000us")
             self.startbutton.configure(state=tk.NORMAL)
             return
  
-        self.startstring = str(self.lambdarangestart.get())
-        self.stopstring = str(self.lambdarangeend.get())
+        self.startth = str(self.lambdarangestart.get())
+        self.stopth = str(self.lambdarangeend.get())
 
-        if len(self.startstring) != 7 and len(self.stopstring) != 7:
+        if int(self.startth[:3]) < 200 or int(self.startth[:3] > 230:
+            messagebox.showerror("Error", "Wavelength bounds are out of range. Please enter values between 200 and 230nm")
+            self.startbutton.configure(state=tk.NORMAL)
+            return
+
+        if len(self.startth) != 7 and len(self.stopth) != 7:
             messagebox.showerror("Error", "Please enter the wavelength bounds in nm in the format XXX.XXX")
             return
 
+        self.startfundamental = str(int(self.startth[:2])*3) + "." + str(int(self.startth[4:])*3) 
+        self.stopfloat = float(self.stopth)*3
+
+        if float(self.startfundamental) > self.stopfloat:
+            messagebox.showerror("Error", "Start wavelength cannot be larger than end wavelength")
 
         self.intensityvtime.set_xlim(self.startinpm-500, self.stopinpm+500)
         
-        self.wlincrement = str(self.incremententry.get())
-        self.incrementpm = int(self.wlincrement[:3])*1000 + self.wlincrement[4:]
-        lambdascanrange = numpy.arange(self.startinpm + increment, self.stopinpm + increment, increment)
+        self.incrementfundamental = int(self.incremententry.get())*3
+        self.incrementstring = str(self.incrementfundamental)[0] + "." + str(self.incrementfundamental)[1:3]
 
-        if int(self.startstring[:3]) < 200 or int(self.startstring[:3] > 230:
-                messagebox.showerror("Error", "Wavelength bounds are out of range. Please enter values between 200 and 230nm")
-                self.startbutton.configure(state=tk.NORMAL)
-                return
-
-        inputstring = "SL {}\r\n".format(self.startstring)
+        inputstring = "SL {}\r\n".format(self.startfundamental)
         self.laser.write(inputstring.encode("utf-8"))
-        lastline = self.laser.readline.decode("utf-8")
-        inputstring = "WL {}\r\n".format(self.wlincrement)
+        respone = self.laser.read(size=2).decode("utf-8")
+        self.laser.reset_input_buffer()
+        if response != "OK":
+            messagebox.showerror("Error", "Problem occurred while setting wavelength.")
+            self.startbutton.configure(state=tk.NORMAL)
+            return
+        inputstring = "WL {}\r\n".format(self.incrementstring)
         self.laser.write(inputstring.encode("utf-8"))
-        lastline = self.laser.readline.decode("utf-8")
-
-        time.sleep(0.100)
+        respone = self.laser.read(size=2).decode("utf-8")
+        self.laser.reset_input_buffer()
+        if response != "OK":
+            messagebox.showerror("Error", "Problem occurred while setting increment.")
+            self.startbutton.configure(state=tk.NORMAL)
+            return
 
         self.imageloop()
 
-        lambdanm = self.startstring 
+        inputstring = "GLC\r\n"
+        self.laser.write(inputstring.encode("utf-8"))
+        lastline = self.laser.readline().decode("utf-8"))
+        self.laser.reset_input_buffer()
+        fundamental = lastline[:-2]
+
+        lambdanm = float(fundamental)/3
+
+        #stopped here!
+
         self.imageseries[lambdanm] = self.sumimage
-        lambdapm = int(self.startstring[:3])*1000 + int(self.startstring[4:])
-        self.lambdalist.append(lambdapm)
+        self.lambdalist.append(lambdanm)
         self.totalintensities.append(numpy.sum(self.sumimage))
 
 
