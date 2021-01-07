@@ -136,9 +136,11 @@ class Root(tk.Tk):
 
     
     def laserconnect(self):
+        
+        MsgBoxLCon = messagebox.askquestion("Connect to Laser", "Before connecting to the laser, make sure that the laser is in the right wavelength region, the laser is in autotracker/lookup table mode and a lookup table is loaded for the wavelength region you would like to use (otherwise take the necessary steps in the Radiant software and then attempt a connection again. Do you want to continue?") 
 
         try:
-            self.laser = serial.Serial("COM1", baudrate=9600, bytesize=8, parity="N", stopbits=1, timeout=1)
+            self.laser = serial.Serial("COM1", baudrate=115200, bytesize=8, parity="N", stopbits=1, timeout=1)
         except:
             messagebox.showerror("Error", "Could not connect to laser. Check connection, port number and baudrate and retry")
             return
@@ -271,8 +273,8 @@ class Root(tk.Tk):
         self.system.ReleaseInstance()
         
         if self.laserstatus == "connected":
-            MsgBox = messagebox.askquestion("Shutdown", "Do you want to shut down the laser controls before closing the program? This will save the current motor positions and send a shutdown command to the laser. If you choose no, make sure to send a shutdown command via the keyboard controls before turning off the laser, otherwise motor positions will be lost.")
-            if MsgBox == "yes":
+            MsgBoxQuit = messagebox.askquestion("Shutdown", "Do you want to shut down the laser controls before closing the program? This will save the current motor positions and send a shutdown command to the laser. If you choose no, the laser controls will not save the current positions and all motors have to be homed at the next startup.")
+            if MsgBoxQuit == "yes":
                 inputstring = "SD\r\n"
                 self.laser.write(inputstring.encode("utf-8"))
                 lastline = self.laser.readline().decode("utf-8")

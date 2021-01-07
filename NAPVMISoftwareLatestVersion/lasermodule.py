@@ -1,6 +1,8 @@
 import serial
 import tkinter as tk
 from tkinter import messagebox
+import decimal
+
 
 
 class LaserApp(tk.Frame):
@@ -8,6 +10,9 @@ class LaserApp(tk.Frame):
     def __init__(self, root, laser):
 
         self.laser = laser
+        
+        decimal.getcontext().prec = 8
+
         self.stepvalues = {"1 nm": "3.000", "100 pm": "0.300", "10 pm": "0.030", "5 pm": "0.015"}
 
         tk.Frame.__init__(self,root)
@@ -15,6 +20,9 @@ class LaserApp(tk.Frame):
 
         self.initialquery()
         self.guiinit()
+
+
+
         
 
 
@@ -26,7 +34,7 @@ class LaserApp(tk.Frame):
         self.laser.write(inputstring.encode("utf-8"))
         lastline = self.laser.readline().decode("utf-8")
         self.fundamental = lastline[:-2]
-        self.wavelength = float(self.fundamental)/3
+        self.wavelength = decimal.Decimal(self.fundamental)/3
 
 
 
@@ -60,7 +68,7 @@ class LaserApp(tk.Frame):
     
     def guiupdate(self):
 
-        self.wavelength = float(self.fundamental)/3
+        self.wavelength = decimal.Decimal(self.fundamental)/3
 
         self.currentlambda.configure(text=str(self.wavelength))
 
