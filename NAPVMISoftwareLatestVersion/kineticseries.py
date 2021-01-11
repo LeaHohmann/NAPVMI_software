@@ -3,7 +3,6 @@ import serial
 import PySpin
 import numpy
 import matplotlib
-import time
 from tkinter import filedialog
 from tkinter import messagebox
 matplotlib.use("TkAgg")
@@ -89,6 +88,8 @@ class SeriesGui(tk.Toplevel):
         self.startbutton = tk.Button(self.leftframe, text="Start Acquisition", background="green", command=self.startacquisition)
         self.startbutton.pack(side=tk.TOP, pady=(50,10))
 
+        self.stopbutton = tk.Button(self.leftframe, text="Interrupt Acquisition", background="red", command=self.userinterrupt)
+
         self.fig = matplotlib.figure.Figure(figsize=[4.6,7.2])
         self.grid = self.fig.add_gridspec(ncols=1, nrows=2)
         self.lastdelaydisplay = self.fig.add_subplot(self.grid[0,0])
@@ -132,44 +133,62 @@ class SeriesGui(tk.Toplevel):
         self.delaylist = []
         self.totalintensities = []
 
+        self.running = True
+        self.stopbutton.pack(side=tk.TOP, pady=(20,10))
+
         self.intensityvtime.set_xlim(int(self.delayrangestart.get())-5, int(self.delayrangeend.get())+5)
 
-        delayscanrange = numpy.arange(int(self.delayrangestart.get()), int(self.delayrangeend.get()) + 1, int(self.incremententry.get()))
+        self.delayscanrange = numpy.arange(int(self.delayrangestart.get()), int(self.delayrangeend.get()) + 1, int(self.incremententry.get()))
 
-        for i in delayscanrange:
-            if i < 1000:
-                currentdelay = "0.000" + str(i) + "00000"
-            elif i <= 2000:
-                currentdelay = "0.00" + str(i) + "00000"
-            else:
-                messagebox.showerror("Error", "Maximum delay is 2000us")
-                self.startbutton.configure(state=tk.NORMAL)
-                return
-            inputstring = ":PULS2:DEL {}\r\n".format(currentdelay)
-            self.bnc.write(inputstring.encode("utf-8"))
-            lastline = self.bnc.readline().decode("utf-8")
+        self.delayloop(0)
 
-            time.sleep(0.100)
+    
 
-            self.imageloop()
-
-            if self.erroroccurrence == True:
-                break 
-
-            self.imageseries[str(i)] = self.sumimage
-            self.delaylist.append(i)
-            self.totalintensities.append(numpy.sum(self.sumimage))
-
-            self.lastdelaydisplay.clear()
-            self.lastdelaydisplay.imshow(self.sumimage, cmap="gray", vmin=0)
-            self.intensityvtime.clear()
-            self.intensityvtime.plot(self.delaylist, self.totalintensities)
-            self.canvas.draw()
+    def delayloop(self, index):
         
-
-        if self.erroroccurrence == True:
+        i = self.delayscanrange[index]
+        
+        if i < 1000:
+            currentdelay = "0.000" + str(i) + "00000"
+        elif i <= 2000:
+            currentdelay = "0.00" + str(i) + "00000"
+        else:
+            messagebox.showerror("Error", "Maximum delay is 2000us")
             self.startbutton.configure(state=tk.NORMAL)
             return
+
+        inputstring = ":PULS2:DEL {}\r\n".format(currentdelay)
+        self.bnc.write(inputstring.encode("utf-8"))
+        lastline = self.bnc.readline().decode("utf-8")
+
+        self.after(100)
+
+        self.imageloop()
+
+        if self.erroroccurrence == True:
+            self.starbutton.configure(state=tk.NORMAL)
+            return 
+            
+        self.imageseries[str(i)] = self.sumimage
+        self.delaylist.append(i)
+        self.totalintensities.append(numpy.sum(self.sumimage))
+
+        self.lastdelaydisplay.clear()
+        self.lastdelaydisplay.imshow(self.sumimage, cmap="gray", vmin=0)
+        self.intensityvtime.clear()
+        self.intensityvtime.plot(self.delaylist, self.totalintensities)
+        self.canvas.draw()
+
+        if i < int(self.delayrangeend.get()) and self.running == True:
+            index += 1
+            self.after(10, self.delayloop, index)
+
+        else:
+            self.savedata()
+
+
+    
+    def savedata(self):
 
         
         numpy.savez_compressed(self.filename, **self.imageseries)
@@ -181,6 +200,9 @@ class SeriesGui(tk.Toplevel):
         f.close
 
         messagebox.showinfo("Measurement finished", "Image has been saved under: {}, parameters under {}".format(self.filename, self.parameterfilename))
+
+        self.startbutton.configure(state=tk.NORMAL)
+        self.stopbutton.pack_forget()
 
 
 
@@ -208,6 +230,13 @@ class SeriesGui(tk.Toplevel):
             self.camera.EndAcquisition()
         except PySpin.SpinnakerException:
             pass
+
+
+
+    def userinterrupt(self):
+
+        self.running = False
+        self.stopbutton.pack_forget()
 
 
     

@@ -3,7 +3,6 @@ import serial
 import PySpin
 import numpy
 import matplotlib
-import time
 from tkinter import filedialog
 from tkinter import messagebox
 matplotlib.use("TkAgg")
@@ -98,6 +97,8 @@ class WavelengthGui(tk.Toplevel):
 
         self.startbutton = tk.Button(self.leftframe, text="Start Acquisition", background="green", command=self.evalentry)
         self.startbutton.pack(side=tk.TOP, pady=(50,10))
+
+        self.stopbutton = tk.Button(self.leftframe, text ="Interrupt Acquisition", background="red", command=self.userinterrupt)
 
         self.fig = matplotlib.figure.Figure(figsize=[4.6,7.2])
         self.grid = self.fig.add_gridspec(ncols=1, nrows=2)
@@ -206,6 +207,9 @@ class WavelengthGui(tk.Toplevel):
 
         self.intensityvtime.set_xlim(self.startfund - decimal.Decimal(0.5), self.stopfund - decimal.Decimal(0.5))
 
+        running = True
+        self.stopbutton.pack(side=tk.TOP, pady=(20,10))
+
         inputstring = "SL {}\r\n".format(str(self.startfund))
         self.laser.write(inputstring.encode("utf-8"))
         response = self.laser.read(size=2).decode("utf-8")
@@ -237,51 +241,56 @@ class WavelengthGui(tk.Toplevel):
         self.totalintensities.append(numpy.sum(self.sumimage))
 
 
-        while running == True:
+        self.wavelengthloop()
+
+
+    def wavelengthloop(self):
             
-            inputstring = "LU\r\n"
-            self.laser.write(inputstring.encode("utf-8"))
-            response = self.laser.read(size=2).decode("utf-8")
-            self.laser.reset_input_buffer()
-            if response != "OK":
-                self.wrongentry("Problem occurred while incrementing wavelength")
-                self.erroroccurrence = True
-                return
+        inputstring = "LU\r\n"
+        self.laser.write(inputstring.encode("utf-8"))
+        response = self.laser.read(size=2).decode("utf-8")
+        self.laser.reset_input_buffer()
+        if response != "OK":
+            self.wrongentry("Problem occurred while incrementing wavelength")
+            self.erroroccurrence = True
+            return
 
-            time.sleep(0.100)
+        self.after(100)
 
-            self.imageloop()
-
-            if self.erroroccurrence == True:
-                break 
-            
-            inputstring = "GLC\r\n"
-            self.laser.write(inputstring.encode("utf-8"))
-            lastline = self.laser.readline().decode("utf-8"))
-            self.laser.reset_input_buffer()
-            fundamental = decimal.Decimal(lastline[:-2])
-
-            lambdanm = fundamental/3
-
-            self.imageseries[str(lambdanm)] = self.sumimage
-            self.lambdalist.append(lambdanm)
-            self.fundamentalist.append(str(fundamental))
-            self.totalintensities.append(numpy.sum(self.sumimage))
-
-            self.lastdelaydisplay.clear()
-            self.lastdelaydisplay.imshow(self.sumimage, cmap="gray", vmin=0)
-            self.intensityvtime.clear()
-            self.intensityvtime.plot(self.lambdalist, self.totalintensities)
-            self.canvas.draw()
-
-            if fundamental == stopfund or fundamental > stopfund:
-                running = False
-        
+        self.imageloop()
 
         if self.erroroccurrence == True:
-            self.wrongentry("Error occurred during acquisition. No data taken.")
-            self.startbutton.configure(state=tk.NORMAL)
+            self.starbutton.configure(state=tk.NORMAL)
             return
+            
+        inputstring = "GLC\r\n"
+        self.laser.write(inputstring.encode("utf-8"))
+        lastline = self.laser.readline().decode("utf-8"))
+        self.laser.reset_input_buffer()
+        fundamental = decimal.Decimal(lastline[:-2])
+
+        lambdanm = fundamental/3
+
+        self.imageseries[str(lambdanm)] = self.sumimage
+        self.lambdalist.append(lambdanm)
+        self.fundamentalist.append(str(fundamental))
+        self.totalintensities.append(numpy.sum(self.sumimage))
+
+        self.lastdelaydisplay.clear()
+        self.lastdelaydisplay.imshow(self.sumimage, cmap="gray", vmin=0)
+        self.intensityvtime.clear()
+        self.intensityvtime.plot(self.lambdalist, self.totalintensities)
+        self.canvas.draw()
+
+        if fundamental < stopfund and running == True 
+            self.after(10, self.wavelengthloop)
+
+        else:
+            self.savedata()
+                    
+
+
+    def savedata(self):
 
         
         numpy.savez_compressed(self.filename, **self.imageseries)
@@ -292,7 +301,10 @@ class WavelengthGui(tk.Toplevel):
         f.write(str(self.parameters))
         f.close
 
-        messagebox.showinfo("Measurement finished", "Image has been saved under: {}, parameters under {}".format(self.filename, self.parameterfilename))       
+        messagebox.showinfo("Measurement finished", "Image has been saved under: {}, parameters under {}".format(self.filename, self.parameterfilename)) 
+
+        self.startbutton.configure(state=tk.NORMAL)
+        self.stopbutton.pack_forget()
 
 
 
@@ -322,6 +334,13 @@ class WavelengthGui(tk.Toplevel):
             pass
 
 
+    
+    def userinterrupt(self):
+
+        self.running = False
+        self.stopbutton.pack_forget()
+        self.startbutton.configure(state=tk.NORMAL)
+        
     
 
     def closegui(self):

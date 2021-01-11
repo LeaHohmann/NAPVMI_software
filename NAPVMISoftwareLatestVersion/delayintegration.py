@@ -3,7 +3,6 @@ import serial
 import PySpin
 import numpy
 import matplotlib
-import time
 from tkinter import filedialog
 from tkinter import messagebox
 matplotlib.use("TkAgg")
@@ -89,6 +88,8 @@ class IntegrationGui(tk.Toplevel):
         self.startbutton = tk.Button(self.leftframe, text="Start Acquisition", background="green", command=self.startacquisition)
         self.startbutton.pack(side=tk.TOP, pady=(50,10))
 
+        self.stopbutton = tk.Button(self.leftframe, text="Interrupt Acquisition", background="red", command=self.userinterrupt)
+
         self.fig = matplotlib.figure.Figure(figsize=[4.6,7.2])
         self.grid = self.fig.add_gridspec(ncols=1, nrows=2)
         self.integrateddisplay = self.fig.add_subplot(self.grid[0,0])
@@ -127,41 +128,58 @@ class IntegrationGui(tk.Toplevel):
 
         self.parameterfilename = self.filename[:-4] + "_parameters.txt"
 
-        delayscanrange = numpy.arange(int(self.delayrangestart.get()), int(self.delayrangeend.get()) + 1, int(self.incremententry.get()))
+        self.delayscanrange = numpy.arange(int(self.delayrangestart.get()), int(self.delayrangeend.get()) + 1, int(self.incremententry.get()))
                 
         self.integratedimage = numpy.zeros((964,1288), int)
 
-        for i in delayscanrange:
-            if i < 1000:
-                currentdelay = "0.000" + str(i) + "00000"
-            elif i<= 2000:
-                currentdelay = "0.00" + str(i) + "00000"
-            else:
-                messagebox.showerror("Error", "Maximum delay is 2000us")
-                self.startbutton.configure(state=tk.NORMAL)
-                return
-            inputstring = ":PULS2:DEL {}\r\n".format(currentdelay)
-            self.bnc.write(inputstring.encode("utf-8"))
-            lastline = self.bnc.readline().decode("utf-8")
+        self.running = True
+        self.stopbutton.pack(side=tk.TOP, pady=(20,10))
 
-            time.sleep(0.1)
+        self.delayloop(0)
 
-            self.imageloop()
 
-            if self.erroroccurrence == True:
-                break 
+    def delayloop(self, index):
 
-            self.integratedimage += self.sumimage
-
-            self.integrateddisplay.clear()
-            self.integrateddisplay.imshow(self.integratedimage, cmap="gray", vmin=0)
-            self.lastdelaydisplay.clear()
-            self.lastdelaydisplay.imshow(self.sumimage, cmap="gray", vmin=0)
-            self.canvas.draw()
+        i = self.delayscanrange[index]
         
-        if self.erroroccurrence == True:
+        if i < 1000:
+            currentdelay = "0.000" + str(i) + "00000"
+        elif i<= 2000:
+            currentdelay = "0.00" + str(i) + "00000"
+        else:
+            messagebox.showerror("Error", "Maximum delay is 2000us")
             self.startbutton.configure(state=tk.NORMAL)
             return
+        
+        inputstring = ":PULS2:DEL {}\r\n".format(currentdelay)
+        self.bnc.write(inputstring.encode("utf-8"))
+        lastline = self.bnc.readline().decode("utf-8")
+
+        self.after(100)
+
+        self.imageloop()
+
+        if self.erroroccurrence == True:
+            self.startbutton.configure(state=tk.NORMAL)
+            return 
+
+        self.integratedimage += self.sumimage
+        self.integrateddisplay.clear()
+        self.integrateddisplay.imshow(self.integratedimage, cmap="gray", vmin=0)
+        self.lastdelaydisplay.clear()
+        self.lastdelaydisplay.imshow(self.sumimage, cmap="gray", vmin=0)
+        self.canvas.draw()
+
+        if i < int(self.delayrangeend.get()) and self.running == True:
+            index += 1
+            self.after(10, delayloop, index)
+
+        else:
+            self.savedata()
+
+
+
+    def savedata(self):
 
         numpy.save(self.filename, self.integratedimage)
 
@@ -172,6 +190,9 @@ class IntegrationGui(tk.Toplevel):
         f.close
 
         messagebox.showinfo("Measurement finished", "Image has been saved under: {}, parameters under {}".format(self.filename, self.parameterfilename))
+
+        self.startbutton.configure(state=tk.NORMAL)
+        self.stopbutton.pack_forget()
 
 
 
@@ -200,6 +221,11 @@ class IntegrationGui(tk.Toplevel):
             pass
     
 
+
+    def userinterrupt(self):
+
+        self.running = False
+        self.stopbutton.pack_forget()
     
 
     def closegui(self):
