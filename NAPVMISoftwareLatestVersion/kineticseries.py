@@ -9,15 +9,12 @@ matplotlib.use("TkAgg")
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 
-class SeriesGui(tk.Toplevel):
+class SeriesGui(tk.Frame):
 
 
     def __init__(self,root,bnc,system,camera,nodemap,streamnodemap,exposuretime,gain,delaysvector,rootcameraframe,rootbncframe,rootlaserframe,rootstartintegration,rootstartseries,rootstartwavelength,rootconnectstatus):
 
-        tk.Toplevel.__init__(self,root)
-        self.title("Acquisition: Kinetic series")
-
-        self.protocol("WM_DELETE_WINDOW", self.closegui)
+        tk.Frame.__init__(self,root)
 
         self.bnc = bnc
         self.system = system
@@ -26,16 +23,6 @@ class SeriesGui(tk.Toplevel):
         self.exposure = exposuretime
         self.gain = gain
         self.delaysvector = delaysvector
-        self.rootbncframe = rootbncframe
-        self.rootcameraframe = rootcameraframe
-        self.rootstartintegration = rootstartintegration
-        self.rootstartseries = rootstartseries
-        self.rootstartwavelength = rootstartwavelength
-        self.rootconnectstatus = rootconnectstatus
-
-        self.rootbncframe.pack_forget()
-        self.rootcameraframe.pack_forget()
-        self.rootlaserframe.pack_forget()
 
         node_bufferhandling = PySpin.CEnumerationPtr(streamnodemap.GetNode("StreamBufferHandlingMode"))
         node_bufferhandling.SetIntValue(node_bufferhandling.GetEntryByName("NewestOnly").GetValue())
@@ -238,21 +225,3 @@ class SeriesGui(tk.Toplevel):
         self.running = False
         self.stopbutton.pack_forget()
 
-
-    
-
-    def closegui(self):
-
-        self.nodemap = ""
-        self.camera = ""
-
-        self.rootlaserframe.pack(side=tk.LEFT)
-        self.rootbncframe.pack(side=tk.LEFT)
-        self.rootcameraframe.pack(side=tk.LEFT)
-
-        self.rootstartintegration.configure(state=tk.NORMAL)
-        self.rootstartseries.configure(state=tk.NORMAL)
-        if self.rootconnectstatus == 5:
-            self.rootstartwavelength.configure(state=tk.NORMAL)
-
-        self.destroy()

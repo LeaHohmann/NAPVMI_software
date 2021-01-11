@@ -10,16 +10,13 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import decimal
 
 
-class WavelengthGui(tk.Toplevel):
+class WavelengthGui(tk.Frame):
 
 
     def __init__(self,root,bnc,laser,system,camera,nodemap,streamnodemap,exposuretime,gain,delaysvector,rootcameraframe,rootbncframe,rootlaserframe,rootstartintegration,rootstartseries,rootstartwavelength):
 
-        tk.Toplevel.__init__(self,root)
-        self.title("Acquisition: Wavelength series")
-
-        self.protocol("WM_DELETE_WINDOW", self.closegui)
-
+        tk.Frame.__init__(self,root)
+        
         decimal.getcontext().prec = 8
 
         self.bnc = bnc
@@ -30,15 +27,6 @@ class WavelengthGui(tk.Toplevel):
         self.exposure = exposuretime
         self.gain = gain
         self.delaysvector = delaysvector
-        self.rootbncframe = rootbncframe
-        self.rootcameraframe = rootcameraframe
-        self.rootstartintegration = rootstartintegration
-        self.rootstartseries = rootstartseries
-        self.rootstartwavelength = rootstartwavelength
-
-        self.rootbncframe.pack_forget()
-        self.rootcameraframe.pack_forget()
-        self.rootlaserframe.pack_forget()
 
         node_bufferhandling = PySpin.CEnumerationPtr(streamnodemap.GetNode("StreamBufferHandlingMode"))
         node_bufferhandling.SetIntValue(node_bufferhandling.GetEntryByName("NewestOnly").GetValue())
@@ -343,17 +331,3 @@ class WavelengthGui(tk.Toplevel):
         
     
 
-    def closegui(self):
-
-        self.nodemap = ""
-        self.camera = ""
-
-        self.rootlaserframe.pack(side=tk.LEFT)
-        self.rootbncframe.pack(side=tk.LEFT)
-        self.rootcameraframe.pack(side=tk.LEFT)
-
-        self.rootstartintegration.configure(state=tk.NORMAL)
-        self.rootstartseries.configure(state=tk.NORMAL)
-        self.rootstartwavelength.configure(state=tk.NORMAL)
-
-        self.destroy()

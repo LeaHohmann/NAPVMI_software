@@ -20,9 +20,6 @@ class LaserApp(tk.Frame):
 
         self.initialquery()
         self.guiinit()
-
-
-
         
 
 

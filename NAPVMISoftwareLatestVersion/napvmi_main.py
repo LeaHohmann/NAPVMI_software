@@ -179,12 +179,11 @@ class Root(tk.Tk):
         exposure = self.cameragui.node_exposuretime.GetValue()
         gain = self.cameragui.node_gain.GetValue()
 
-        self.startintegration.configure(state=tk.DISABLED)
-        self.startseries.configure(state=tk.DISABLED)
-        self.startlambdaseries.configure(state=tk.DISABLED)
+        self.newwindow("Acquisition: Delay integration")
 
-        self.delayintegrationgui = delayintegration.IntegrationGui(self,self.bnc,self.system,self.camera,self.cameragui.nodemap, self.cameragui.streamnodemap, exposure,gain,self.delaysvector,self.cameraframe,self.bncframe,self.laserframe,self.startintegration, self.startseries, self.startlambdaseries,self.connectionstatus)
+        self.delayintegrationgui = delayintegration.IntegrationGui(self.serieswindow,self.bnc,self.system,self.camera,self.cameragui.nodemap, self.cameragui.streamnodemap, exposure,gain,self.delaysvector)
 
+        self.serieswindow.mainloop()
 
 
 
@@ -203,12 +202,11 @@ class Root(tk.Tk):
         exposure = self.cameragui.node_exposuretime.GetValue()
         gain = self.cameragui.node_gain.GetValue()
 
-        self.startseries.configure(state=tk.DISABLED)
-        self.startintegration.configure(state=tk.DISABLED)
-        self.startlambdaseries.configure(state=tk.DISABLED)
+        self.newwindow("Acquisition: Kinetic series")
 
-        self.kineticseriesgui = kineticseries.SeriesGui(self, self.bnc, self.system, self.camera, self.cameragui.nodemap, self.cameragui.streamnodemap, exposure, gain, self.delaysvector, self.cameraframe, self.bncframe, self.laserframe, self.startintegration, self.startseries, self.startlambdaseries, self.connectionstatus)
+        self.seriesgui = kineticseries.SeriesGui(self.serieswindow, self.bnc, self.system, self.camera, self.cameragui.nodemap, self.cameragui.streamnodemap, exposure, gain, self.delaysvector)
 
+        self.serieswindow.mainloop()
 
 
     
@@ -226,13 +224,12 @@ class Root(tk.Tk):
         exposure = self.cameragui.node_exposuretime.GetValue()
         gain = self.cameragui.node_gain.GetValue()
 
-        self.startseries.configure(state=tk.DISABLED)
-        self.startintegration.configure(state=tk.DISABLED)
-        self.startlambdaseries.configure(state=tk.DISABLED)
+        self.newwindow("Acquisition: Wavelength series")
 
-        self.wavelengthseriesgui = wavelengthseries.WavelengthGui(self, self.bnc, self.laser, self.system, self.camera, self.cameragui.nodemap, self.cameragui.streamnodemap, exposure, gain, self.delaysvector, self.cameraframe, self.bncframe, self.laserframe, self.startintegration, self.startseries, self.startlambdaseries)
+        self.seriesgui = wavelengthseries.WavelengthGui(self.serieswindow, self.bnc, self.laser, self.system, self.camera, self.cameragui.nodemap, self.cameragui.streamnodemap, exposure, gain, self.delaysvector)
 
-    
+        self.serieswindow.mainloop()
+
 
 
     def checkdelays(self):
@@ -246,6 +243,48 @@ class Root(tk.Tk):
             self.delaysvector.append(lastline[:-2])
 
 
+
+    
+    def newwindow(self, title):
+
+        self.serieswindow = tk.Toplevel(self)
+
+        self.startseries.configure(state=tk.DISABLED)
+        self.startintegration.configure(state=tk.DISABLED)
+        self.startlambdaseries.configure(state=tk.DISABLED)
+        self.cameraframe.pack_forget()
+        self.bncframe.pack_forget()
+        self.laserframe.pack_forget()
+
+        self.serieswindow.title(title)
+
+        self.serieswindow.protocol("WM_DELETE_WINDOW", self.quitseries)
+
+
+
+    def quitseries(self):
+
+        self.seriesgui.nodemap = ""
+        self.seriesgui.camera = ""
+        
+        self.laserframe.pack()
+        self.bncframe.pack()
+        self.cameraframe.pack()
+
+        self.startseries.configure(state=tk.NORMAL)
+        self.startintegration.configure(state=tk.NORMAL)
+        if self.connectionstatus == 5:
+            self.startlambdaseries.configure(state=tk.NORMAL)
+
+            self.lasergui.initialquery()
+            self.lasergui.guiupdate()
+        
+        self.bncgui.channel.bncinit()
+        self.bncgui.channel.guiupdate()
+
+        self.serieswindow.destroy()
+
+        
 
 
     def quitgui(self):
