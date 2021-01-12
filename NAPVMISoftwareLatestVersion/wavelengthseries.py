@@ -13,12 +13,14 @@ import decimal
 class WavelengthGui(tk.Frame):
 
 
-    def __init__(self,root,bnc,laser,system,camera,nodemap,streamnodemap,exposuretime,gain,delaysvector,rootcameraframe,rootbncframe,rootlaserframe,rootstartintegration,rootstartseries,rootstartwavelength):
+    def __init__(self,root,bnc,laser,system,camera,nodemap,streamnodemap,exposuretime,gain,delaysvector):
 
         tk.Frame.__init__(self,root)
-        
+        self.pack()
+
         decimal.getcontext().prec = 8
 
+        self.root = root
         self.bnc = bnc
         self.laser = laser
         self.system = system
@@ -183,10 +185,10 @@ class WavelengthGui(tk.Frame):
         if self.filename[-4:] != ".npz":
             self.filename += ".npz"
 
-        self.attributes("-topmost", "true")
-
         self.parameterfilename = self.filename[:-4] + "_parameters.txt"
 
+        self.root.attributes("-topmost","true")
+       
         self.imageseries = {}
 
         self.fundamentalist = []
@@ -249,6 +251,7 @@ class WavelengthGui(tk.Frame):
 
         if self.erroroccurrence == True:
             self.starbutton.configure(state=tk.NORMAL)
+            self.stopbutton.pack_forget()
             return
             
         inputstring = "GLC\r\n"

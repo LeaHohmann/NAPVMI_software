@@ -12,10 +12,12 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 class SeriesGui(tk.Frame):
 
 
-    def __init__(self,root,bnc,system,camera,nodemap,streamnodemap,exposuretime,gain,delaysvector,rootcameraframe,rootbncframe,rootlaserframe,rootstartintegration,rootstartseries,rootstartwavelength,rootconnectstatus):
+    def __init__(self,root,bnc,system,camera,nodemap,streamnodemap,exposuretime,gain,delaysvector):
 
         tk.Frame.__init__(self,root)
+        self.pack()
 
+        self.root = root
         self.bnc = bnc
         self.system = system
         self.camera = camera
@@ -111,9 +113,9 @@ class SeriesGui(tk.Frame):
         if self.filename[-4:] != ".npz":
             self.filename += ".npz"
 
-        self.attributes("-topmost", "true")
-
         self.parameterfilename = self.filename[:-4] + "_parameters.txt"
+
+        self.root.attributes("-topmost","true")
 
         self.imageseries = {}
 
@@ -154,6 +156,7 @@ class SeriesGui(tk.Frame):
 
         if self.erroroccurrence == True:
             self.starbutton.configure(state=tk.NORMAL)
+            self.stopbutton.pack_forget()
             return 
             
         self.imageseries[str(i)] = self.sumimage

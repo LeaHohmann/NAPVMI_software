@@ -136,7 +136,7 @@ class DelayApp(tk.Frame):
 
         for i in delaydict:
             newdelay = delaydict[i]
-            inputstring = ":PULS{}:DEL {}\r\n".format(i,newdelay)
+            inputstring = ":PULS{}:DEL {}\r\n".format(self.channelnumbers[i],newdelay)
             self.bnc.write(inputstring.encode("utf-8"))
             lastline = self.bnc.readline().decode("utf-8")
         

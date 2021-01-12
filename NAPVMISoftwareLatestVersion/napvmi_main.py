@@ -181,7 +181,7 @@ class Root(tk.Tk):
 
         self.newwindow("Acquisition: Delay integration")
 
-        self.delayintegrationgui = delayintegration.IntegrationGui(self.serieswindow,self.bnc,self.system,self.camera,self.cameragui.nodemap, self.cameragui.streamnodemap, exposure,gain,self.delaysvector)
+        self.seriesgui = delayintegration.IntegrationGui(self.serieswindow,self.bnc,self.system,self.camera,self.cameragui.nodemap, self.cameragui.streamnodemap, exposure,gain,self.delaysvector)
 
         self.serieswindow.mainloop()
 
@@ -206,9 +206,6 @@ class Root(tk.Tk):
 
         self.seriesgui = kineticseries.SeriesGui(self.serieswindow, self.bnc, self.system, self.camera, self.cameragui.nodemap, self.cameragui.streamnodemap, exposure, gain, self.delaysvector)
 
-        self.serieswindow.mainloop()
-
-
     
     def startwavelengthseries(self):
 
@@ -228,8 +225,6 @@ class Root(tk.Tk):
 
         self.seriesgui = wavelengthseries.WavelengthGui(self.serieswindow, self.bnc, self.laser, self.system, self.camera, self.cameragui.nodemap, self.cameragui.streamnodemap, exposure, gain, self.delaysvector)
 
-        self.serieswindow.mainloop()
-
 
 
     def checkdelays(self):
@@ -247,7 +242,7 @@ class Root(tk.Tk):
     
     def newwindow(self, title):
 
-        self.serieswindow = tk.Toplevel(self)
+        self.serieswindow = tk.Toplevel(self) 
 
         self.startseries.configure(state=tk.DISABLED)
         self.startintegration.configure(state=tk.DISABLED)
@@ -266,10 +261,10 @@ class Root(tk.Tk):
 
         self.seriesgui.nodemap = ""
         self.seriesgui.camera = ""
-        
-        self.laserframe.pack()
-        self.bncframe.pack()
-        self.cameraframe.pack()
+
+        self.laserframe.pack(side=tk.LEFT, padx=30)
+        self.bncframe.pack(side=tk.LEFT, padx=30)
+        self.cameraframe.pack(side=tk.LEFT, padx=30)
 
         self.startseries.configure(state=tk.NORMAL)
         self.startintegration.configure(state=tk.NORMAL)
@@ -279,16 +274,18 @@ class Root(tk.Tk):
             self.lasergui.initialquery()
             self.lasergui.guiupdate()
         
-        self.bncgui.channel.bncinit()
-        self.bncgui.channel.guiupdate()
+        try:
+            self.bncgui.channel.bncinit()
+            self.bncgui.channel.guiupdate()
+        except AttributeError:
+            pass
 
         self.serieswindow.destroy()
 
         
 
-
     def quitgui(self):
-
+        
         if self.camerastatus == "connected" and self.cameragui.startlive["text"] == "Stop":
             messagebox.showerror("Error", "Acquisition running. Please stop acquisition before closing.")
             return
@@ -318,7 +315,7 @@ class Root(tk.Tk):
                 self.laser.write(inputstring.encode("utf-8"))
                 lastline = self.laser.readline().decode("utf-8")
 
-        self.quit()
+        self.destroy()
 
 
 

@@ -12,10 +12,12 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 class IntegrationGui(tk.Frame):
 
 
-    def __init__(self,root,bnc,system,camera,nodemap,streamnodemap,exposuretime,gain,delaysvector,rootcameraframe,rootbncframe,rootlaserframe,rootstartintegration, rootstartseries, rootstartwavelength, rootconnectstatus):
+    def __init__(self,root,bnc,system,camera,nodemap,streamnodemap,exposuretime,gain,delaysvector):
 
         tk.Frame.__init__(self,root)
+        self.pack()
 
+        self.root = root
         self.bnc = bnc
         self.system = system
         self.camera = camera
@@ -111,9 +113,9 @@ class IntegrationGui(tk.Frame):
         if self.filename[-4:] != ".npy":
             self.filename += ".npy"
 
-        self.attributes("-topmost", "true")
-
         self.parameterfilename = self.filename[:-4] + "_parameters.txt"
+
+        self.root.attributes("-topmost","true")
 
         self.delayscanrange = numpy.arange(int(self.delayrangestart.get()), int(self.delayrangeend.get()) + 1, int(self.incremententry.get()))
                 
@@ -148,6 +150,7 @@ class IntegrationGui(tk.Frame):
 
         if self.erroroccurrence == True:
             self.startbutton.configure(state=tk.NORMAL)
+            self.stopbutton.pack_forget()
             return 
 
         self.integratedimage += self.sumimage
@@ -159,7 +162,7 @@ class IntegrationGui(tk.Frame):
 
         if i < int(self.delayrangeend.get()) and self.running == True:
             index += 1
-            self.after(10, delayloop, index)
+            self.after(10, self.delayloop, index)
 
         else:
             self.savedata()
