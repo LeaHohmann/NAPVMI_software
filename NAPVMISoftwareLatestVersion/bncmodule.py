@@ -62,7 +62,7 @@ class DelayApp(tk.Frame):
         self.savedelays = tk.Button(self.delayfileframe, text="Save current delays to file", command=self.savedelayfile)
         self.savedelays.pack(side=tk.LEFT, padx=5)
 
-        self.laoddelays = tk.Button(self.delayfileframe, text="Load delays from file", command=self.loaddelayfile)
+        self.loaddelays = tk.Button(self.delayfileframe, text="Load delays from file", command=self.loaddelayfile)
         self.loaddelays.pack(side=tk.LEFT, padx=5)
 
 

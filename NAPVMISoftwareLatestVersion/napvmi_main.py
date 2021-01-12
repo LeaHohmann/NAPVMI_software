@@ -67,7 +67,7 @@ class Root(tk.Tk):
         self.bncinit()
         
         self.connectionstatus += 1
-        if self.connectionstatus == 2 or self.connectionstatuss == 5:
+        if self.connectionstatus == 2 or self.connectionstatus == 5:
             self.startintegration.configure(state=tk.NORMAL, background="green")
             self.startseries.configure(state=tk.NORMAL, background="green")
         if self.connectionstatus == 5:
