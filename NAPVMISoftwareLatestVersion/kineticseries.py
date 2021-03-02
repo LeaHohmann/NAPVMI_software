@@ -127,7 +127,7 @@ class SeriesGui(tk.Frame):
 
         self.intensityvtime.set_xlim(int(self.delayrangestart.get())-5, int(self.delayrangeend.get())+5)
 
-        self.delayscanrange = numpy.arange(int(self.delayrangestart.get()), int(self.delayrangeend.get()) + 1, int(self.incremententry.get()))
+        self.delayscanrange = numpy.arange(-1*int(self.delayrangestart.get()), -1*(int(self.delayrangeend.get()) + 1), -1*int(self.incremententry.get()))
 
         self.delayloop(0)
 
@@ -137,10 +137,10 @@ class SeriesGui(tk.Frame):
         
         i = self.delayscanrange[index]
         
-        if i < 1000:
-            currentdelay = "0.000" + str(i) + "00000"
-        elif i <= 2000:
-            currentdelay = "0.00" + str(i) + "00000"
+        if i > -1000:
+            currentdelay = "-0.000" + str(i)[1:] + "00000"
+        elif i >= -2000:
+            currentdelay = "-0.00" + str(i)[1:] + "00000"
         else:
             messagebox.showerror("Error", "Maximum delay is 2000us")
             self.startbutton.configure(state=tk.NORMAL)
@@ -159,8 +159,8 @@ class SeriesGui(tk.Frame):
             self.stopbutton.pack_forget()
             return 
             
-        self.imageseries[str(i)] = self.sumimage
-        self.delaylist.append(i)
+        self.imageseries[str(i)[1:]] = self.sumimage
+        self.delaylist.append(i*(-1))
         self.totalintensities.append(numpy.sum(self.sumimage))
 
         self.lastdelaydisplay.clear()
@@ -169,7 +169,7 @@ class SeriesGui(tk.Frame):
         self.intensityvtime.plot(self.delaylist, self.totalintensities)
         self.canvas.draw()
 
-        if i < int(self.delayrangeend.get()) and self.running == True:
+        if i > int(self.delayrangeend.get()) and self.running == True:
             index += 1
             self.after(10, self.delayloop, index)
 

@@ -110,19 +110,19 @@ class WavelengthGui(tk.Frame):
             return
 
         try:
-            self.usdelay = str(self.delayBentry.get())
+            self.usdelay = -1*str(self.delayBentry.get())
         except KeyError:
-            self.wrongentry("Please enter a channel B delay")
+            self.wrongentry("Please enter a molecular beam - laser delay")
             return
 
-        if self.usdelay <= 999:
-            self.currentdelay = "0.000" + str(self.usdelay) + "00000"
+        if self.usdelay >= -999:
+            self.currentdelay = "-0.000" + str(self.usdelay)[1:] + "00000"
             inputstring = ":PULS2:DEL {}\r\n".format(self.currentdelay)
             self.bnc.write(inputstring.encode("utf-8"))
             self.bnc.reset_input_buffer()
 
-        elif self.usdelay <= 2000:
-            self.currentdelay = "0.00" + str(self.usdelay) + "00000"
+        elif self.usdelay >= -2000:
+            self.currentdelay = "-0.00" + str(self.usdelay)[1:] + "00000"
             inputstring = ":PULS2:Del {}\r\n".format(self.currentdelay)
             self.bnc.write(inputstring.encode("utf-8"))
             self.bnc.reset_input_buffer()

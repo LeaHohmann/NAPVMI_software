@@ -117,7 +117,7 @@ class IntegrationGui(tk.Frame):
 
         self.root.attributes("-topmost","true")
 
-        self.delayscanrange = numpy.arange(int(self.delayrangestart.get()), int(self.delayrangeend.get()) + 1, int(self.incremententry.get()))
+        self.delayscanrange = numpy.arange(-1*int(self.delayrangestart.get()), -1*(int(self.delayrangeend.get()) + 1), -1*int(self.incremententry.get()))
                 
         self.integratedimage = numpy.zeros((964,1288), int)
 
@@ -131,10 +131,10 @@ class IntegrationGui(tk.Frame):
 
         i = self.delayscanrange[index]
         
-        if i < 1000:
-            currentdelay = "0.000" + str(i) + "00000"
-        elif i<= 2000:
-            currentdelay = "0.00" + str(i) + "00000"
+        if i > -1000:
+            currentdelay = "-0.000" + str(i)[1:] + "00000"
+        elif i >= -2000:
+            currentdelay = "-0.00" + str(i)[1:] + "00000"
         else:
             messagebox.showerror("Error", "Maximum delay is 2000us")
             self.startbutton.configure(state=tk.NORMAL)
@@ -160,7 +160,7 @@ class IntegrationGui(tk.Frame):
         self.lastdelaydisplay.imshow(self.sumimage, cmap="gray", vmin=0)
         self.canvas.draw()
 
-        if i < int(self.delayrangeend.get()) and self.running == True:
+        if i > int(self.delayrangeend.get()) and self.running == True:
             index += 1
             self.after(10, self.delayloop, index)
 
