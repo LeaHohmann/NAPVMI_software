@@ -483,12 +483,19 @@ class CameraApp(tk.Frame):
         filename = filedialog.asksaveasfilename(initialdir="C:/", title="Save array as:", filetypes=(("Binary numpy array file", "*.npy"),("All files","*.*")))
         numpy.save(filename, self.image_data)
 
+        paramfilename = filename[:-4] + "_parameters.txt"
+        self.parametersaver(paramfilename)
+
+
 
 
     def save_asimage(self):
 
         filename = filedialog.asksaveasfilename(initialdir="C:/", title="Save image as:", filetypes=(("PNG files", "*.png"),("All files","*.*")))
         matplotlib.image.imsave(filename, self.image_data, vmin=0, cmap="gray")
+
+        paramfilename = filename[:-4] + "_parameters.txt"
+        self.parametersaver(paramfilename)
 
 
 
@@ -509,18 +516,28 @@ class CameraApp(tk.Frame):
 
     def saveparameterfile(self):
 
+        filename = filedialog.asksaveasfilename(initialdir="C:/", title="Save parameters:", filetypes=(("Text files", "*.txt"),("All files", "*.*")))
+
+        self.parametersaver(filename)
+
+        
+
+    def parametersaver(self,filename):
+
         exposure = self.node_exposuretime.GetValue()
         gain = self.node_gain.GetValue()
+        framecount = int(self.sumimages.get())
         xstart = int(self.xpixelstart.get()) 
         xend = int(self.xpixelend.get()) + 1
         ystart = int(self.ypixelstart.get()) 
         yend = int(self.ypixelend.get()) + 1
 
-        parameters = {"Exposure time": exposure, "Gain": gain, "Lower end x": xstart, "Upper end x": xend, "Lower end y": ystart, "Upper end x": yend}
-        filename = filedialog.asksaveasfilename(initialdir="C:/", title="Save parameters:", filetypes=(("Text files", "*.txt"),("All files", "*.*")))
+        parameters = {"Exposure time": exposure, "Gain": gain, "Number of frames": framecount, "Lower end x": xstart, "Upper end x": xend, "Lower end y": ystart, "Upper end x": yend}
+        
         f = open(filename, "w")
         f.write(str(parameters))
         f.close()
+
 
 
 
@@ -533,6 +550,7 @@ class CameraApp(tk.Frame):
 
         exposuretime = parameters["Exposure time"]
         gain = parameters["Gain"]
+        framecount = parameters["Number of frames"]
         self.node_exposuretime.SetValue(exposuretime)
         self.exposureslider.set(self.node_exposuretime.GetValue())
         self.exposurelabel.configure(text="Exposure time [us]: {}".format(round(self.node_exposuretime.GetValue(),2)))

@@ -286,7 +286,12 @@ class WavelengthGui(tk.Frame):
         
         numpy.savez_compressed(self.filename, **self.imageseries)
 
-        self.parameters = {"Exposure time": self.exposure, "Gain": self.gain, "Number of frames per delay": self.numberofframes, "Delay start": int(self.delayrangestart.get()), "Delay end": int(self.delayrangeend.get()), "Delay increment": int(self.incremententry.get()), "Delay A": self.delaysvector[0], "Delay B": self.currentdelay, "Delay C": self.delaysvector[1], "Delay D": self.delaysvector[2], "Delay E": self.delaysvector[3], "Delay F": self.delaysvector[4], "Delay G": self.delaysvector[5], "Delay H": self.delaysvector[6]}
+        inputstring = "PULS2:DEL?\r\n"
+        self.bnc.write(inputstring.encode("utf-8"))
+        lastline = self.bnc.readline().decode("utf-8")
+        Bdelay = lastline[:-2]
+
+        self.parameters = {"Exposure time": self.exposure, "Gain": self.gain, "Number of frames per wavelength": self.numberofframes, "Wavelength start": int(self.lambdarangestart.get()), "Wavelength end": int(self.lambdarangeend.get()), "Wavelength increment": int(self.incremententry.get()), "Delay A": self.delaysvector[0], "Delay B": Bdelay, "Delay C": self.delaysvector[1], "Delay D": self.delaysvector[2], "Delay E": self.delaysvector[3], "Delay F": self.delaysvector[4], "Delay G": self.delaysvector[5], "Delay H": self.delaysvector[6]}
         
         f = open(self.parameterfilename, "w")
         f.write(str(self.parameters))
