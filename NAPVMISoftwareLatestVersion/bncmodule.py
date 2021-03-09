@@ -173,8 +173,7 @@ class Channel(tk.Frame):
         self.delay = "0"
         self.bnc = unit
 
-        self.timeunits = {"ms": 9, "us": 6, "ns": 3}
-        self.steps = {1: 0, 10: 1, 100: 2}
+        self.timeunits = {"ms": 100000000, "us": 100000, "ns": 100}
 
         self.bncinit()
         self.guiinit()
@@ -244,11 +243,45 @@ class Channel(tk.Frame):
             return
         
         try:
+            if self.delay[0] == "-":
+                self.increment *= -1
+                self.parity = -1
+            else:
+                self.parity = 1
+            dotindex = self.delay.index(".")
+          
             timefactor = self.timeunits[self.timeunit.get()]
-            step = self.steps[self.stepsize.get()]
-            delayindex = step + timefactor
-            newdigit = int(self.delay[-delayindex]) + self.increment
-            newdelay = self.delay[:-delayindex] + str(newdigit) + self.delay[-delayindex+1:]
+            step = int(self.stepsize.get())
+            increment = timefactor*step*self.increment
+            newvalue = int(self.delay[-11:]) + increment
+            
+            if newvalue < 0:
+                newvalue *= -1
+                
+                if int(self.delay[:dotindex]) != 0:
+                    newseconds = int(self.delay[:dotindex]) -1*self.parity
+                    newvalue = 100000000000 - newvalue
+                elif self.parity == -1:
+                    newseconds = self.delay[1:dotindex]
+                else:
+                    newseconds = "-" + self.delay[:dotindex]
+                    
+            else:        
+
+                if len(newvalue) == 11:
+                    newseconds = self.delay[:dotindex]
+        
+                elif len(newvalue) > 11:
+                    newseconds = str(int(self.delay[:dotindex]) + 1*self.parity)
+                    newvalue = newvalue[:-11]
+
+            newdecimals = str(newvalue)
+            if len(newdecimals) < 11:
+                newdecimals.zfill(11)
+
+            newdelay = newseconds + "." + newdecimals
+
+
             inputstring = ":PULS{}:DEL {}\r\n".format(self.number,newdelay)
             self.bnc.write(inputstring.encode("utf-8"))
             lastline = self.bnc.readline().decode("utf-8")
