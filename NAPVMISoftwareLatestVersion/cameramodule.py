@@ -48,6 +48,14 @@ class CameraApp(tk.Frame):
         self.exposureslider = tk.Scale(self.leftframe, from_=40.00, to=32000.00, resolution=30.00, orient=tk.HORIZONTAL, length=200, command=self.exposuretime)
         self.exposureslider.set(self.node_exposuretime.GetValue())
         self.exposureslider.pack(side=tk.TOP, pady=(0,30))
+        
+        self.manualexposureframe = tk.Frame(self.leftframe)
+        self.manualexposureframe.pack(side=tk.TOP, pady=5)
+
+        self.exposureentry = tk.Entry(self.manualexposureframe)
+        self.exposureentry.pack(side=tk.LEFT)
+        self.exposurebutton = tk.Button(self.manualexposureframe, text="Set", command=self.setexposure)
+        self.exposurebutton.pack(side=tk.LEFT, padx=5)
 
         self.gainlabel = tk.Label(self.leftframe, text="Gain: {}".format(round(self.node_gain.GetValue(),2)), anchor=tk.NW, font=("Helvetica",12))
         self.gainlabel.pack(side=tk.TOP, pady=5)
@@ -56,11 +64,18 @@ class CameraApp(tk.Frame):
         self.gainslider.set(self.node_gain.GetValue())
         self.gainslider.pack(side=tk.TOP, pady=(0,30))
 
+        self.manualgainframe = tk.Frame(self.leftframe)
+        self.manualgainframe.pack(side=tk.TOP, pady=5)
+
+        self.gainentry = tk.Entry(self.manualgainframe)
+        self.gainentry.pack(side=tk.LEFT)
+        self.gainbutton = tk.Button(self.manualgainframe, text="Set", command=self.setgain)
+        self.gainbutton.pack(side=tk.LEFT, padx=5)
+
         self.sumimageslabel = tk.Message(self.leftframe, text="Number of frames to sum (single image acquisition, multiframe live):", anchor=tk.NW, font=("Helvetica,12"), width=250)
         self.sumimageslabel.pack(side=tk.TOP, pady=5)
 
-        self.numberofframes = tk.IntVar(self.leftframe, value=1)
-        self.sumimages = tk.Entry(self.leftframe, textvariable=self.numberofframes)
+        self.sumimages = tk.Entry(self.leftframe)
         self.sumimages.pack(side=tk.TOP, pady=(0,30))
 
         self.xpixelframe = tk.Frame(self.leftframe)
@@ -112,10 +127,7 @@ class CameraApp(tk.Frame):
         self.signallabel = tk.Label(self.rightframe, text="Total signal:", font=("Helvetica,11"), anchor=tk.E, background="White")
         self.signallabel.pack(side=tk.TOP,expand=1, fill=tk.X, pady=(0,10))
         
-        self.startlive = tk.Button(self.rightframe, text="Live", command=self.start_singleframelive)
-        self.startlive.pack(side=tk.LEFT, ipadx=5, ipady=5, pady=(0,10))
-
-        self.summedlive = tk.Button(self.rightframe, text="Multiframe live", command=self.start_multiframelive)
+        self.summedlive = tk.Button(self.rightframe, text="Live", command=self.start_multiframelive)
         self.summedlive.pack(side=tk.LEFT, ipadx=5, ipady=5, pady=(0,10))
 
         self.multiframe = tk.Button(self.rightframe, text="Single image", command=self.acquireimage)
@@ -168,11 +180,28 @@ class CameraApp(tk.Frame):
 
 
 
+    def setexposure(self):
+
+        try:
+            self.exposureslider.set(float(self.exposureentry.get()))
+        except KeyError:
+            messagebox.showerror("Error", "Please enter an exposure value to set")
+
+
 
     def exposuretime(self,value):
 
         self.node_exposuretime.SetValue(float(value))
         self.exposurelabel.configure(text="Exposure time [us] : {}".format(round(self.node_exposuretime.GetValue(),2)))
+
+
+    
+    def setgain(self):
+        
+        try:
+            self.gainslider.set(float(self.gainentry.get()))
+        except KeyError:
+            messagebox.showerror("Error", "Please enter a gain value to set")
 
 
     
@@ -221,66 +250,16 @@ class CameraApp(tk.Frame):
         self.camera.BeginAcquisition()
 
 
-
-    def start_singleframelive(self):
-    
-        self.start_liveacquisition()
-        self.startlive.configure(text="Stop", command=self.stop_liveacquisition)
-        self.multiframe.configure(state=tk.DISABLED)
-        self.summedlive.configure(state=tk.DISABLED)
-        self.takexslice.configure(state=tk.DISABLED)
-        self.takeyslice.configure(state=tk.DISABLED)
-        
-        self.imageloop()
-
-
-
+   
     def start_multiframelive(self):
 
         self.start_liveacquisition()
         self.summedlive.configure(text="Stop", command=self.stop_liveacquisition)
         self.multiframe.configure(state=tk.DISABLED)
-        self.startlive.configure(state=tk.DISABLED)
         self.takexslice.configure(state=tk.DISABLED)
         self.takeyslice.configure(state=tk.DISABLED)
 
         self.multiframeloop()
-
-
-
-    def imageloop(self):
-        
-        try:
-            image_result = self.camera.GetNextImage(5000)
-            self.image_data = image_result.GetNDArray()
-
-        except PySpin.SpinnakerException as ex:
-            
-            
-            self.camera.EndAcquisition()
-            self.startlive.configure(text="Live", command=self.start_singleframelive)
-            self.multiframe.configure(state=tk.NORMAL)
-            self.summedlive.configure(state=tk.NORMAL)
-            self.takexslice.configure(state=tk.NORMAL)
-            self.takeyslice.configure(state=tk.NORMAL)
-            messagebox.showerror("Error", "{}".format(ex))
-            return
-
-        self.displayimage()
-        self.integrateimage()
-
-        image_result.Release()
-
-        if self.running == True:
-            self.after(1, self.imageloop)
-        else:
-            self.camera.EndAcquisition()
-            self.signalwarnings.configure(text="")
-            self.startlive.configure(text="Live", command=self.start_singleframelive)
-            self.multiframe.configure(state=tk.NORMAL)
-            self.summedlive.configure(state=tk.NORMAL)
-            self.takexslice.configure(state=tk.NORMAL)
-            self.takeyslice.configure(state=tk.NORMAL)
 
 
 
@@ -315,7 +294,6 @@ class CameraApp(tk.Frame):
                 pass
             self.signalwarnings.configure(text="")
             self.summedlive.configure(text="Multiframe live", command=self.start_multiframelive)
-            self.startlive.configure(state=tk.NORMAL)
             self.multiframe.configure(state=tk.NORMAL)
             self.takexslice.configure(state=tk.NORMAL)
             self.takeyslice.configure(state=tk.NORMAL)
@@ -426,7 +404,7 @@ class CameraApp(tk.Frame):
                     self.camera.EndAcquisition()
                 except PySpin.SpinnakerException:
                     pass
-                messagebox.showerror("Error", "Stopped after {} images: {}".format(i,ex))
+                messagebox.showerror("Error", "Stopped after {} images: {}".format(i-1,ex))
                 self.captureexception = True
                 return
 
@@ -532,7 +510,7 @@ class CameraApp(tk.Frame):
         ystart = int(self.ypixelstart.get()) 
         yend = int(self.ypixelend.get()) + 1
 
-        parameters = {"Exposure time": exposure, "Gain": gain, "Number of frames": framecount, "Lower end x": xstart, "Upper end x": xend, "Lower end y": ystart, "Upper end x": yend}
+        parameters = {"Exposure time": exposure, "Gain": gain, "Number of frames": framecount, "Lower end x": xstart, "Upper end x": xend, "Lower end y": ystart, "Upper end y": yend}
         
         f = open(filename, "w")
         f.write(str(parameters))
@@ -557,6 +535,8 @@ class CameraApp(tk.Frame):
         self.node_gain.SetValue(gain)
         self.gainslider.set(self.node_gain.GetValue())
         self.gainlabel.configure(text="Gain: {}".format(round(self.node_gain.GetValue(),2)))
+        self.sumimages.delete(0,tk.END)
+        self.sumimages.insert(0,str(framecount))
 
 
 
