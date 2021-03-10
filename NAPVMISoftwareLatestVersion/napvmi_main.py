@@ -286,9 +286,6 @@ class Root(tk.Tk):
 
     def quitgui(self):
         
-        if self.camerastatus == "connected" and self.cameragui.startlive["text"] == "Stop":
-            messagebox.showerror("Error", "Acquisition running. Please stop acquisition before closing.")
-            return
         if self.camerastatus == "connected" and self.cameragui.summedlive["text"] == "Stop":
             messagebox.showerror("Error", "Acquisition running. Please stop acquisition before closing.")
             return

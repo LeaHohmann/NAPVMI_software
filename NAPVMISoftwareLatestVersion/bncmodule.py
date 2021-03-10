@@ -241,6 +241,7 @@ class Channel(tk.Frame):
             self.delay = lastline[:-2]
             self.guiupdate()
             return
+
         
         try:
             if self.delay[0] == "-":
@@ -258,26 +259,33 @@ class Channel(tk.Frame):
             if newvalue < 0:
                 newvalue *= -1
                 
-                if int(self.delay[:dotindex]) != 0:
-                    newseconds = int(self.delay[:dotindex]) -1*self.parity
+                if int(self.delay[:dotindex]) != 0 and self.parity == 1:
+                    newseconds = str(int(self.delay[:dotindex]) -1*self.parity)
+                    newvalue = 100000000000 - newvalue
+                elif int(self.delay[:dotindex]) != 0 and self.parity == -1:
+                    newseconds = "-" + str(int(self.delay[:dotindex]) -1*self.parity)
                     newvalue = 100000000000 - newvalue
                 elif self.parity == -1:
                     newseconds = self.delay[1:dotindex]
                 else:
                     newseconds = "-" + self.delay[:dotindex]
+
+                newdecimals = str(newvalue)
+
                     
             else:        
 
-                if len(newvalue) == 11:
+                newdecimals = str(newvalue)
+
+                if len(newdecimals) <= 11:
                     newseconds = self.delay[:dotindex]
         
-                elif len(newvalue) > 11:
+                elif len(newdecimals) > 11:
                     newseconds = str(int(self.delay[:dotindex]) + 1*self.parity)
-                    newvalue = newvalue[:-11]
+                    newdecimals = newdecimals[:-11]
 
-            newdecimals = str(newvalue)
             if len(newdecimals) < 11:
-                newdecimals.zfill(11)
+                newdecimals = newdecimals.zfill(11)
 
             newdelay = newseconds + "." + newdecimals
 

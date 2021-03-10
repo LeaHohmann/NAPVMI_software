@@ -272,8 +272,7 @@ class CameraApp(tk.Frame):
         except ValueError:
             messagebox.showerror("Error", "Set number of frames as integer number")
             self.camera.EndAcquisition()
-            self.summedlive.configure(text="Multiframe live", command=self.start_multiframelive)
-            self.startlive.configure(state=tk.NORMAL)
+            self.summedlive.configure(text="Live", command=self.start_multiframelive)
             self.multiframe.configure(state=tk.NORMAL)
             self.takexslice.configure(state=tk.NORMAL)
             self.takeyslice.configure(state=tk.NORMAL)
@@ -293,7 +292,7 @@ class CameraApp(tk.Frame):
             except PySpin.SpinnakerException:
                 pass
             self.signalwarnings.configure(text="")
-            self.summedlive.configure(text="Multiframe live", command=self.start_multiframelive)
+            self.summedlive.configure(text="Live", command=self.start_multiframelive)
             self.multiframe.configure(state=tk.NORMAL)
             self.takexslice.configure(state=tk.NORMAL)
             self.takeyslice.configure(state=tk.NORMAL)
