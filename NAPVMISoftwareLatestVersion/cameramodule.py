@@ -58,7 +58,7 @@ class CameraApp(tk.Frame):
         self.exposurebutton.pack(side=tk.LEFT, padx=5)
 
         self.gainlabel = tk.Label(self.leftframe, text="Gain: {}".format(round(self.node_gain.GetValue(),2)), anchor=tk.NW, font=("Helvetica",12))
-        self.gainlabel.pack(side=tk.TOP, pady=5)
+        self.gainlabel.pack(side=tk.TOP, pady=(15,5))
 
         self.gainslider = tk.Scale(self.leftframe, from_=-10.75, to=23.05, resolution=0.26, orient=tk.HORIZONTAL, length=200, command=self.gain)
         self.gainslider.set(self.node_gain.GetValue())
@@ -72,11 +72,18 @@ class CameraApp(tk.Frame):
         self.gainbutton = tk.Button(self.manualgainframe, text="Set", command=self.setgain)
         self.gainbutton.pack(side=tk.LEFT, padx=5)
 
-        self.sumimageslabel = tk.Message(self.leftframe, text="Number of frames to sum (single image acquisition, multiframe live):", anchor=tk.NW, font=("Helvetica,12"), width=250)
+        self.sumimageslabel = tk.Message(self.leftframe, text="Number of frames to sum:", anchor=tk.NW, font=("Helvetica,12"), width=250)
         self.sumimageslabel.pack(side=tk.TOP, pady=5)
 
         self.sumimages = tk.Entry(self.leftframe)
         self.sumimages.pack(side=tk.TOP, pady=(0,30))
+
+        self.thresholdlabel = tk.Label(self.leftframe, text="Threshold:", font=("Helvetica",12))
+        self.thresholdlabel.pack(side=tk.TOP, pady=5)
+
+        self.thresholdentry = tk.Entry(self.leftframe)
+        self.thresholdentry.pack(side=tk.TOP, pady=(0,30))
+        self.thresholdentry.insert(tk.END, "0")
 
         self.xpixelframe = tk.Frame(self.leftframe)
         self.xpixelframe.pack(side=tk.TOP, pady=(0,20))
@@ -280,7 +287,13 @@ class CameraApp(tk.Frame):
  
         if self.captureexception == False:
 
-            self.image_data = self.sumimage
+            try:
+                self.threshold = int(self.thresholdentry.get)
+                self.image_data = (self.sumimage > self.threshold) * self.sumimage
+            except ValueError:
+                messagebox.showerror("Error", "Set threshold as integer number. No thresholding performed")
+                self.image_data = self.sumimage
+
             self.displayimage()
             self.integrateimage()
 
@@ -379,7 +392,15 @@ class CameraApp(tk.Frame):
             self.xend = int(self.xpixelend.get()) + 1
             self.ystart = int(self.ypixelstart.get())
             self.yend = int(self.ypixelend.get()) +1
-            self.image_data = self.sumimage[self.ystart:self.yend,self.xstart:self.xend]
+
+            try:
+                self.threshold = int(self.thresholdentry.get)
+                self.image_data = (self.sumimage[self.ystart:self.yend,self.xstart:self.xend] > self.threshold) * self.sumimage[self.ystart:self.yend,self.xstart:self.xend]
+            except ValueError:
+                messagebox.showerror("Error", "Set threshold as integer number. No thresholding performed")
+                self.image_data = self.sumimage[self.ystart:self.yend,self.xstart:self.xend]
+
+
             self.camera.EndAcquisition()
 
         self.sumimages.configure(state=tk.NORMAL)
@@ -416,7 +437,7 @@ class CameraApp(tk.Frame):
         histo, bin_steps = numpy.histogram(self.image_data, bins=[0,32,64,96,128,160,192,224,255], range=(0,256))
         x = [16,48,80,112,144,176,208,240]
         self.imagedisplay.clear()
-        self.imagedisplay.imshow(self.image_data, cmap="gray", vmin=0, vmax=255)
+        self.imagedisplay.imshow(self.image_data, cmap="inferno", vmin=0, vmax=255)
         self.imagedisplay.axhline(y=int(self.ypixelstart.get()), color="red", linewidth=0.3)
         self.imagedisplay.axhline(y=int(self.ypixelend.get()), color="red", linewidth=0.3)
         self.imagedisplay.axvline(x=int(self.xpixelstart.get()), color="red", linewidth=0.3)
@@ -504,12 +525,13 @@ class CameraApp(tk.Frame):
         exposure = self.node_exposuretime.GetValue()
         gain = self.node_gain.GetValue()
         framecount = int(self.sumimages.get())
+        threshold = int(self.thresholdentry.get())
         xstart = int(self.xpixelstart.get()) 
         xend = int(self.xpixelend.get()) + 1
         ystart = int(self.ypixelstart.get()) 
         yend = int(self.ypixelend.get()) + 1
 
-        parameters = {"Exposure time": exposure, "Gain": gain, "Number of frames": framecount, "Lower end x": xstart, "Upper end x": xend, "Lower end y": ystart, "Upper end y": yend}
+        parameters = {"Exposure time": exposure, "Gain": gain, "Number of frames": framecount, "Threshold": threshold, "Lower end x": xstart, "Upper end x": xend, "Lower end y": ystart, "Upper end y": yend}
         
         f = open(filename, "w")
         f.write(str(parameters))
@@ -528,6 +550,7 @@ class CameraApp(tk.Frame):
         exposuretime = parameters["Exposure time"]
         gain = parameters["Gain"]
         framecount = parameters["Number of frames"]
+        threshold = parameters["Threshold"]
         self.node_exposuretime.SetValue(exposuretime)
         self.exposureslider.set(self.node_exposuretime.GetValue())
         self.exposurelabel.configure(text="Exposure time [us]: {}".format(round(self.node_exposuretime.GetValue(),2)))
@@ -536,6 +559,8 @@ class CameraApp(tk.Frame):
         self.gainlabel.configure(text="Gain: {}".format(round(self.node_gain.GetValue(),2)))
         self.sumimages.delete(0,tk.END)
         self.sumimages.insert(0,str(framecount))
+        self.thresholdentry.delete(0,tk.END)
+        self.thresholdentry.insert(0,str(threshold))
 
 
 

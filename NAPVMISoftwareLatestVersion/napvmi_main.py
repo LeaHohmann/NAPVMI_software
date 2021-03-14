@@ -51,6 +51,7 @@ class Root(tk.Tk):
         self.startseries.pack(side=tk.LEFT, ipadx=5, ipady=5)
         self.startlambdaseries = tk.Button(self.startexperimentframe, text="Wavelength series acquisition", command=self.startwavelengthseries, state=tk.DISABLED)
         self.startlambdaseries.pack(side=tk.LEFT, ipadx=5, ipady=5)
+    
 
 
 
