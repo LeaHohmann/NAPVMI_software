@@ -46,7 +46,7 @@ class SeriesGui(tk.Frame):
         self.description = tk.Message(self.leftframe, text="Kinetic series over a range of delays. Please specify delay range, increment and number of frames per delay.", font=("Helvetica",11), width=250)
         self.description.pack(side=tk.TOP, pady=10)
 
-        self.delayrangelabel = tk.Label(self.leftframe, text="Delay range in microseconds (min 0 - max 2000):", font=("Helvetica",12))
+        self.delayrangelabel = tk.Label(self.leftframe, text="Delay range in nanoseconds (min 0 - max 4000):", font=("Helvetica",12))
         self.delayrangelabel.pack(side=tk.TOP, pady=(20,5))
 
         self.delayrangeframe = tk.Frame(self.leftframe)
@@ -127,7 +127,7 @@ class SeriesGui(tk.Frame):
 
         self.intensityvtime.set_xlim(int(self.delayrangestart.get())-5, int(self.delayrangeend.get())+5)
 
-        self.delayscanrange = numpy.arange(-1*int(self.delayrangestart.get()), -1*(int(self.delayrangeend.get()) + 1), -1*int(self.incremententry.get()))
+        self.delayscanrange = numpy.arange(int(self.delayrangestart.get()), (int(self.delayrangeend.get()) + 1), int(self.incremententry.get()))
 
         self.delayloop(0)
 
@@ -137,16 +137,16 @@ class SeriesGui(tk.Frame):
         
         i = self.delayscanrange[index]
         
-        if i > -1000:
-            currentdelay = "-0.000" + str(i)[1:] + "00000"
-        elif i >= -2000:
-            currentdelay = "-0.00" + str(i)[1:] + "00000"
+        if i < 1000:
+            currentdelay = "0.000000" + str(i) + "00"
+        elif i <= 4000:
+            currentdelay = "0.00000" + str(i) + "00"
         else:
-            messagebox.showerror("Error", "Maximum delay is 2000us")
+            messagebox.showerror("Error", "Maximum delay is 4000ns")
             self.startbutton.configure(state=tk.NORMAL)
             return
 
-        inputstring = ":PULS2:DEL {}\r\n".format(currentdelay)
+        inputstring = ":PULS7:DEL {}\r\n".format(currentdelay)
         self.bnc.write(inputstring.encode("utf-8"))
         lastline = self.bnc.readline().decode("utf-8")
 
@@ -159,8 +159,8 @@ class SeriesGui(tk.Frame):
             self.stopbutton.pack_forget()
             return 
             
-        self.imageseries[str(i)[1:]] = self.sumimage
-        self.delaylist.append(i*(-1))
+        self.imageseries[str(i)] = self.sumimage
+        self.delaylist.append(i)
         self.totalintensities.append(numpy.sum(self.sumimage))
 
         self.lastdelaydisplay.clear()
@@ -169,7 +169,7 @@ class SeriesGui(tk.Frame):
         self.intensityvtime.plot(self.delaylist, self.totalintensities)
         self.canvas.draw()
 
-        if i > int(self.delayrangeend.get()) and self.running == True:
+        if i < int(self.delayrangeend.get()) and self.running == True:
             index += 1
             self.after(10, self.delayloop, index)
 
