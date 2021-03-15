@@ -85,6 +85,13 @@ class CameraApp(tk.Frame):
         self.thresholdentry.pack(side=tk.TOP, pady=(0,30))
         self.thresholdentry.insert(tk.END, "0")
 
+        self.colorrangelabel = tk.Label(self.leftframe, text="Color map range end:", font=("Helvetica",12))
+        self.colorrangelabel.pack(side=tk.TOP, pady=5)
+
+        self.colorrangeentry = tk.Entry(self.leftframe)
+        self.colorrangeentry.pack(side=tk.TOP,pady=(0,30))
+        self.colorrangeentry.insert(tk.END,"255")
+
         self.xpixelframe = tk.Frame(self.leftframe)
         self.xpixelframe.pack(side=tk.TOP, pady=(0,20))
 
@@ -434,10 +441,15 @@ class CameraApp(tk.Frame):
 
     def displayimage(self):
         
+        try:
+            self.colorrange = int(self.colorrangeentry.get())
+        except ValueError:
+            self.colorrange = 255
+
         histo, bin_steps = numpy.histogram(self.image_data, bins=[0,32,64,96,128,160,192,224,255], range=(0,256))
         x = [16,48,80,112,144,176,208,240]
         self.imagedisplay.clear()
-        self.imagedisplay.imshow(self.image_data, cmap="inferno", vmin=0, vmax=255)
+        self.imagedisplay.imshow(self.image_data, cmap="inferno", vmin=0, vmax=self.colorrange)
         self.imagedisplay.axhline(y=int(self.ypixelstart.get()), color="red", linewidth=0.3)
         self.imagedisplay.axhline(y=int(self.ypixelend.get()), color="red", linewidth=0.3)
         self.imagedisplay.axvline(x=int(self.xpixelstart.get()), color="red", linewidth=0.3)
