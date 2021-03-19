@@ -139,14 +139,18 @@ class SeriesGui(tk.Frame):
         
         if i < 1000:
             currentdelay = "0.000000" + str(i) + "00"
-        elif i <= 4000:
+        elif i < 10000:
             currentdelay = "0.00000" + str(i) + "00"
+        elif i < 100000:
+            currentdelay = "0.0000" + str(i) + "00"
+        elif i < 1000000:
+            currentdelay = "0.000" + str(i) + "00"
         else:
-            messagebox.showerror("Error", "Maximum delay is 4000ns")
+            messagebox.showerror("Error", "Maximum delay is 1000000ns")
             self.startbutton.configure(state=tk.NORMAL)
             return
 
-        inputstring = ":PULS7:DEL {}\r\n".format(currentdelay)
+        inputstring = ":PULS4:DEL {}\r\n".format(currentdelay)
         self.bnc.write(inputstring.encode("utf-8"))
         lastline = self.bnc.readline().decode("utf-8")
 
@@ -183,7 +187,7 @@ class SeriesGui(tk.Frame):
         
         numpy.savez_compressed(self.filename, **self.imageseries)
 
-        self.parameters = {"Exposure time": self.exposure, "Gain": self.gain, "Number of frames per delay": self.numberofframes, "Delay start": int(self.delayrangestart.get()), "Delay end": int(self.delayrangeend.get()), "Delay increment": int(self.incremententry.get()), "Delay A": self.delaysvector[0], "Delay C": self.delaysvector[1], "Delay D": self.delaysvector[2], "Delay E": self.delaysvector[3], "Delay F": self.delaysvector[4], "Delay G": self.delaysvector[5], "Delay H": self.delaysvector[6]}
+        self.parameters = {"Exposure time": self.exposure, "Gain": self.gain, "Number of frames per delay": self.numberofframes, "Delay start": int(self.delayrangestart.get()), "Delay end": int(self.delayrangeend.get()), "Delay increment": int(self.incremententry.get()), "Delay A": self.delaysvector[0], "Delay B": self.delaysvector[1], "Delay C": self.delaysvector[2], "Delay E": self.delaysvector[3], "Delay F": self.delaysvector[4], "Delay G": self.delaysvector[5], "Delay H": self.delaysvector[6]}
         
         f = open(self.parameterfilename, "w")
         f.write(str(self.parameters))

@@ -230,7 +230,7 @@ class Root(tk.Tk):
 
     def checkdelays(self):
 
-        channelnumbersvector = [1,3,4,5,6,7,8]
+        channelnumbersvector = [1,2,3,5,6,7,8]
         self.delaysvector = []
         for i in channelnumbersvector:
             inputstring = ":PULS{}:DEL?\r\n".format(i)
