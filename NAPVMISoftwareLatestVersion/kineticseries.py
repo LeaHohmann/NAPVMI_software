@@ -150,7 +150,7 @@ class SeriesGui(tk.Frame):
             self.startbutton.configure(state=tk.NORMAL)
             return
 
-        inputstring = ":PULS4:DEL {}\r\n".format(currentdelay)
+        inputstring = ":PULS7:DEL {}\r\n".format(currentdelay)
         self.bnc.write(inputstring.encode("utf-8"))
         lastline = self.bnc.readline().decode("utf-8")
 
