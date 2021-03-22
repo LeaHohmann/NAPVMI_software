@@ -77,6 +77,7 @@ class CameraApp(tk.Frame):
 
         self.sumimages = tk.Entry(self.leftframe)
         self.sumimages.pack(side=tk.TOP, pady=(0,30))
+        self.sumimages.insert(tk.END, "1")
 
         self.thresholdlabel = tk.Label(self.leftframe, text="Threshold:", font=("Helvetica",12))
         self.thresholdlabel.pack(side=tk.TOP, pady=5)
@@ -85,12 +86,19 @@ class CameraApp(tk.Frame):
         self.thresholdentry.pack(side=tk.TOP, pady=(0,30))
         self.thresholdentry.insert(tk.END, "0")
 
+        self.colorrangeframe = tk.Frame(self.leftframe)
+        self.colorrangeframe.pack(side=tk.TOP, pady=(0.20))
+
         self.colorrangelabel = tk.Label(self.leftframe, text="Color map range end:", font=("Helvetica",12))
         self.colorrangelabel.pack(side=tk.TOP, pady=5)
 
-        self.colorrangeentry = tk.Entry(self.leftframe)
-        self.colorrangeentry.pack(side=tk.TOP,pady=(0,30))
-        self.colorrangeentry.insert(tk.END,"255")
+        self.colorrangelower = tk.Entry(self.leftframe)
+        self.colorrangelower.pack(side=tk.LEFT,pady=(0,30))
+        self.colorrangelower.insert(tk.END,"0")
+
+        self.colorrangeupper = tk.Entry(self.leftframe)
+        self.colorrangeupper.pack(side=tk.LEFT,pady=(0,30))
+        self.colorrangeupper.insert(tk.END,"255")
 
         self.xpixelframe = tk.Frame(self.leftframe)
         self.xpixelframe.pack(side=tk.TOP, pady=(0,20))
@@ -285,6 +293,8 @@ class CameraApp(tk.Frame):
             self.getmultiframeimage()
         except ValueError:
             messagebox.showerror("Error", "Set number of frames as integer number")
+            self.sumimages.delete(0,tk.END)
+            self.sumimages.inser(tk.END,"1")
             self.camera.EndAcquisition()
             self.summedlive.configure(text="Live", command=self.start_multiframelive)
             self.multiframe.configure(state=tk.NORMAL)
@@ -294,13 +304,8 @@ class CameraApp(tk.Frame):
  
         if self.captureexception == False:
 
-            try:
-                self.threshold = int(self.thresholdentry.get())
-                self.image_data = (self.sumimage > self.threshold) * self.sumimage
-            except ValueError:
-                messagebox.showerror("Error", "Set threshold as integer number. No thresholding performed")
-                self.image_data = self.sumimage
-
+            self.image_data = self.sumimage
+            
             self.displayimage()
             self.integrateimage()
 
@@ -442,14 +447,27 @@ class CameraApp(tk.Frame):
     def displayimage(self):
         
         try:
-            self.colorrange = int(self.colorrangeentry.get())
+            self.uppercrange = int(self.colorrangeupper.get())
+            self.lowercrange = int(self.colorrangelower.get())
         except ValueError:
-            self.colorrange = 255
+            self.uppercrange = 255
+            self.lowercrange = 0
+
+        try:
+            self.threshold = int(self.thresholdentry.get())
+            displayimage = (self.image_data > self.threshold) * self.image_data
+        except ValueError:
+            messagebox.showerror("Error", "Set threshold as integer number. No thresholding performed")
+            self.thresholdentry.delete(0,tk.END)
+            self.thresholdentry.insert(tk.END,"0")
+            displayimage = self.image_data
+
+
 
         histo, bin_steps = numpy.histogram(self.image_data, bins=[0,32,64,96,128,160,192,224,255], range=(0,256))
         x = [16,48,80,112,144,176,208,240]
         self.imagedisplay.clear()
-        self.imagedisplay.imshow(self.image_data, cmap="inferno", vmin=0, vmax=self.colorrange)
+        self.imagedisplay.imshow(displayimage, cmap="inferno", vmin=self.lowercrange, vmax=self.uppercrange)
         self.imagedisplay.axhline(y=int(self.ypixelstart.get()), color="red", linewidth=0.3)
         self.imagedisplay.axhline(y=int(self.ypixelend.get()), color="red", linewidth=0.3)
         self.imagedisplay.axvline(x=int(self.xpixelstart.get()), color="red", linewidth=0.3)
@@ -491,6 +509,9 @@ class CameraApp(tk.Frame):
     def save_asarray(self):
         
         filename = filedialog.asksaveasfilename(initialdir="C:/", title="Save array as:", filetypes=(("Binary numpy array file", "*.npy"),("All files","*.*")))
+        if filename[-4:] != ".npy"
+            filename = filename + ".npy"
+        
         numpy.save(filename, self.image_data)
 
         paramfilename = filename[:-4] + "_parameters.txt"
