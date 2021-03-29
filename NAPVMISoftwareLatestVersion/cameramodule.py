@@ -509,7 +509,7 @@ class CameraApp(tk.Frame):
     def save_asarray(self):
         
         filename = filedialog.asksaveasfilename(initialdir="C:/", title="Save array as:", filetypes=(("Binary numpy array file", "*.npy"),("All files","*.*")))
-        if filename[-4:] != ".npy"
+        if filename[-4:] != ".npy":
             filename = filename + ".npy"
         
         numpy.save(filename, self.image_data)
