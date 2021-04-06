@@ -89,16 +89,20 @@ class CameraApp(tk.Frame):
         self.colorrangeframe = tk.Frame(self.leftframe)
         self.colorrangeframe.pack(side=tk.TOP, pady=(0.20))
 
-        self.colorrangelabel = tk.Label(self.leftframe, text="Color map range end:", font=("Helvetica",12))
+        self.colorrangelabel = tk.Label(self.colorrangeframe, text="Color map range end:", font=("Helvetica",12))
         self.colorrangelabel.pack(side=tk.TOP, pady=5)
 
-        self.colorrangelower = tk.Entry(self.leftframe)
+        self.colorrangelower = tk.Entry(self.colorrangeframe)
         self.colorrangelower.pack(side=tk.LEFT,pady=(0,30))
         self.colorrangelower.insert(tk.END,"0")
 
-        self.colorrangeupper = tk.Entry(self.leftframe)
+        self.colorrangeupper = tk.Entry(self.colorrangeframe)
         self.colorrangeupper.pack(side=tk.LEFT,pady=(0,30))
         self.colorrangeupper.insert(tk.END,"255")
+
+        self.autovar = tk.IntVar()
+        self.rangeauto = tk.Checkbutton(self.colorrangeframe, text="Auto", variable=self.autovar)
+        self.rangeauto.pack()
 
         self.xpixelframe = tk.Frame(self.leftframe)
         self.xpixelframe.pack(side=tk.TOP, pady=(0,20))
@@ -467,7 +471,10 @@ class CameraApp(tk.Frame):
         histo, bin_steps = numpy.histogram(self.image_data, bins=[0,32,64,96,128,160,192,224,255], range=(0,256))
         x = [16,48,80,112,144,176,208,240]
         self.imagedisplay.clear()
-        self.imagedisplay.imshow(displayimage, cmap="inferno", vmin=self.lowercrange, vmax=self.uppercrange)
+        if self.autovar == 0:
+            self.imagedisplay.imshow(displayimage, cmap="inferno", vmin=self.lowercrange, vmax=self.uppercrange)
+        else:
+            self.imagedisplay.imshow(displayimage, cmap="inferno")
         self.imagedisplay.axhline(y=int(self.ypixelstart.get()), color="red", linewidth=0.3)
         self.imagedisplay.axhline(y=int(self.ypixelend.get()), color="red", linewidth=0.3)
         self.imagedisplay.axvline(x=int(self.xpixelstart.get()), color="red", linewidth=0.3)
