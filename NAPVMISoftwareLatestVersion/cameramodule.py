@@ -101,7 +101,7 @@ class CameraApp(tk.Frame):
         self.colorrangeupper.insert(tk.END,"255")
 
         self.autovar = tk.IntVar()
-        self.rangeauto = tk.Checkbutton(self.colorrangeframe, text="Auto", variable=self.autovar)
+        self.rangeauto = tk.Checkbutton(self.colorrangeframe, text="Auto", variable=self.autovar, onvalue=1, offvalue=0)
         self.rangeauto.pack()
 
         self.xpixelframe = tk.Frame(self.leftframe)
@@ -471,7 +471,7 @@ class CameraApp(tk.Frame):
         histo, bin_steps = numpy.histogram(self.image_data, bins=[0,32,64,96,128,160,192,224,255], range=(0,256))
         x = [16,48,80,112,144,176,208,240]
         self.imagedisplay.clear()
-        if self.autovar == 0:
+        if self.autovar.get() == 0:
             self.imagedisplay.imshow(displayimage, cmap="inferno", vmin=self.lowercrange, vmax=self.uppercrange)
         else:
             self.imagedisplay.imshow(displayimage, cmap="inferno")
