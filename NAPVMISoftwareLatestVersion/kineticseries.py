@@ -29,6 +29,8 @@ class SeriesGui(tk.Frame):
         node_bufferhandling = PySpin.CEnumerationPtr(streamnodemap.GetNode("StreamBufferHandlingMode"))
         node_bufferhandling.SetIntValue(node_bufferhandling.GetEntryByName("NewestOnly").GetValue())
 
+        self.channelnumbers = {"A": 1, "B": 2, "C": 3, "D": 4, "E": 5, "F": 6, "G": 7, "H": 8}
+
         self.erroroccurrence = False
 
         self.guiinit()
@@ -45,6 +47,10 @@ class SeriesGui(tk.Frame):
 
         self.description = tk.Message(self.leftframe, text="Kinetic series over a range of delays. Please specify delay range, increment and number of frames per delay.", font=("Helvetica",11), width=250)
         self.description.pack(side=tk.TOP, pady=10)
+
+        self.channelname = tk.StringVar(self.leftframe)
+        self.channeltuner = tk.OptionsMenu(self.leftframe, self.channelname, "A", "B", "C", "D", "E", "F", "G", "H")
+        self.channeltuner.pack(side=tk.TOP,pady=(20,5))
 
         self.delayrangelabel = tk.Label(self.leftframe, text="Delay range in nanoseconds (min 0 - max 4000):", font=("Helvetica",12))
         self.delayrangelabel.pack(side=tk.TOP, pady=(20,5))
@@ -107,6 +113,9 @@ class SeriesGui(tk.Frame):
         self.node_framecount = PySpin.CIntegerPtr(self.nodemap.GetNode("AcquisitionFrameCount"))
         self.node_framecount.SetValue(self.numberofframes)
 
+        channelname = self.channelname.get()
+        self.channelnumber = self.channelnumbers(channelname)
+
         self.startbutton.configure(state=tk.DISABLED)
 
         self.filename = filedialog.asksaveasfilename(initialdir="C:/", title="Choose experiment file name", filetypes=(("numpy zip archive", "*.npz"),("All files", "*.*")))
@@ -150,7 +159,7 @@ class SeriesGui(tk.Frame):
             self.startbutton.configure(state=tk.NORMAL)
             return
 
-        inputstring = ":PULS7:DEL {}\r\n".format(currentdelay)
+        inputstring = ":PULS{}:DEL {}\r\n".format(self.channelnumer,currentdelay)
         self.bnc.write(inputstring.encode("utf-8"))
         lastline = self.bnc.readline().decode("utf-8")
 
