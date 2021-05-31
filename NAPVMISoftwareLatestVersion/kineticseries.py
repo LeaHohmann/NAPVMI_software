@@ -47,9 +47,12 @@ class SeriesGui(tk.Frame):
 
         self.description = tk.Message(self.leftframe, text="Kinetic series over a range of delays. Please specify delay range, increment and number of frames per delay.", font=("Helvetica",11), width=250)
         self.description.pack(side=tk.TOP, pady=10)
+        
+        self.channellabel = tk.Label(self.leftframe, text="Channel to scan:", anchor=tk.NW, font=("Helvetica",12))
+        self.channellabel.pack()
 
         self.channelname = tk.StringVar(self.leftframe)
-        self.channeltuner = tk.OptionsMenu(self.leftframe, self.channelname, "A", "B", "C", "D", "E", "F", "G", "H")
+        self.channeltuner = tk.OptionMenu(self.leftframe, self.channelname, "A", "B", "C", "D", "E", "F", "G", "H")
         self.channeltuner.pack(side=tk.TOP,pady=(20,5))
 
         self.delayrangelabel = tk.Label(self.leftframe, text="Delay range in nanoseconds (min 0 - max 4000):", font=("Helvetica",12))
@@ -114,7 +117,7 @@ class SeriesGui(tk.Frame):
         self.node_framecount.SetValue(self.numberofframes)
 
         channelname = self.channelname.get()
-        self.channelnumber = self.channelnumbers(channelname)
+        self.channelnumber = self.channelnumbers[channelname]
 
         self.startbutton.configure(state=tk.DISABLED)
 
@@ -159,7 +162,7 @@ class SeriesGui(tk.Frame):
             self.startbutton.configure(state=tk.NORMAL)
             return
 
-        inputstring = ":PULS{}:DEL {}\r\n".format(self.channelnumer,currentdelay)
+        inputstring = ":PULS{}:DEL {}\r\n".format(self.channelnumber,currentdelay)
         self.bnc.write(inputstring.encode("utf-8"))
         lastline = self.bnc.readline().decode("utf-8")
 
