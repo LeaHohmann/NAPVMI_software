@@ -25,14 +25,17 @@ class MotorApp(tk.Tk):
 
         self.serialnumbers = {"X": "20052-011", "Y": "20052-012", "Z": "20052-013", "R": "20052-014"}
 
-        self.statusframe = tk.Frame(self)
-        self.statusframe.pack(side=tk.LEFT)
+        self.statusframe = tk.Frame(self, height=300, width=400)
+        self.statusframe.pack(side=tk.LEFT,padx=5)
+        self.statusframe.pack_propagate(0)
 
-        self.controlframe = tk.Frame(self)
-        self.controlframe.pack(side=tk.LEFT)
+        self.controlframe = tk.Frame(self, height=300, width=400)
+        self.controlframe.pack(side=tk.LEFT, padx=5)
+        self.controlframe.pack_propagate(0)
 
-        self.menuframe = tk.Frame(self)
-        self.menuframe.pack(side=tk.LEFT)
+        self.menuframe = tk.Frame(self, height=300, width=240)
+        self.menuframe.pack(side=tk.LEFT, padx=5)
+        self.menuframe.pack_propagate(0)
         
         self.xlimits = (-5000,5000)
         self.ylimits = (-4500,4500)
@@ -44,8 +47,9 @@ class MotorApp(tk.Tk):
         self.today = date.today()
 
         self.portnum = 1
-        self.portconnect()
-       
+        
+        self.connectbutton = tk.Button(self.controlframe, text="Connect to motors", command=self.portconnect)
+        self.connectbutton.pack(side=tk.TOP)
 
 
     
@@ -95,7 +99,7 @@ class MotorApp(tk.Tk):
                 return
 
         if self.globalstatus == 4:
-
+        
             self.loadcurrent()
             
        
@@ -131,23 +135,23 @@ class MotorApp(tk.Tk):
     
         self.xport.write("PACT\r\n".encode("utf-8"))
         response = self.xport.readline().decode("utf-(").split(",")
-        xselfloc = response[3][0:-2]
+        xselfloc = response[2][0:-5]
         self.yport.write("PACT\r\n".encode("utf-8"))
         response = self.yport.readline().decode("utf-(").split(",")
-        yselfloc = response[3][0:-2]
+        yselfloc = response[2][0:-5]
         self.zport.write("PACT\r\n".encode("utf-8"))
         response = self.zport.readline().decode("utf-(").split(",")
-        zselfloc = response[3][0:-2]
+        zselfloc = response[2][0:-5]
         self.rport.write("PACT\r\n".encode("utf-8"))
         response = self.rport.readline().decode("utf-(").split(",")
-        rselfloc = response[3][0:-2]
+        rselfloc = response[2][0:-5]
         
         f = open("current.txt", "r")
         current = ast.literal_eval(f.read())
         f.close()
         
         if xselfloc != current["X"] or yselfloc != current["Y"] or zselfloc != current["Z"] or rselfloc != current["R"]:
-            result = messagebox.askyesnocancel("The position information stored on motors does not match the current position file. Last position on file (saved on {}) is: X: {}, Y: {}, Z: {}, R: {}. Last position on motors is: X: {}, Y: {}, Z: {}, R: {}. Would you like to overwrite current file position with motor position? If yes, click YES. If you would like to use file position instead, click NO (this will override motor saved positions). Else click CANCEL, program will be closed and position file opened for edit.".format(current["date"],current["X"],current["Y"],current["Z"],current["R"]))
+            result = messagebox.askyesnocancel("Out of sync","The position information stored on motors does not match the current position file. Last position on file (saved on {}) is: X: {}, Y: {}, Z: {}, R: {}. Last position on motors is: X: {}, Y: {}, Z: {}, R: {}. Would you like to overwrite current file position with motor position? If yes, click YES. If you would like to use file position instead, click NO (this will override motor saved positions). Else click CANCEL, program will be closed and position file opened for edit.".format(current["date"],current["X"],current["Y"],current["Z"],current["R"],xselfloc,yselfloc,zselfloc,rselfloc))
         
             if result:
                 
@@ -160,13 +164,14 @@ class MotorApp(tk.Tk):
                 current = {"date": self.today.strftime("%y%m%d"), "X": xselfloc, "Y": yselfloc, "Z": zselfloc, "R": rselfloc}
                 f.write(str(current))
                 f.close()
+                
+                self.initiatemotors(xpos,ypos,zpos,rpos)
 
                 
             elif result is None:
             
                 subprocess.call(["cmd.exe", "/c", "current.txt"])
                 self.closegui()
-                return
                 
             else:
             
@@ -187,10 +192,13 @@ class MotorApp(tk.Tk):
                 inputstring = "PACT,{}\r\n".format(rpos)
                 self.rport.write(inputstring.encode("utf-8"))
                 lastline = self.rport.readline()
+                
+                self.initiatemotors(xpos,ypos,zpos,rpos)
+        
                        
 
         else:
-            result = messagebox.askquestion("The last used position (saved on {}) is: X: {}, Y: {}, Z: {}, R: {}. Would you like to set this as current position (only click yes, if position has not been changed since then)? If no, the program will be closed and the position storage file will be opened for edit. Edit the position and run program again.".format(current["date"],current["X"],current["Y"],current["Z"],current["R"]))
+            result = messagebox.askquestion("Confirm position", "The last used position (saved on {}) is: X: {}, Y: {}, Z: {}, R: {}. Would you like to set this as current position (only click yes, if position has not been changed since then)? If no, the program will be closed and the position storage file will be opened for edit. Edit the position and run program again.".format(current["date"],current["X"],current["Y"],current["Z"],current["R"]))
         
             if result == "yes":
         
@@ -198,6 +206,8 @@ class MotorApp(tk.Tk):
                 ypos = current["Y"]
                 zpos = current["Z"]
                 rpos = current["R"]
+                
+                self.initiatemotors(xpos,ypos,zpos,rpos)
             
             
             else:
@@ -206,9 +216,12 @@ class MotorApp(tk.Tk):
                 self.closegui()
                 return
                 
-                
+        
+
+    def initiatemotors(self,xpos,ypos,zpos,rpos):
+
         self.x = Motor(self,"X",self.xport,xpos,self.xlimits)
-        self.y = Motor(self,"Y",self.Yport,ypos,self.ylimits)
+        self.y = Motor(self,"Y",self.yport,ypos,self.ylimits)
         self.z = Motor(self,"Z",self.zport,zpos,self.zlimits)  
         self.r = Motor(self,"R",self.rport,rpos,self.rlimits)
         
@@ -220,6 +233,8 @@ class MotorApp(tk.Tk):
         self.fourththread()
         self.fifththread()
         
+        self.globalstatus = 5
+        self.connectbutton.destroy()
         self.guiinit()
         
         
@@ -230,17 +245,17 @@ class MotorApp(tk.Tk):
         #Status frame
         
         self.statusheader = tk.Label(self.statusframe, text="Error Log", font=("Helvetica",14))
-        self.statusheader.pack(side=tk.TOP)
+        self.statusheader.pack(side=tk.TOP, pady=(5,10))
         
-        self.errorlog = scroll.ScrolledText(self.statusframe, width = 50, height = 20, font=("Courier",12))
+        self.errorlog = scroll.ScrolledText(self.statusframe, width = 40, height = 20, font=("Courier",12))
         self.errorlog.pack(side=tk.TOP)
-        self.errorlog.insert(tk.END, "Error log\n")
+        self.errorlog.insert(tk.END, "{}\n".format(self.today.strftime("%y%m%d")))
         
         
         #Control frame
         
         self.controlheader = tk.Label(self.controlframe, text="Motor control", font=("Helvetica",14))
-        self.controlheader.pack(side=tk.TOP)
+        self.controlheader.pack(side=tk.TOP, pady=(5,50))
         
         self.x.guipack()
         self.y.guipack()
@@ -254,19 +269,22 @@ class MotorApp(tk.Tk):
         #Menu frame
         
         self.menuheader = tk.Label(self.menuframe, text="Saved positions", font=("Helvetica",14))
-        self.menuheader.pack(side=tk.TOP)
+        self.menuheader.pack(side=tk.TOP, pady=(5,50))
         
         self.nofavlabel = tk.Label(self.menuframe, text="There are no saved positions availale")
         
-        self.favourites = tk.Listbox(self.menuframe, selectmode=tk.SINGLE)
+        self.favframe = tk.Frame(self.menuframe)
+        self.favframe.pack(side=tk.TOP,pady=(5,10))
+        
+        self.favourites = tk.Listbox(self.favframe, selectmode=tk.SINGLE)
         
         self.menubuttonframe = tk.Frame(self.menuframe)
-        self.menubuttonframe.pack(side=tk.TOP, pady=(10,0))
+        self.menubuttonframe.pack(side=tk.TOP)
         
-        self.savebutton = tk.Button(self.menubuttonframe, text="Save current position", command=self.savefavourite)
+        self.savebutton = tk.Button(self.menubuttonframe, text="Save current", command=self.savefavourite)
         self.savebutton.pack(side=tk.LEFT)
         
-        self.setbutton = tk.Button(self.menubuttonframe, text="Set chosen position", command=self.setfavourite)
+        self.setbutton = tk.Button(self.menubuttonframe, text="Set position", command=self.setfavourite)
         
         self.loadfavourites()
         
@@ -278,6 +296,7 @@ class MotorApp(tk.Tk):
         
             self.nofavlabel.pack(side=tk.TOP,pady=5)
             self.favs = {}
+            self.nofavs = True
             
         else:
             
@@ -285,19 +304,22 @@ class MotorApp(tk.Tk):
             self.favs = ast.literal_eval(f.read())
             f.close()
             
-            self.favourits.pack(side=tk.TOP)
+            self.favourites.pack(side=tk.TOP)
         
-            for i in favs.keys():
+            for i in self.favs.keys():
                 
-                self.favourits.insert(tk.END, i)
+                self.favourites.insert(tk.END, i)
             
             self.setbutton.pack(side=tk.LEFT)
+            
+            self.nofavs = False
         
         
         
     def secondthread(self):
         
         t2 = threading.Thread(target=self.x.update)
+        t2.daemon = True
         t2.start()
         
         
@@ -305,6 +327,7 @@ class MotorApp(tk.Tk):
     def thirdthread(self):
     
         t3 = threading.Thread(target=self.y.update)
+        t3.daemon = True
         t3.start()
         
         
@@ -312,6 +335,7 @@ class MotorApp(tk.Tk):
     def fourththread(self):
     
         t4 = threading.Thread(target=self.z.update)
+        t4.daemon = True
         t4.start()
         
         
@@ -319,8 +343,8 @@ class MotorApp(tk.Tk):
     def fifththread(self):
     
         t5 = threading.Thread(target=self.r.update)
+        t5.daemon = True
         t5.start()
-        
         
            
 
@@ -362,7 +386,7 @@ class MotorApp(tk.Tk):
 
     def setfavourite(self):
         
-        choice = str(self.favourites.get(int(self.favourites.curselection)))
+        choice = str(self.favourites.get(self.favourites.curselection()))
         setposition = self.favs[choice]
         succesfulmoves = 0
         
@@ -410,14 +434,21 @@ class MotorApp(tk.Tk):
         f.write(str(self.favs))
         f.close()
         
-        self.favourits.insert(tk.END, newname)
+        self.favourites.insert(tk.END, newname)
         
-  
-
+        self.popup.destroy()
+        
+        if self.nofavs:
+            
+            self.nofavlabel.pack_forget()
+            self.favourites.pack()
+            self.setbutton.pack()
+        
+        
    
     def closegui(self):
         
-        if self.globalstatus == 4:
+        if self.globalstatus == 5:
         
             xmoving = self.x.querymovement()
             ymoving = self.y.querymovement()
@@ -449,6 +480,17 @@ class MotorApp(tk.Tk):
             
             self.destroy()
             
+            
+        elif self.globalstatus == 4:
+        
+            self.xport.close()
+            self.yport.close()
+            self.zport.close()
+            self.rport.close()
+            
+            self.destroy()
+        
+            
         else:
         
             self.destroy()
@@ -473,11 +515,10 @@ class Motor():
     
     def guiinit(self):
     
-        
         self.frame = tk.Frame(self.master.controlframe)
-        self.Label = tk.Label(self.frame, text="Motor X", font=("Helvetica",12))
+        self.Label = tk.Label(self.frame, text="Motor {}".format(self.name), font=("Helvetica",12))
         self.Label.pack(side=tk.LEFT, padx=(0,5))
-        self.poslabel = tk.Label(self.frame, text=self.pos, font=("Helvetica",12))
+        self.poslabel = tk.Label(self.frame, text=self.pos, font=("Helvetica",12), width=10)
         self.poslabel.pack(side=tk.LEFT, padx=5)
         self.entry = tk.Entry(self.frame)
         self.entry.pack(side=tk.LEFT, padx=5)
@@ -502,7 +543,7 @@ class Motor():
         
             self.motor.write("PACT\r\n".encode("utf-8"))
             response = self.motor.readline().decode("utf-(").split(",")
-            self.pos = response[3][0:-2]
+            self.pos = response[2][0:-5]
             
             self.poslabel.configure(text=self.pos)
             
@@ -514,7 +555,7 @@ class Motor():
 
         try:
             self.newpos = int(self.entry.get())
-        except KeyError:
+        except ValueError:
             messagebox.showerror("Error", "Please enter a position to set")
             return
             
@@ -526,10 +567,10 @@ class Motor():
             self.motor.write(inputstring.encode("utf-8"))
             response = self.motor.readline().decode("utf-8").split(",")
             if len(response) > 2:
-                if response[3][:-2] in self.master.errorcodes:
-                    errormsg = "Motor {}: {} ({})\n".format(self.name,response[3][:-2],self.errorcodes[response[3][:-2]])
+                if response[2][:-2] in self.master.errorcodes:
+                    errormsg = "Motor {}: {} ({})\n".format(self.name,response[2][:-2],self.errorcodes[response[2][:-2]])
                 else:
-                    errormsg = "Motor {}: {}\n".format(self.name, response[3][:-2])
+                    errormsg = "Motor {}: {}\n".format(self.name, response[2][:-2])
                 self.master.errorlog.insert(tk.END, errormsg)
                 
             self.master.running = True
@@ -537,7 +578,7 @@ class Motor():
             
         else:
         
-            messagebox.showerror("Out of Range", "Value set for this motor is out of range. Motor range limits are: {}".format(limits))
+            messagebox.showerror("Out of Range", "Value set for this motor is out of range. Motor range limits are: {}".format(self.limits))
             
             
             
@@ -547,10 +588,10 @@ class Motor():
         self.motor.write(inputstring.encode("utf-8"))
         response = self.motor.readline().decode("utf-8").split(",")
         if len(response) > 2:
-            if response[3][:-2] in self.master.errorcodes:
-                errormsg = "Motor X: {} ({})\n".format(response[3][:-2],self.master.errorcodes[response[3][:-2]])
+            if response[2][:-2] in self.master.errorcodes:
+                errormsg = "Motor X: {} ({})\n".format(response[2][:-2],self.master.errorcodes[response[2][:-2]])
             else:
-                errormsg = "Motor X: {}\n".format(response[3][:-2])
+                errormsg = "Motor X: {}\n".format(response[2][:-2])
             self.master.errorlog.insert(tk.END, errormsg)
             
     
@@ -580,12 +621,12 @@ class Motor():
     
         self.master.running = False
         
-        self.motor.write("SER".encode("utf-8"))
+        self.motor.write("SER\r\n".encode("utf-8"))
         response = self.motor.readline().decode("utf-8").split(",")
         
         self.master.running = True
         
-        statusflag = response[1]
+        statusflag = response[0]
         binstatus = bin(int(statusflag[2:], base=16))
         
         if binstatus[-7] == "1":
