@@ -584,15 +584,19 @@ class Motor():
             
     def moveto(self,newposition):
     
+        self.master.running = False
+        
         inputstring = "RUNA,{}\r\n".format(newposition)
         self.motor.write(inputstring.encode("utf-8"))
         response = self.motor.readline().decode("utf-8").split(",")
         if len(response) > 2:
             if response[2][:-2] in self.master.errorcodes:
-                errormsg = "Motor X: {} ({})\n".format(response[2][:-2],self.master.errorcodes[response[2][:-2]])
+                errormsg = "Motor {}: {} ({})\n".format(self.name,response[2][:-2],self.master.errorcodes[response[2][:-2]])
             else:
-                errormsg = "Motor X: {}\n".format(response[2][:-2])
+                errormsg = "Motor {}: {}\n".format(self.name,response[2][:-2])
             self.master.errorlog.insert(tk.END, errormsg)
+            
+        self.master.running = True
             
     
     
