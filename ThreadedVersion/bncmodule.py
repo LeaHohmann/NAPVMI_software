@@ -16,11 +16,11 @@ class DelayApp(tk.Frame):
         tk.Frame.__init__(self,root)
         self.pack()
 
+        self.channelnumbers = {"A": 1, "B": 2, "C": 3, "D": 4, "E": 5, "F": 6, "G": 7, "H": 8}
+
         self.guiinit()
         self.initialquery()
         self.setchannel("A")
-
-        self.bncrunning = "0"
 
         self.channelnumbers = {"A": 1, "B": 2, "C": 3, "D": 4, "E": 5, "F": 6, "G": 7, "H": 8}
 
@@ -226,7 +226,7 @@ class Channel(tk.Frame):
 
     def update(self):
 
-        time.sleep(0.5)
+        time.sleep(0.2)
         
         if self.active:
         
@@ -258,6 +258,8 @@ class Channel(tk.Frame):
     def changedelay(self):
 
         self.active = False
+        
+        time.sleep(0.1)
         
         try:
             if self.delay[0] == "-":
