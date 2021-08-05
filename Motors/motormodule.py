@@ -29,11 +29,11 @@ class MotorApp(tk.Tk):
         self.statusframe.pack(side=tk.LEFT,padx=5)
         self.statusframe.pack_propagate(0)
 
-        self.controlframe = tk.Frame(self, height=300, width=400)
+        self.controlframe = tk.Frame(self, height=300, width=450)
         self.controlframe.pack(side=tk.LEFT, padx=5)
         self.controlframe.pack_propagate(0)
 
-        self.menuframe = tk.Frame(self, height=300, width=240)
+        self.menuframe = tk.Frame(self, height=300, width=230)
         self.menuframe.pack(side=tk.LEFT, padx=5)
         self.menuframe.pack_propagate(0)
         
@@ -360,7 +360,7 @@ class MotorApp(tk.Tk):
         self.running = True
         
         self.stopbutton.configure(text="Restart", command=self.restart)
-        messagebox.showinfo("Emergency stop", "Emergency stop was executed. Motor is now disabled, click restart when motor is operational again.")
+        messagebox.showinfo("Emergency stop", "Emergency stop was executed. Motor is now disabled; when the problem is fixed, clear errors to return motor to operational state and then click restart")
         
         currenttime = time.strftime("%H:%M:%S", time.localtime())
         errormsg = "{} EMERGENCY STOP".format(currenttime)
@@ -526,6 +526,8 @@ class Motor():
         self.startbutton.pack(side=tk.LEFT, padx=5)
         self.stopbutton = tk.Button(self.frame, text="Stop", command=self.stopmotor)
         self.stopbutton.pack(side=tk.LEFT, padx=5)
+        self.clearbutton = tk.Button(self.frame, text="Clear error", command=self.clearerror)
+        self.clearbutton.pack(side=tk.LEFT,padx=5)
         
         
         
@@ -605,6 +607,17 @@ class Motor():
         self.master.running = False
     
         self.motor.write("STOP\r\n".encode("utf-8"))
+        lastline = self.motor.readline().decode("utf-8")
+        
+        self.master.running = True
+        
+        
+        
+    def clearerror(self):
+    
+        self.master.running = False
+        
+        self.motor.write("CLR\r\n".encode("utf-8"))
         lastline = self.motor.readline().decode("utf-8")
         
         self.master.running = True
