@@ -25,15 +25,15 @@ class MotorApp(tk.Tk):
 
         self.serialnumbers = {"X": "20052-011", "Y": "20052-012", "Z": "20052-013", "R": "20052-014"}
 
-        self.statusframe = tk.Frame(self, height=300, width=400)
+        self.statusframe = tk.Frame(self, height=300, width=350)
         self.statusframe.pack(side=tk.LEFT,padx=5)
         self.statusframe.pack_propagate(0)
 
-        self.controlframe = tk.Frame(self, height=300, width=450)
+        self.controlframe = tk.Frame(self, height=300, width=480)
         self.controlframe.pack(side=tk.LEFT, padx=5)
         self.controlframe.pack_propagate(0)
 
-        self.menuframe = tk.Frame(self, height=300, width=230)
+        self.menuframe = tk.Frame(self, height=300, width=200)
         self.menuframe.pack(side=tk.LEFT, padx=5)
         self.menuframe.pack_propagate(0)
         
@@ -247,7 +247,7 @@ class MotorApp(tk.Tk):
         self.statusheader = tk.Label(self.statusframe, text="Error Log", font=("Helvetica",14))
         self.statusheader.pack(side=tk.TOP, pady=(5,10))
         
-        self.errorlog = scroll.ScrolledText(self.statusframe, width = 40, height = 20, font=("Courier",12))
+        self.errorlog = scroll.ScrolledText(self.statusframe, width = 35, height = 20, font=("Courier",12))
         self.errorlog.pack(side=tk.TOP)
         self.errorlog.insert(tk.END, "{}\n".format(self.today.strftime("%y%m%d")))
         
