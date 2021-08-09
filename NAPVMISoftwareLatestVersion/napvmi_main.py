@@ -182,7 +182,7 @@ class Root(tk.Tk):
 
         self.newwindow("Acquisition: Delay integration")
 
-        self.seriesgui = delayintegration.IntegrationGui(self.serieswindow,self.bnc,self.system,self.camera,self.cameragui.nodemap, self.cameragui.streamnodemap, exposure,gain,self.delaysvector)
+        self.seriesgui = delayintegration.IntegrationGui(self.serieswindow,self.bnc,self.bncgui,self.system,self.camera,self.cameragui.nodemap, self.cameragui.streamnodemap, exposure,gain,self.delaysvector)
 
         self.serieswindow.mainloop()
 
@@ -205,7 +205,7 @@ class Root(tk.Tk):
 
         self.newwindow("Acquisition: Kinetic series")
 
-        self.seriesgui = kineticseries.SeriesGui(self.serieswindow, self.bnc, self.system, self.camera, self.cameragui.nodemap, self.cameragui.streamnodemap, exposure, gain, self.delaysvector)
+        self.seriesgui = kineticseries.SeriesGui(self.serieswindow, self.bnc, self.bncgui, self.system, self.camera, self.cameragui.nodemap, self.cameragui.streamnodemap, exposure, gain, self.delaysvector)
 
     
     def startwavelengthseries(self):

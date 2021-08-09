@@ -12,13 +12,14 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 class IntegrationGui(tk.Frame):
 
 
-    def __init__(self,root,bnc,system,camera,nodemap,streamnodemap,exposuretime,gain,delaysvector):
+    def __init__(self,root,bnc,bncgui,system,camera,nodemap,streamnodemap,exposuretime,gain,delaysvector):
 
         tk.Frame.__init__(self,root)
         self.pack()
 
         self.root = root
         self.bnc = bnc
+        self.bncgui = bncgui
         self.system = system
         self.camera = camera
         self.nodemap = nodemap
@@ -89,6 +90,10 @@ class IntegrationGui(tk.Frame):
         self.sumframes = tk.IntVar(self.leftframe, value=10)
         self.framenumber = tk.Entry(self.leftframe, textvariable=self.sumframes, width=10)
         self.framenumber.pack(side=tk.TOP, pady=(0,20))
+        
+        self.minusvar = tk.IntVar(self.leftframe, value=0)
+        self.minuscheck = tk.Checkbutton(self.leftframe, text="Negative delays", variable=self.minusvar, onvalue=1, offvalue=0)
+        self.minuscheck.pack(side=tk.TOP,pady=(10,20))
 
         self.startbutton = tk.Button(self.leftframe, text="Start Acquisition", background="green", command=self.startacquisition)
         self.startbutton.pack(side=tk.TOP, pady=(50,10))
@@ -141,12 +146,14 @@ class IntegrationGui(tk.Frame):
 
         self.root.attributes("-topmost","true")
 
-        self.delayscanrange = numpy.arange(-1*int(self.delayrangestart.get()), -1*(int(self.delayrangeend.get()) + 1), -1*int(self.incremententry.get()))
+        self.delayscanrange = numpy.arange(int(self.delayrangestart.get()), (int(self.delayrangeend.get()) + 1), int(self.incremententry.get()))
                 
         self.integratedimage = numpy.zeros((964,1288), int)
 
         self.running = True
         self.stopbutton.pack(side=tk.TOP, pady=(20,10))
+        
+        self.bncgui.channel.active = False
 
         self.delayloop(0)
 
@@ -174,6 +181,7 @@ class IntegrationGui(tk.Frame):
         else:
             messagebox.showerror("Error", "Invalid delay")
             self.startbutton.configure(state=tk.NORMAL)
+            self.bncgui.channel.active = True
             return
                 
        
@@ -192,6 +200,7 @@ class IntegrationGui(tk.Frame):
         if self.erroroccurrence == True:
             self.startbutton.configure(state=tk.NORMAL)
             self.stopbutton.pack_forget()
+            self.bncgui.channel.active = True
             return 
 
         self.integratedimage += self.sumimage
@@ -201,11 +210,12 @@ class IntegrationGui(tk.Frame):
         self.lastdelaydisplay.imshow(self.sumimage, cmap="gray", vmin=0)
         self.canvas.draw()
 
-        if i > int(self.delayrangeend.get()) and self.running == True:
+        if i < int(self.delayrangeend.get()) and self.running == True:
             index += 1
             self.after(10, self.delayloop, index)
 
         else:
+            self.bncgui.channel.active = True
             self.savedata()
 
 

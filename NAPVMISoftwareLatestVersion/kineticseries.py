@@ -12,13 +12,14 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 class SeriesGui(tk.Frame):
 
 
-    def __init__(self,root,bnc,system,camera,nodemap,streamnodemap,exposuretime,gain,delaysvector):
+    def __init__(self,root,bnc,bncgui,system,camera,nodemap,streamnodemap,exposuretime,gain,delaysvector):
 
         tk.Frame.__init__(self,root)
         self.pack()
 
         self.root = root
         self.bnc = bnc
+        self.bncgui = bncgui
         self.system = system
         self.camera = camera
         self.nodemap = nodemap
@@ -156,6 +157,8 @@ class SeriesGui(tk.Frame):
         self.intensityvtime.set_xlim(int(self.delayrangestart.get())-5, int(self.delayrangeend.get())+5)
 
         self.delayscanrange = numpy.arange(int(self.delayrangestart.get()), (int(self.delayrangeend.get()) + 1), int(self.incremententry.get()))
+        
+        self.bncgui.channel.active = False
 
         self.delayloop(0)
 
@@ -184,6 +187,7 @@ class SeriesGui(tk.Frame):
         else:
             messagebox.showerror("Error", "Invalid delay")
             self.startbutton.configure(state=tk.NORMAL)
+            self.bncgui.channel.active = True
             return
                 
        
@@ -201,6 +205,7 @@ class SeriesGui(tk.Frame):
         if self.erroroccurrence == True:
             self.starbutton.configure(state=tk.NORMAL)
             self.stopbutton.pack_forget()
+            self.bncgui.channel.active = True
             return 
             
         self.imageseries[str(i)] = self.sumimage
@@ -218,6 +223,7 @@ class SeriesGui(tk.Frame):
             self.after(10, self.delayloop, index)
 
         else:
+            self.bncgui.channel.active = True
             self.savedata()
 
 

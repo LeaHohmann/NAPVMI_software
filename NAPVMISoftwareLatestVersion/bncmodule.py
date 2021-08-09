@@ -164,9 +164,6 @@ class DelayApp(tk.Frame):
 
 
     def quitapp(self):
-    
-        if self.bncrunning == "1":
-            self.stoptriggering()
             
         self.channel.active = False
 
@@ -226,7 +223,7 @@ class Channel(tk.Frame):
 
     def update(self):
 
-        time.sleep(0.2)
+        time.sleep(0.5)
         
         if self.active:
         
