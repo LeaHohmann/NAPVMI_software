@@ -25,6 +25,8 @@ class IntegrationGui(tk.Frame):
         self.exposure = exposuretime
         self.gain = gain
         self.delaysvector = delaysvector
+        
+        self.channelnumbers = {"A": 1, "B": 2, "C": 3, "D": 4, "E": 5, "F": 6, "G": 7, "H": 8}
 
         self.erroroccurrence = False
 
@@ -45,8 +47,22 @@ class IntegrationGui(tk.Frame):
 
         self.description = tk.Message(self.leftframe, text="Integrates over a range of delays. Please specify delay range, increment and number of frames per delay.", font=("Helvetica",11), width=250)
         self.description.pack(side=tk.TOP, pady=10)
+        
+        self.channellabel = tk.Label(self.leftframe, text="Channel to scan:", anchor=tk.NW, font=("Helvetica",12))
+        self.channellabel.pack()
 
-        self.delayrangelabel = tk.Label(self.leftframe, text="Delay range in microseconds (min 0 - max 2000):", font=("Helvetica",12))
+        self.channelname = tk.StringVar(self.leftframe)
+        self.channeltuner = tk.OptionMenu(self.leftframe, self.channelname, "A", "B", "C", "D", "E", "F", "G", "H")
+        self.channeltuner.pack(side=tk.TOP,pady=(10,20))
+        
+        self.timelabel = tk.Label(self.leftframe, text="Choose time range (micro or nanoseconds)", anchor=tk.NW, font=("Helvetica",12))
+        self.timelabel.pack()
+        
+        self.timerange = tk.StringVar(self.leftframe)
+        self.timetuner = tk.OptionMenu(self.leftframe, self.timerange, "us", "ns")
+        self.timetuner.pack(side=tk.TOP,pady=(10,20))
+
+        self.delayrangelabel = tk.Label(self.leftframe, text="Delay range (min 100 - max 10000):", font=("Helvetica",12))
         self.delayrangelabel.pack(side=tk.TOP, pady=(20,5))
 
         self.delayrangeframe = tk.Frame(self.leftframe)
@@ -107,6 +123,14 @@ class IntegrationGui(tk.Frame):
         self.node_framecount = PySpin.CIntegerPtr(self.nodemap.GetNode("AcquisitionFrameCount"))
         self.node_framecount.SetValue(self.numberofframes)
 
+        try:
+            channelname = self.channelname.get()
+        except ValueError:
+            messagebox.showerror("Error", "Please choose a channel")
+            self.startbutton.configure(state=tk.NORMAL)
+            return
+        self.channelnumber = self.channelnumbers[channelname]
+        
         self.startbutton.configure(state=tk.DISABLED)
 
         self.filename = filedialog.asksaveasfilename(initialdir="C:/", title="Choose image file name", filetypes=(("binary numpy array file","*.npy"),("All files","*.*")))
@@ -131,16 +155,33 @@ class IntegrationGui(tk.Frame):
 
         i = self.delayscanrange[index]
         
-        if i > -1000:
-            currentdelay = "-0.000" + str(i)[1:] + "00000"
-        elif i >= -2000:
-            currentdelay = "-0.00" + str(i)[1:] + "00000"
+        if i < 10 and self.timerange.get() == "ns":
+            currentdelay = "0.00000000" + str(i) + "00"
+        elif i < 100 and self.timerange.get() == "ns":
+            currentdelay = "0.0000000" + str(i) + "00"
+        elif i < 1000 and self.timerange.get() == "ns":
+            currentdelay = "0.000000" + str(i) + "00"
+        elif i < 10000 and self.timerange.get() == "ns":
+            currentdelay = "0.00000" + str(i) + "00"
+        elif i < 10 and self.timerange.get() == "us":
+            currentdelay = "0.00000" + str(i) + "00000"
+        elif i < 100 and self.timerange.get() == "ns":
+            currentdelay = "0.0000" + str(i) + "00000"
+        elif i < 1000 and self.timerange.get() == "us":
+            currentdelay = "0.000" + str(i) + "00000"
+        elif i < 10000 and self.timerange.get() == "us":
+            currentdelay = "0.00" + str(i) + "00000"
         else:
-            messagebox.showerror("Error", "Maximum delay is 2000us")
+            messagebox.showerror("Error", "Invalid delay")
             self.startbutton.configure(state=tk.NORMAL)
             return
-        
-        inputstring = ":PULS2:DEL {}\r\n".format(currentdelay)
+                
+       
+        if self.minusvar.get() == 1:
+            currentdelay = "-" + currentdelay
+          
+          
+        inputstring = ":PULS{}:DEL {}\r\n".format(self.channelnumber, currentdelay)
         self.bnc.write(inputstring.encode("utf-8"))
         lastline = self.bnc.readline().decode("utf-8")
 

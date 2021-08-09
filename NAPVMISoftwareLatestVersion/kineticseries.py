@@ -62,7 +62,7 @@ class SeriesGui(tk.Frame):
         self.timetuner = tk.OptionMenu(self.leftframe, self.timerange, "us", "ns")
         self.timetuner.pack(side=tk.TOP,pady=(10,20))
 
-        self.delayrangelabel = tk.Label(self.leftframe, text="Delay range in nanoseconds (min 0 - max 4000):", font=("Helvetica",12))
+        self.delayrangelabel = tk.Label(self.leftframe, text="Delay range (min 0 - max 10000):", font=("Helvetica",12))
         self.delayrangelabel.pack(side=tk.TOP, pady=(20,5))
 
         self.delayrangeframe = tk.Frame(self.leftframe)
@@ -127,7 +127,12 @@ class SeriesGui(tk.Frame):
         self.node_framecount = PySpin.CIntegerPtr(self.nodemap.GetNode("AcquisitionFrameCount"))
         self.node_framecount.SetValue(self.numberofframes)
 
-        channelname = self.channelname.get()
+        try:
+            channelname = self.channelname.get()
+        except ValueError:
+            messagebox.showerror("Error", "Please choose a channel")
+            self.startbutton.configure(state=tk.NORMAL)
+            return
         self.channelnumber = self.channelnumbers[channelname]
 
         self.startbutton.configure(state=tk.DISABLED)
@@ -160,35 +165,30 @@ class SeriesGui(tk.Frame):
         
         i = self.delayscanrange[index]
         
-        if self.minusvar.get() == 0:
-        
-            if i < 1000 and self.timerange.get() == "ns":
-                currentdelay = "0.000000" + str(i) + "00"
-            elif i < 10000 and self.timerange.get() == "ns":
-                currentdelay = "0.00000" + str(i) + "00"
-            elif i < 1000 and self.timerange.get() == "us":
-                currentdelay = "0.000" + str(i) + "00000"
-            elif i < 10000 and self.timerange.get() == "us":
-                currentdelay = "0.00" + str(i) + "00000"
-            else:
-                messagebox.showerror("Error", "Invalid delay")
-                self.startbutton.configure(state=tk.NORMAL)
-                return
+        if i < 10 and self.timerange.get() == "ns":
+            currentdelay = "0.00000000" + str(i) + "00"
+        elif i < 100 and self.timerange.get() == "ns":
+            currentdelay = "0.0000000" + str(i) + "00"
+        elif i < 1000 and self.timerange.get() == "ns":
+            currentdelay = "0.000000" + str(i) + "00"
+        elif i < 10000 and self.timerange.get() == "ns":
+            currentdelay = "0.00000" + str(i) + "00"
+        elif i < 10 and self.timerange.get() == "us":
+            currentdelay = "0.00000" + str(i) + "00000"
+        elif i < 100 and self.timerange.get() == "ns":
+            currentdelay = "0.0000" + str(i) + "00000"
+        elif i < 1000 and self.timerange.get() == "us":
+            currentdelay = "0.000" + str(i) + "00000"
+        elif i < 10000 and self.timerange.get() == "us":
+            currentdelay = "0.00" + str(i) + "00000"
+        else:
+            messagebox.showerror("Error", "Invalid delay")
+            self.startbutton.configure(state=tk.NORMAL)
+            return
                 
-        elif self.minusvar.get() == 1:
-            
-            if i < 1000 and self.timerange.get() == "ns":
-                currentdelay = "-0.000000" + str(i) + "00"
-            elif i < 10000 and self.timerange.get() == "ns":
-                currentdelay = "-0.00000" + str(i) + "00"
-            elif i < 1000 and self.timerange.get() == "us":
-                currentdelay = "-0.000" + str(i) + "00000"
-            elif i < 10000 and self.timerange.get() == "us":
-                currentdelay = "-0.00" + str(i) + "00000"
-            else:
-                messagebox.showerror("Error", "Invalid delay")
-                self.startbutton.configure(state=tk.NORMAL)
-                return
+       
+        if self.minusvar.get() == 1:
+            currentdelay = "-" + currentdelay
 
         inputstring = ":PULS{}:DEL {}\r\n".format(self.channelnumber,currentdelay)
         self.bnc.write(inputstring.encode("utf-8"))
