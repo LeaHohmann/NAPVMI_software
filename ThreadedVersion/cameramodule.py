@@ -297,10 +297,12 @@ class CameraApp(tk.Frame):
         self.sumimage = numpy.zeros((964,1288), int)
 
         try:
-            framecount = self.sumimages.get()
+            framecount = int(self.sumimages.get())
         except ValueError:
             framecount = 1
         
+        
+        self.counter = 0
         t1 = threading.Thread(target=lambda: self.getmultiframeimage(framecount))
         t1.start()
         
@@ -416,10 +418,11 @@ class CameraApp(tk.Frame):
         self.sumimage = numpy.zeros((964,1288), int)
         
         try:
-            framecount = self.sumimages.get()
+            framecount = int(self.sumimages.get())
         except ValueError:
             framecount = 1
         
+        self.counter = 0
         t1 = threading.Thread(target=lambda: self.getmultiframeimage(framecount))
         t1.start()
         
@@ -476,7 +479,7 @@ class CameraApp(tk.Frame):
         
         if self.counter < framecount and self.running:
             time.sleep(0.1)
-            self.getmultiframeimage()
+            self.getmultiframeimage(framecount)
 
 
 

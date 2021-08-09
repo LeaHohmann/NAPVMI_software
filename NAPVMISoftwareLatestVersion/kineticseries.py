@@ -53,7 +53,14 @@ class SeriesGui(tk.Frame):
 
         self.channelname = tk.StringVar(self.leftframe)
         self.channeltuner = tk.OptionMenu(self.leftframe, self.channelname, "A", "B", "C", "D", "E", "F", "G", "H")
-        self.channeltuner.pack(side=tk.TOP,pady=(20,5))
+        self.channeltuner.pack(side=tk.TOP,pady=(10,20))
+        
+        self.timelabel = tk.Label(self.leftframe, text="Choose time range (micro or nanoseconds)", anchor=tk.NW, font=("Helvetica",12))
+        self.timelabel.pack()
+        
+        self.timerange = tk.StringVar(self.leftframe)
+        self.timetuner = tk.OptionMenu(self.leftframe, self.timerange, "us", "ns")
+        self.timetuner.pack(side=tk.TOP,pady=(10,20))
 
         self.delayrangelabel = tk.Label(self.leftframe, text="Delay range in nanoseconds (min 0 - max 4000):", font=("Helvetica",12))
         self.delayrangelabel.pack(side=tk.TOP, pady=(20,5))
@@ -153,33 +160,33 @@ class SeriesGui(tk.Frame):
         
         i = self.delayscanrange[index]
         
-        if self.minusvar == 0:
+        if self.minusvar.get() == 0:
         
-            if i < 1000:
+            if i < 1000 and self.timerange.get() == "ns":
                 currentdelay = "0.000000" + str(i) + "00"
-            elif i < 10000:
+            elif i < 10000 and self.timerange.get() == "ns":
                 currentdelay = "0.00000" + str(i) + "00"
-            elif i < 100000:
-                currentdelay = "0.0000" + str(i) + "00"
-            elif i < 1000000:
-                currentdelay = "0.000" + str(i) + "00"
+            elif i < 1000 and self.timerange.get() == "us":
+                currentdelay = "0.000" + str(i) + "00000"
+            elif i < 10000 and self.timerange.get() == "us":
+                currentdelay = "0.00" + str(i) + "00000"
             else:
-                messagebox.showerror("Error", "Maximum delay is 1000000ns")
+                messagebox.showerror("Error", "Invalid delay")
                 self.startbutton.configure(state=tk.NORMAL)
                 return
                 
-        elif self.minusvar == 1:
+        elif self.minusvar.get() == 1:
             
-            if i < 1000:
+            if i < 1000 and self.timerange.get() == "ns":
                 currentdelay = "-0.000000" + str(i) + "00"
-            elif i < 10000:
+            elif i < 10000 and self.timerange.get() == "ns":
                 currentdelay = "-0.00000" + str(i) + "00"
-            elif i < 100000:
-                currentdelay = "-0.0000" + str(i) + "00"
-            elif i < 1000000:
-                currentdelay = "-0.000" + str(i) + "00"
+            elif i < 1000 and self.timerange.get() == "us":
+                currentdelay = "-0.000" + str(i) + "00000"
+            elif i < 10000 and self.timerange.get() == "us":
+                currentdelay = "-0.00" + str(i) + "00000"
             else:
-                messagebox.showerror("Error", "Maximum delay is 1000000ns")
+                messagebox.showerror("Error", "Invalid delay")
                 self.startbutton.configure(state=tk.NORMAL)
                 return
 

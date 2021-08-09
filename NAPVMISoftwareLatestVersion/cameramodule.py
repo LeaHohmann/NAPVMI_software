@@ -8,6 +8,7 @@ matplotlib.use("TkAgg")
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import ast
 import time
+import threading
 
 
 class CameraApp(tk.Frame):
@@ -292,39 +293,51 @@ class CameraApp(tk.Frame):
     def multiframeloop(self):
 
         self.captureexception = False
+        
+        self.sumimage = numpy.zeros((964,1288), int)
 
         try:
-            self.getmultiframeimage()
+            framecount = int(self.sumimages.get())
         except ValueError:
-            messagebox.showerror("Error", "Set number of frames as integer number")
-            self.sumimages.delete(0,tk.END)
-            self.sumimages.inser(tk.END,"1")
-            self.camera.EndAcquisition()
-            self.summedlive.configure(text="Live", command=self.start_multiframelive)
-            self.multiframe.configure(state=tk.NORMAL)
-            self.takexslice.configure(state=tk.NORMAL)
-            self.takeyslice.configure(state=tk.NORMAL)
-            return
+            framecount = 1
+        
+        
+        self.counter = 0
+        t1 = threading.Thread(target=lambda: self.getmultiframeimage(framecount))
+        t1.start()
+        
+        self.multiframeloop2(framecount)
+        
+        
+        
+    def multiframeloop2(self,framecount):
+    
+        if self.counter < framecount and self.running:
+        
+            self.after(2, lambda: self.multiframeloop2(framecount))
  
-        if self.captureexception == False:
-
-            self.image_data = self.sumimage
-            
-            self.displayimage()
-            self.integrateimage()
-
-        if self.running == True and self.captureexception == False:
-            self.after(1, self.multiframeloop)
         else:
-            try:
-                self.camera.EndAcquisition()
-            except PySpin.SpinnakerException:
-                pass
-            self.signalwarnings.configure(text="")
-            self.summedlive.configure(text="Live", command=self.start_multiframelive)
-            self.multiframe.configure(state=tk.NORMAL)
-            self.takexslice.configure(state=tk.NORMAL)
-            self.takeyslice.configure(state=tk.NORMAL)
+        
+            if self.captureexception == False:
+
+                self.image_data = self.sumimage
+                
+                self.displayimage()
+                self.integrateimage()
+
+            if self.running and self.captureexception == False:
+                self.after(1, self.multiframeloop)
+            else:
+                try:
+                    self.camera.EndAcquisition()
+                except PySpin.SpinnakerException:
+                    pass
+                self.signalwarnings.configure(text="")
+                self.summedlive.configure(text="Live", command=self.start_multiframelive)
+                self.multiframe.configure(state=tk.NORMAL)
+                self.takexslice.configure(state=tk.NORMAL)
+                self.takeyslice.configure(state=tk.NORMAL)
+ 
 
 
 
@@ -401,50 +414,72 @@ class CameraApp(tk.Frame):
         self.saveslice.configure(state=tk.DISABLED)
         
         self.camera.BeginAcquisition()
-        self.getmultiframeimage()
+        
+        self.sumimage = numpy.zeros((964,1288), int)
+        
+        try:
+            framecount = int(self.sumimages.get())
+        except ValueError:
+            framecount = 1
+        
+        self.counter = 0
+        t1 = threading.Thread(target=lambda: self.getmultiframeimage(framecount))
+        t1.start()
+        
+        
+        
+    def capturemultiframe2(self, framecount):
+    
+        if self.counter < framecount and self.running:
+        
+            self.after(2, lambda: self.capturemultiframe2(framecount))
 
-        if self.captureexception == False:
-            self.xstart = int(self.xpixelstart.get()) 
-            self.xend = int(self.xpixelend.get()) + 1
-            self.ystart = int(self.ypixelstart.get())
-            self.yend = int(self.ypixelend.get()) +1
+        else:
 
-            try:
-                self.threshold = int(self.thresholdentry.get())
-                self.image_data = (self.sumimage[self.ystart:self.yend,self.xstart:self.xend] > self.threshold) * self.sumimage[self.ystart:self.yend,self.xstart:self.xend]
-            except ValueError:
-                messagebox.showerror("Error", "Set threshold as integer number. No thresholding performed")
-                self.image_data = self.sumimage[self.ystart:self.yend,self.xstart:self.xend]
+            if self.captureexception == False:
+                self.xstart = int(self.xpixelstart.get()) 
+                self.xend = int(self.xpixelend.get()) + 1
+                self.ystart = int(self.ypixelstart.get())
+                self.yend = int(self.ypixelend.get()) +1
+
+                try:
+                    self.threshold = int(self.thresholdentry.get())
+                    self.image_data = (self.sumimage[self.ystart:self.yend,self.xstart:self.xend] > self.threshold) * self.sumimage[self.ystart:self.yend,self.xstart:self.xend]
+                except ValueError:
+                    messagebox.showerror("Error", "Set threshold as integer number. No thresholding performed")
+                    self.image_data = self.sumimage[self.ystart:self.yend,self.xstart:self.xend]
 
 
-            self.camera.EndAcquisition()
+                self.camera.EndAcquisition()
 
-        self.sumimages.configure(state=tk.NORMAL)
+            self.sumimages.configure(state=tk.NORMAL)
 
        
 
-    def getmultiframeimage(self):
+    def getmultiframeimage(self,framecount):
 
-        self.sumimage = numpy.zeros((964,1288), int)
 
-        for i in range(int(self.sumimages.get())):
-
-            try:
-                image_result = self.camera.GetNextImage(2000)
-                frame_data = image_result.GetNDArray()
-                self.sumimage += frame_data
+        try:
+            image_result = self.camera.GetNextImage(2000)
+            frame_data = image_result.GetNDArray()
+            self.sumimage += frame_data
         
-            except PySpin.SpinnakerException as ex:
+        except PySpin.SpinnakerException as ex:
             
-                try:
-                    self.camera.EndAcquisition()
-                except PySpin.SpinnakerException:
-                    pass
-                messagebox.showerror("Error", "Stopped after {} images: {}".format(i-1,ex))
-                self.captureexception = True
-                return
+            try:
+                self.camera.EndAcquisition()
+            except PySpin.SpinnakerException:
+                pass
+            messagebox.showerror("Error", "Stopped after {} images: {}".format(i-1,ex))
+            self.captureexception = True
+            return
 
         image_result.Release()
+        self.counter += 1
+        
+        if self.counter < framecount and self.running:
+            time.sleep(0.1)
+            self.getmultiframeimage(framecount)
 
 
 

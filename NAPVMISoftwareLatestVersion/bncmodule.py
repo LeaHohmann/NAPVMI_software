@@ -3,6 +3,8 @@ import tkinter as tk
 from tkinter import messagebox
 from tkinter import filedialog
 import ast
+import time
+import threading
 
 
 class DelayApp(tk.Frame):
@@ -14,10 +16,11 @@ class DelayApp(tk.Frame):
         tk.Frame.__init__(self,root)
         self.pack()
 
+        self.channelnumbers = {"A": 1, "B": 2, "C": 3, "D": 4, "E": 5, "F": 6, "G": 7, "H": 8}
+
         self.guiinit()
         self.initialquery()
-
-        self.bncrunning = "0"
+        self.setchannel("A")
 
         self.channelnumbers = {"A": 1, "B": 2, "C": 3, "D": 4, "E": 5, "F": 6, "G": 7, "H": 8}
 
@@ -47,7 +50,7 @@ class DelayApp(tk.Frame):
         self.channeltuner = tk.OptionMenu(self.tunerframe, self.channelname, "A", "B", "C", "D", "E", "F", "G", "H")
         self.channeltuner.pack(side=tk.LEFT, pady=(10,5), padx=(0,10))
 
-        self.channelset = tk.Button(self.tunerframe, text="Set Channel", command=self.setchannel)
+        self.channelset = tk.Button(self.tunerframe, text="Set Channel", command=lambda: self.setchannel(self.channelname.get()))
         self.channelset.pack(side=tk.LEFT, pady=(10,5))
 
         self.channelframe = tk.Frame(self)
@@ -67,14 +70,14 @@ class DelayApp(tk.Frame):
 
 
 
-    def setchannel(self):
+    def setchannel(self,channelname):
         
         try:
+            self.channel.active = False
             self.channel.destroy()
         except AttributeError:
             pass
-        
-        channelname = self.channelname.get()
+       
         channelnumber = self.channelnumbers[channelname]
 
         self.channel = Channel(channelname, channelnumber, self.channelframe, self.bnc) 
@@ -82,6 +85,8 @@ class DelayApp(tk.Frame):
 
 
     def runtriggering(self):
+    
+        self.channel.active = False
 
         inputstring = ":PULS0:STATE 1\r\n"
         self.bnc.write(inputstring.encode("utf-8"))
@@ -92,10 +97,14 @@ class DelayApp(tk.Frame):
         self.bncrunning = lastline[:-2]
         if self.bncrunning == "1":
             self.triggeringonoff.configure(text="Stop triggering", background="red", command=self.stoptriggering)
+            
+        self.channel.active = True
 
 
 
     def stoptriggering(self):
+    
+        self.channel.active = False
 
         inputstring = ":PULS0:STATE 0\r\n"
         self.bnc.write(inputstring.encode("utf-8"))
@@ -106,12 +115,16 @@ class DelayApp(tk.Frame):
         self.bncrunning = lastline[:-2]
         if self.bncrunning == "0":
             self.triggeringonoff.configure(text="Run triggering", background="green", command=self.runtriggering)
+            
+        self.channel.active = True
 
     
 
     def savedelayfile(self):
         
         delaydict = {}
+        
+        self.channel.active = False
 
         for i in self.channelnumbers:
             number = self.channelnumbers[i]
@@ -120,6 +133,8 @@ class DelayApp(tk.Frame):
             lastline = self.bnc.readline().decode("utf-8")
             self.delay = lastline[:-2]
             delaydict[i] = self.delay
+            
+        self.channel.active = True
 
         filename = filedialog.asksaveasfilename(initialdir="C:/", title="Save delay settings:", filetypes=(("Text files", "*.txt"),("All files", "*.*")))
         f = open(filename, "w")
@@ -133,21 +148,16 @@ class DelayApp(tk.Frame):
         filename = filedialog.askopenfilename(initialdir="C:/", title="Load delay settings from file:", filetypes=(("Text files", "*.txt"),("All files", "*.*")))
         f = open(filename, "r")
         delaydict = ast.literal_eval(f.read())
+        
+        self.channel.active = False
 
         for i in delaydict:
             newdelay = delaydict[i]
             inputstring = ":PULS{}:DEL {}\r\n".format(self.channelnumbers[i],newdelay)
             self.bnc.write(inputstring.encode("utf-8"))
             lastline = self.bnc.readline().decode("utf-8")
-        
-        try:
-            inputstring = ":PULS{}:DEL?\r\n".format(self.channel.number)
-            self.bnc.write(inputstring.encode("utf-8"))
-            lastline = self.bnc.readline().decode("utf-8")
-            self.channel.delay = lastline[:-2]
-            self.channel.guiupdate()
-        except AttributeError:
-            pass
+            
+        self.channel.active = True
         
         messagebox.showinfo("File loaded", "All channel delays updated from file.")
 
@@ -157,6 +167,8 @@ class DelayApp(tk.Frame):
     
         if self.bncrunning == "1":
             self.stoptriggering()
+            
+        self.channel.active = False
 
 
 
@@ -174,19 +186,20 @@ class Channel(tk.Frame):
         self.bnc = unit
 
         self.timeunits = {"ms": 100000000, "us": 100000, "ns": 100}
-
-        self.bncinit()
+        
         self.guiinit()
+        self.bncinit()
 
 
 
     def bncinit(self):
 
-        inputstring = ":PULS{}:DEL?\r\n".format(self.number)
-        self.bnc.write(inputstring.encode("utf-8"))
-        lastline = self.bnc.readline().decode("utf-8")
-        self.delay = lastline[:-2]
-
+        self.active = True
+        
+        t1 = threading.Thread(target=self.update)
+        t1.daemon = True
+        t1.start()
+        
 
 
     def guiinit(self):
@@ -211,9 +224,20 @@ class Channel(tk.Frame):
 
 
 
-    def guiupdate(self):
+    def update(self):
 
-        self.delaylabel.configure(text=self.delay)
+        time.sleep(0.2)
+        
+        if self.active:
+        
+            inputstring = ":PULS{}:DEL?\r\n".format(self.number)
+            self.bnc.write(inputstring.encode("utf-8"))
+            lastline = self.bnc.readline().decode("utf-8")
+            self.delay = lastline[:-2]
+        
+            self.delaylabel.configure(text=self.delay)
+            
+        self.update()
 
 
     
@@ -233,15 +257,9 @@ class Channel(tk.Frame):
 
     def changedelay(self):
 
-        inputstring = ":PULS{}:DEL?\r\n".format(self.number)
-        self.bnc.write(inputstring.encode("utf-8"))
-        lastline = self.bnc.readline().decode("utf-8")
-        if lastline[:-2] != self.delay:
-            messagebox.showerror("Error:", "Delay was out of sync due to manual change. No incrementing performed. Delay will be updated to the current value and can be altered again after.")
-            self.delay = lastline[:-2]
-            self.guiupdate()
-            return
-
+        self.active = False
+        
+        time.sleep(0.1)
         
         try:
             if self.delay[0] == "-":
@@ -293,14 +311,12 @@ class Channel(tk.Frame):
             inputstring = ":PULS{}:DEL {}\r\n".format(self.number,newdelay)
             self.bnc.write(inputstring.encode("utf-8"))
             lastline = self.bnc.readline().decode("utf-8")
-            inputstring = ":PULS{}:DEL?\r\n".format(self.number)
-            self.bnc.write(inputstring.encode("utf-8"))
-            lastline = self.bnc.readline().decode("utf-8")
-            self.delay = lastline[:-2]
-            self.guiupdate()
+           
 
         except KeyError:
             messagebox.showerror("Error", "Please set an increment and a time unit")
+            
+        self.active = True
 
 
 
