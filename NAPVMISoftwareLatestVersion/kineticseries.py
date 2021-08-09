@@ -82,6 +82,10 @@ class SeriesGui(tk.Frame):
         self.sumframes = tk.IntVar(self.leftframe, value=10)
         self.framenumber = tk.Entry(self.leftframe, textvariable=self.sumframes, width=10)
         self.framenumber.pack(side=tk.TOP, pady=(0,20))
+        
+        self.minusvar = tk.IntVar(self.leftframe, value=0)
+        self.minuscheck = tk.Checkbutton(self.leftframe, text="Negative delays", variable=self.minusvar, onvalue=1, offvalue=0)
+        self.minuscheck.pack(side=tk.TOP,pady=(10,20))
 
         self.startbutton = tk.Button(self.leftframe, text="Start Acquisition", background="green", command=self.startacquisition)
         self.startbutton.pack(side=tk.TOP, pady=(50,10))
@@ -149,18 +153,35 @@ class SeriesGui(tk.Frame):
         
         i = self.delayscanrange[index]
         
-        if i < 1000:
-            currentdelay = "0.000000" + str(i) + "00"
-        elif i < 10000:
-            currentdelay = "0.00000" + str(i) + "00"
-        elif i < 100000:
-            currentdelay = "0.0000" + str(i) + "00"
-        elif i < 1000000:
-            currentdelay = "0.000" + str(i) + "00"
-        else:
-            messagebox.showerror("Error", "Maximum delay is 1000000ns")
-            self.startbutton.configure(state=tk.NORMAL)
-            return
+        if self.minusvar == 0:
+        
+            if i < 1000:
+                currentdelay = "0.000000" + str(i) + "00"
+            elif i < 10000:
+                currentdelay = "0.00000" + str(i) + "00"
+            elif i < 100000:
+                currentdelay = "0.0000" + str(i) + "00"
+            elif i < 1000000:
+                currentdelay = "0.000" + str(i) + "00"
+            else:
+                messagebox.showerror("Error", "Maximum delay is 1000000ns")
+                self.startbutton.configure(state=tk.NORMAL)
+                return
+                
+        elif self.minusvar == 1:
+            
+            if i < 1000:
+                currentdelay = "-0.000000" + str(i) + "00"
+            elif i < 10000:
+                currentdelay = "-0.00000" + str(i) + "00"
+            elif i < 100000:
+                currentdelay = "-0.0000" + str(i) + "00"
+            elif i < 1000000:
+                currentdelay = "-0.000" + str(i) + "00"
+            else:
+                messagebox.showerror("Error", "Maximum delay is 1000000ns")
+                self.startbutton.configure(state=tk.NORMAL)
+                return
 
         inputstring = ":PULS{}:DEL {}\r\n".format(self.channelnumber,currentdelay)
         self.bnc.write(inputstring.encode("utf-8"))
@@ -199,7 +220,7 @@ class SeriesGui(tk.Frame):
         
         numpy.savez_compressed(self.filename, **self.imageseries)
 
-        self.parameters = {"Exposure time": self.exposure, "Gain": self.gain, "Number of frames per delay": self.numberofframes, "Delay start": int(self.delayrangestart.get()), "Delay end": int(self.delayrangeend.get()), "Delay increment": int(self.incremententry.get()), "Delay A": self.delaysvector[0], "Delay B": self.delaysvector[1], "Delay C": self.delaysvector[2], "Delay E": self.delaysvector[3], "Delay F": self.delaysvector[4], "Delay G": self.delaysvector[5], "Delay H": self.delaysvector[6]}
+        self.parameters = {"Exposure time": self.exposure, "Gain": self.gain, "Number of frames per delay": self.numberofframes, "Negative delays": self.minusvar, "Scan channel": self.channelname.get(), "Delay start": int(self.delayrangestart.get()), "Delay end": int(self.delayrangeend.get()), "Delay increment": int(self.incremententry.get()), "Delay A": self.delaysvector[0], "Delay B": self.delaysvector[1], "Delay C": self.delaysvector[2], "Delay E": self.delaysvector[3], "Delay F": self.delaysvector[4], "Delay G": self.delaysvector[5], "Delay H": self.delaysvector[6]}
         
         f = open(self.parameterfilename, "w")
         f.write(str(self.parameters))
