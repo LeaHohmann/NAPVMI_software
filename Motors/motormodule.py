@@ -40,7 +40,7 @@ class MotorApp(tk.Tk):
         self.xlimits = (-5000,5000)
         self.ylimits = (-4500,4500)
         self.zlimits = (0,80000)
-        self.rlimits = (0,3600)
+        self.rlimits = (-3600,3600)
         
         self.errorcodes = {"-1": "Stop motor first", "-2": "Invalid argument", "-3": "Cannot query this option", "-5": "Action failed due to internal error", "-6": "Command unavailable in current mode", "-7": "Motor is disabled", "-101": "Wrong argument type", "-102": "Invalid number of arguments"}
 
@@ -544,8 +544,11 @@ class Motor():
         if self.master.running:
         
             self.motor.write("PACT\r\n".encode("utf-8"))
-            response = self.motor.readline().decode("utf-(").split(",")
-            self.pos = response[2][0:-5]
+            try:
+                response = self.motor.readline().decode("utf-(").split(",")
+                self.pos = response[2][0:-5]
+            except RecursionError:
+                self.pos = "Error"
             
             self.poslabel.configure(text=self.pos)
             
@@ -564,6 +567,7 @@ class Motor():
         if self.limits[0] <= self.newpos <= self.limits[1]:
         
             self.master.running = False
+            time.sleep(0.1)
             
             inputstring = "RUNA,{}\r\n".format(self.newpos)
             self.motor.write(inputstring.encode("utf-8"))
@@ -587,6 +591,8 @@ class Motor():
     def moveto(self,newposition):
     
         self.master.running = False
+        
+        time.sleep(0.2)
         
         inputstring = "RUNA,{}\r\n".format(newposition)
         self.motor.write(inputstring.encode("utf-8"))
