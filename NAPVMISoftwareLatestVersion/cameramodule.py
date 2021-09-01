@@ -281,7 +281,7 @@ class CameraApp(tk.Frame):
     def start_multiframelive(self):
 
         self.start_liveacquisition()
-        self.summedlive.configure(text="Stop", command=self.stop_liveacquisition)
+        self.summedlive.configure(text="Stop", command=self.stop_acquisition)
         self.multiframe.configure(state=tk.DISABLED)
         self.takexslice.configure(state=tk.DISABLED)
         self.takeyslice.configure(state=tk.DISABLED)
@@ -341,7 +341,7 @@ class CameraApp(tk.Frame):
 
 
 
-    def stop_liveacquisition(self):
+    def stop_acquisition(self):
 
         self.running = False
 
@@ -350,8 +350,11 @@ class CameraApp(tk.Frame):
     def acquireimage(self):
 
         self.captureexception = False
+        self.running = True
         
         self.imtype = "image"
+        
+        self.multiframe.configure(text="Stop", command=self.stop_acquisition)
         
         self.capturemultiframe()
 
@@ -361,11 +364,14 @@ class CameraApp(tk.Frame):
     def acquirexslice(self):
 
         self.captureexception = False
+        self.running = True
 
         self.savearray.configure(state=tk.DISABLED)
         self.saveimage.configure(state=tk.DISABLED)
         
         self.imtype = "xslice"
+        
+        self.takexslice.configure(text="Stop", command=self.stop_acquisition)
         
         self.capturemultiframe()
 
@@ -375,11 +381,14 @@ class CameraApp(tk.Frame):
     def acquireyslice(self):
 
         self.captureexception = False
+        self.running = True
 
         self.savearray.configure(state=tk.DISABLED)
         self.saveimage.configure(state=tk.DISABLED)
         
         self.imtype = "yslice"
+        
+        self.takeyslice.configure(text="Stop", command=self.stop_acquisition)
         
         self.capturemultiframe()
             
@@ -442,6 +451,7 @@ class CameraApp(tk.Frame):
 
                     self.savearray.configure(state=tk.NORMAL)
                     self.saveimage.configure(state=tk.NORMAL, command=self.save_asimage)
+                    self.multiframe.configure(text="Single image", command=self.acquireimage)
                 
                 elif self.imtype == "xslice":
                 
@@ -451,6 +461,7 @@ class CameraApp(tk.Frame):
                     self.displayslice()
 
                     self.saveslice.configure(state=tk.NORMAL, text="Save X-slice")
+                    self.takexslice.configure(text="X-slice", command=self.acquirexslice)
                     
                 elif self.imtype == "yslice":
                 
@@ -460,6 +471,7 @@ class CameraApp(tk.Frame):
                     self.displayslice()
                 
                     self.saveslice.configure(state=tk.NORMAL, text="Save Y-slice")
+                    self.takeyslice.configure(text="Y-slice", command=self.acquireyslice)
 
 
             self.camera.EndAcquisition() 
