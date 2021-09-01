@@ -493,8 +493,9 @@ class CameraApp(tk.Frame):
                 self.camera.EndAcquisition()
             except PySpin.SpinnakerException:
                 pass
-            messagebox.showerror("Error", "Stopped after {} images: {}".format(i-1,ex))
+            messagebox.showerror("Error", "Stopped after {} images: {}".format(self.counter,ex))
             self.captureexception = True
+            running = False
             return
 
         image_result.Release()
