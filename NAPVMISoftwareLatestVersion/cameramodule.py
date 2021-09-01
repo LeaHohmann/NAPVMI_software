@@ -409,7 +409,7 @@ class CameraApp(tk.Frame):
         t1 = threading.Thread(target=lambda: self.getmultiframeimage(framecount))
         t1.start()
         
-        self.capturemultiframe2()
+        self.capturemultiframe2(framecount)
         
         
         
