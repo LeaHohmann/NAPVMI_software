@@ -483,7 +483,7 @@ class CameraApp(tk.Frame):
     def getmultiframeimage(self,framecount):
 
         try:
-            image_result = self.camera.GetNextImage(2000)
+            image_result = self.camera.GetNextImage(3000)
             frame_data = image_result.GetNDArray()
             self.sumimage += frame_data
         
