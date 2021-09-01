@@ -398,9 +398,7 @@ class CameraApp(tk.Frame):
     def capturemultiframe(self):
 
         self.setup_acquisition()
-        self.node_acquisitionmode.SetIntValue(2)
-        node_framecount = PySpin.CIntegerPtr(self.nodemap.GetNode("AcquisitionFrameCount"))
-        node_framecount.SetValue(int(self.sumimages.get()))
+        self.node_acquisitionmode.SetIntValue(0)
  
         self.sumimages.configure(state=tk.DISABLED)
         self.saveslice.configure(state=tk.DISABLED)
