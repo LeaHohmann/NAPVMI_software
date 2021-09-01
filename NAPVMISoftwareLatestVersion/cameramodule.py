@@ -351,17 +351,12 @@ class CameraApp(tk.Frame):
 
         self.captureexception = False
         
+        self.imtype = "image"
+        
         self.capturemultiframe()
 
-        if self.captureexception == False:
-
-            self.displayimage()
-            self.integrateimage()
-
-            self.savearray.configure(state=tk.NORMAL)
-            self.saveimage.configure(state=tk.NORMAL, command=self.save_asimage)
-
-
+       
+       
 
     def acquirexslice(self):
 
@@ -370,17 +365,11 @@ class CameraApp(tk.Frame):
         self.savearray.configure(state=tk.DISABLED)
         self.saveimage.configure(state=tk.DISABLED)
         
+        self.imtype = "xslice"
+        
         self.capturemultiframe()
 
-        if self.captureexception == False:
-
-            self.slice = numpy.sum(self.image_data, axis=0, dtype=int)
-            self.pixelvalues = numpy.arange(self.xstart,self.xend, dtype=int)
-
-            self.displayslice()
-
-            self.saveslice.configure(state=tk.NORMAL, text="Save X-slice")
-
+        
 
     
     def acquireyslice(self):
@@ -390,16 +379,10 @@ class CameraApp(tk.Frame):
         self.savearray.configure(state=tk.DISABLED)
         self.saveimage.configure(state=tk.DISABLED)
         
-        self.capturemultiframe()
-
-        if self.captureexception == False:
-
-            self.slice = numpy.sum(self.image_data, axis=1, dtype=int)
-            self.pixelvalues = numpy.arange(self.ystart,self.yend, dtype=int)
-
-            self.displayslice()
+        self.imtype = "yslice"
         
-            self.saveslice.configure(state=tk.NORMAL, text="Save Y-slice")
+        self.capturemultiframe()
+            
 
 
 
@@ -426,6 +409,8 @@ class CameraApp(tk.Frame):
         t1 = threading.Thread(target=lambda: self.getmultiframeimage(framecount))
         t1.start()
         
+        self.capturemultiframe2()
+        
         
         
     def capturemultiframe2(self, framecount):
@@ -448,16 +433,42 @@ class CameraApp(tk.Frame):
                 except ValueError:
                     messagebox.showerror("Error", "Set threshold as integer number. No thresholding performed")
                     self.image_data = self.sumimage[self.ystart:self.yend,self.xstart:self.xend]
+                    
+            
+                if self.imtype == "image":
+                
+                    self.displayimage()
+                    self.integrateimage()
+
+                    self.savearray.configure(state=tk.NORMAL)
+                    self.saveimage.configure(state=tk.NORMAL, command=self.save_asimage)
+                
+                elif self.imtype == "xslice":
+                
+                    self.slice = numpy.sum(self.image_data, axis=0, dtype=int)
+                    self.pixelvalues = numpy.arange(self.xstart,self.xend, dtype=int)
+
+                    self.displayslice()
+
+                    self.saveslice.configure(state=tk.NORMAL, text="Save X-slice")
+                    
+                elif self.imtype == "yslice":
+                
+                    self.slice = numpy.sum(self.image_data, axis=1, dtype=int)
+                    self.pixelvalues = numpy.arange(self.ystart,self.yend, dtype=int)
+
+                    self.displayslice()
+                
+                    self.saveslice.configure(state=tk.NORMAL, text="Save Y-slice")
 
 
-                self.camera.EndAcquisition()
+            self.camera.EndAcquisition() 
 
             self.sumimages.configure(state=tk.NORMAL)
 
        
 
     def getmultiframeimage(self,framecount):
-
 
         try:
             image_result = self.camera.GetNextImage(2000)
