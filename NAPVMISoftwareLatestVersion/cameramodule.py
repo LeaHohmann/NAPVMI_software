@@ -9,7 +9,8 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import ast
 import time
 import threading
-
+import sys
+sys.setrecursionlimit(10100)
 
 class CameraApp(tk.Frame):
 
@@ -300,6 +301,9 @@ class CameraApp(tk.Frame):
             framecount = int(self.sumimages.get())
         except ValueError:
             framecount = 1
+        if framecount > 10000:
+            framecount = 10000
+            messagebox.showerror("Note", "Maximum number of frames is 10000. Framecount for current acquisition reduced to 10000.")
         
         
         self.counter = 0
@@ -411,6 +415,9 @@ class CameraApp(tk.Frame):
             framecount = int(self.sumimages.get())
         except ValueError:
             framecount = 1
+        if framecount > 10000:
+            framecount = 10000
+            messagebox.showerror("Note", "Maximum number of frames is 10000. Framecount for current acquisition reduced to 10000.")
         
         self.counter = 0
         t1 = threading.Thread(target=lambda: self.getmultiframeimage(framecount))
