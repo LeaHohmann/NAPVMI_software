@@ -227,6 +227,7 @@ class MotorApp(tk.Tk):
         
     
         self.running = True
+        self.connected = True
         
         self.secondthread()
         self.thirdthread()
@@ -472,6 +473,7 @@ class MotorApp(tk.Tk):
                 
                     
             self.running = False
+            self.connected = False
             
             self.xport.close()
             self.yport.close()
@@ -539,20 +541,20 @@ class Motor():
         
     def update(self):
     
-        time.sleep(0.5)
+        while self.master.connected == True:
         
-        if self.master.running:
+            time.sleep(0.5)
         
-            self.motor.write("PACT\r\n".encode("utf-8"))
-            try:
-                response = self.motor.readline().decode("utf-(").split(",")
-                self.pos = response[2][0:-5]
-            except RecursionError:
-                self.pos = "Error"
+            if self.master.running:
+        
+                self.motor.write("PACT\r\n".encode("utf-8"))
+                try:
+                    response = self.motor.readline().decode("utf-(").split(",")
+                    self.pos = response[2][0:-5]
+                except RecursionError:
+                    self.pos = "Error"
             
-            self.poslabel.configure(text=self.pos)
-            
-        self.update()
+                self.poslabel.configure(text=self.pos)
         
         
         
