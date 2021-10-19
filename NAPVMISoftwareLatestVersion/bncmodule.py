@@ -73,6 +73,7 @@ class DelayApp(tk.Frame):
     def setchannel(self,channelname):
         
         try:
+            self.channel.running = False
             self.channel.active = False
             self.channel.destroy()
         except AttributeError:
@@ -86,7 +87,7 @@ class DelayApp(tk.Frame):
 
     def runtriggering(self):
     
-        self.channel.active = False
+        self.channel.running = False
 
         inputstring = ":PULS0:STATE 1\r\n"
         self.bnc.write(inputstring.encode("utf-8"))
@@ -98,13 +99,13 @@ class DelayApp(tk.Frame):
         if self.bncrunning == "1":
             self.triggeringonoff.configure(text="Stop triggering", background="red", command=self.stoptriggering)
             
-        self.channel.active = True
+        self.channel.running = True
 
 
 
     def stoptriggering(self):
     
-        self.channel.active = False
+        self.channel.running = False
 
         inputstring = ":PULS0:STATE 0\r\n"
         self.bnc.write(inputstring.encode("utf-8"))
@@ -116,7 +117,7 @@ class DelayApp(tk.Frame):
         if self.bncrunning == "0":
             self.triggeringonoff.configure(text="Run triggering", background="green", command=self.runtriggering)
             
-        self.channel.active = True
+        self.channel.running = True
 
     
 
@@ -124,7 +125,7 @@ class DelayApp(tk.Frame):
         
         delaydict = {}
         
-        self.channel.active = False
+        self.channel.running = False
 
         for i in self.channelnumbers:
             number = self.channelnumbers[i]
@@ -134,7 +135,7 @@ class DelayApp(tk.Frame):
             self.delay = lastline[:-2]
             delaydict[i] = self.delay
             
-        self.channel.active = True
+        self.channel.running = True
 
         filename = filedialog.asksaveasfilename(initialdir="C:/", title="Save delay settings:", filetypes=(("Text files", "*.txt"),("All files", "*.*")))
         f = open(filename, "w")
@@ -149,7 +150,7 @@ class DelayApp(tk.Frame):
         f = open(filename, "r")
         delaydict = ast.literal_eval(f.read())
         
-        self.channel.active = False
+        self.channel.running = False
 
         for i in delaydict:
             newdelay = delaydict[i]
@@ -157,7 +158,7 @@ class DelayApp(tk.Frame):
             self.bnc.write(inputstring.encode("utf-8"))
             lastline = self.bnc.readline().decode("utf-8")
             
-        self.channel.active = True
+        self.channel.running = True
         
         messagebox.showinfo("File loaded", "All channel delays updated from file.")
 
@@ -165,6 +166,7 @@ class DelayApp(tk.Frame):
 
     def quitapp(self):
             
+        self.channel.running = False
         self.channel.active = False
 
 
@@ -192,6 +194,7 @@ class Channel(tk.Frame):
     def bncinit(self):
 
         self.active = True
+        self.running = True
         
         t1 = threading.Thread(target=self.update)
         t1.daemon = True
@@ -222,19 +225,19 @@ class Channel(tk.Frame):
 
 
     def update(self):
-
-        time.sleep(0.5)
         
-        if self.active:
+        while self.active:
         
-            inputstring = ":PULS{}:DEL?\r\n".format(self.number)
-            self.bnc.write(inputstring.encode("utf-8"))
-            lastline = self.bnc.readline().decode("utf-8")
-            self.delay = lastline[:-2]
+            time.sleep(0.5)
         
-            self.delaylabel.configure(text=self.delay)
+            if self.running:
+        
+                inputstring = ":PULS{}:DEL?\r\n".format(self.number)
+                self.bnc.write(inputstring.encode("utf-8"))
+                lastline = self.bnc.readline().decode("utf-8")
+                self.delay = lastline[:-2]
             
-        self.update()
+                self.delaylabel.configure(text=self.delay)
 
 
     
@@ -254,7 +257,7 @@ class Channel(tk.Frame):
 
     def changedelay(self):
 
-        self.active = False
+        self.running = False
         
         time.sleep(0.1)
         
@@ -313,7 +316,7 @@ class Channel(tk.Frame):
         except KeyError:
             messagebox.showerror("Error", "Please set an increment and a time unit")
             
-        self.active = True
+        self.running = True
 
 
 

@@ -9,8 +9,6 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import ast
 import time
 import threading
-import sys
-sys.setrecursionlimit(10100)
 
 class CameraApp(tk.Frame):
 
@@ -301,10 +299,6 @@ class CameraApp(tk.Frame):
             framecount = int(self.sumimages.get())
         except ValueError:
             framecount = 1
-        if framecount > 10000:
-            framecount = 10000
-            messagebox.showerror("Note", "Maximum number of frames is 10000. Framecount for current acquisition reduced to 10000.")
-        
         
         self.counter = 0
         t1 = threading.Thread(target=lambda: self.getmultiframeimage(framecount))
@@ -487,28 +481,28 @@ class CameraApp(tk.Frame):
 
     def getmultiframeimage(self,framecount):
 
-        try:
-            image_result = self.camera.GetNextImage(3000)
-            frame_data = image_result.GetNDArray()
-            self.sumimage += frame_data
+        while self.counter < framecount and self.running:
         
-        except PySpin.SpinnakerException as ex:
-            
             try:
-                self.camera.EndAcquisition()
-            except PySpin.SpinnakerException:
-                pass
-            messagebox.showerror("Error", "Stopped after {} images: {}".format(self.counter,ex))
-            self.captureexception = True
-            running = False
-            return
+                image_result = self.camera.GetNextImage(3000)
+                frame_data = image_result.GetNDArray()
+                self.sumimage += frame_data
+            
+            except PySpin.SpinnakerException as ex:
+                
+                try:
+                    self.camera.EndAcquisition()
+                except PySpin.SpinnakerException:
+                    pass
+                messagebox.showerror("Error", "Stopped after {} images: {}".format(self.counter,ex))
+                self.captureexception = True
+                running = False
+                return
 
-        image_result.Release()
-        self.counter += 1
-        
-        if self.counter < framecount and self.running:
+            image_result.Release()
+            self.counter += 1
+            
             time.sleep(0.1)
-            self.getmultiframeimage(framecount)
 
 
 
