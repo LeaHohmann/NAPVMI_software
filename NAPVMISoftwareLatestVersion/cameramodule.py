@@ -153,6 +153,9 @@ class CameraApp(tk.Frame):
         self.signallabel = tk.Label(self.rightframe, text="Total signal:", font=("Helvetica,11"), anchor=tk.E, background="White")
         self.signallabel.pack(side=tk.TOP,expand=1, fill=tk.X, pady=(0,10))
         
+        self.statuslabel = tk.Label(self.rightframe, text="", font=("Helvetica,11"), anchor=tk.E, background="White")
+        self.statuslabel.pack(side=tk.TOP,expand=1, fill=tk.X, pady=(0,10))
+        
         self.summedlive = tk.Button(self.rightframe, text="Live", command=self.start_multiframelive)
         self.summedlive.pack(side=tk.LEFT, ipadx=5, ipady=5, pady=(0,10))
 
@@ -320,7 +323,7 @@ class CameraApp(tk.Frame):
 
                 self.image_data = self.sumimage
                 
-                self.displayimage()
+                self.displayimage(framecount)
                 self.integrateimage()
 
             if self.running and self.captureexception == False:
@@ -342,6 +345,7 @@ class CameraApp(tk.Frame):
     def stop_acquisition(self):
 
         self.running = False
+        self.statuslabel.configure(text="Acquisition stopped")
 
 
  
@@ -409,9 +413,6 @@ class CameraApp(tk.Frame):
             framecount = int(self.sumimages.get())
         except ValueError:
             framecount = 1
-        if framecount > 10000:
-            framecount = 10000
-            messagebox.showerror("Note", "Maximum number of frames is 10000. Framecount for current acquisition reduced to 10000.")
         
         self.counter = 0
         t1 = threading.Thread(target=lambda: self.getmultiframeimage(framecount))
@@ -445,7 +446,7 @@ class CameraApp(tk.Frame):
             
                 if self.imtype == "image":
                 
-                    self.displayimage()
+                    self.displayimage(framecount)
                     self.integrateimage()
 
                     self.savearray.configure(state=tk.NORMAL)
@@ -471,6 +472,8 @@ class CameraApp(tk.Frame):
                 
                     self.saveslice.configure(state=tk.NORMAL, text="Save Y-slice")
                     self.takeyslice.configure(text="Y-slice", command=self.acquireyslice)
+                    
+                self.statuslabel.configure(text="Acquisition finished")
 
 
             self.camera.EndAcquisition() 
@@ -500,13 +503,14 @@ class CameraApp(tk.Frame):
                 return
 
             image_result.Release()
+            self.statuslabel.configure(text="Acquisition: {} of {} frames".format(self.counter,framecount))
             self.counter += 1
             
-            time.sleep(0.1)
+            time.sleep(0.05)
 
 
 
-    def displayimage(self):
+    def displayimage(self,framecount):
         
         try:
             self.uppercrange = int(self.colorrangeupper.get())
@@ -526,7 +530,8 @@ class CameraApp(tk.Frame):
 
 
 
-        histo, bin_steps = numpy.histogram(self.image_data, bins=[0,32,64,96,128,160,192,224,255], range=(0,256))
+        perframe = self.image_data/framecount
+        histo, bin_steps = numpy.histogram(perframe.astype(int), bins=[0,32,64,96,128,160,192,224,255], range=(0,256))
         x = [16,48,80,112,144,176,208,240]
         self.imagedisplay.clear()
         if self.autovar.get() == 0:
