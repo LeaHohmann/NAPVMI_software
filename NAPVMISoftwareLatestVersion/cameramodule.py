@@ -297,6 +297,7 @@ class CameraApp(tk.Frame):
         self.captureexception = False
         
         self.sumimage = numpy.zeros((964,1288), int)
+        self.lasttwenty = numpy.zeros((964,1288), int)
 
         try:
             framecount = int(self.sumimages.get())
@@ -314,6 +315,11 @@ class CameraApp(tk.Frame):
     def multiframeloop2(self,framecount):
     
         if self.counter < framecount and self.running:
+        
+            if self.counter%20 == 0:
+                displayimage = self.lasttwenty
+                self.quickdisplay(displayimage)
+                self.lasttwenty = numpy.zeros((964,1288), int)
         
             self.after(2, lambda: self.multiframeloop2(framecount))
  
@@ -408,6 +414,7 @@ class CameraApp(tk.Frame):
         self.camera.BeginAcquisition()
         
         self.sumimage = numpy.zeros((964,1288), int)
+        self.lasttwenty = numpy.zeros((964,1288), int)
         
         try:
             framecount = int(self.sumimages.get())
@@ -425,6 +432,11 @@ class CameraApp(tk.Frame):
     def capturemultiframe2(self, framecount):
     
         if self.counter < framecount and self.running:
+        
+            if self.counter%20 == 0:
+                displayimage = self.lasttwenty
+                self.quickdisplay(displayimage)
+                self.lasttwenty = numpy.zeros((964,1288), int)
         
             self.after(2, lambda: self.capturemultiframe2(framecount))
 
@@ -490,6 +502,7 @@ class CameraApp(tk.Frame):
                 image_result = self.camera.GetNextImage(3000)
                 frame_data = image_result.GetNDArray()
                 self.sumimage += frame_data
+                self.lasttwenty += frame_data
             
             except PySpin.SpinnakerException as ex:
                 
@@ -556,6 +569,33 @@ class CameraApp(tk.Frame):
             self.signalwarnings.configure(text="Oversaturation", anchor=tk.E, foreground="dark orange")
         else:
             self.signalwarnings.configure(text="")
+            
+            
+            
+            
+    def quickdisplay(self,displayimage):
+    
+        perframe = self.image_data/20
+        histo, bin_steps = numpy.histogram(perframe.astype(int), bins=[0,32,64,96,128,160,192,224,255], range=(0,256))
+        x = [16,48,80,112,144,176,208,240]
+        self.imagedisplay.clear()
+        
+        self.imagedisplay.imshow(displayimage, cmap="inferno")
+        self.histogram.clear()
+        self.histogram.bar(x,histo, width=14, align='center', log=True, tick_label=["0-31","32-63","64-95","96-127","128-159","160-191","192-223","224-255"])
+        self.canvas.draw()
+        
+        if numpy.sum(histo[1:]) == 0:
+            self.signalwarnings.configure(text="No / low signal", anchor=tk.W, foreground="dark red")
+        elif numpy.sum(histo[3:]) < 10:
+            self.signalwarnings.configure(text="Low signal", anchor=tk.W, foreground="dark orange")
+        elif histo[7] >= 10:
+            self.signalwarnings.configure(text="Strong Oversaturation", anchor=tk.E, foreground="dark red")
+        elif numpy.sum(histo[6:]) >= 20:
+            self.signalwarnings.configure(text="Oversaturation", anchor=tk.E, foreground="dark orange")
+        else:
+            self.signalwarnings.configure(text="")
+            
 
 
 
