@@ -316,11 +316,6 @@ class CameraApp(tk.Frame):
     
         if self.counter < framecount and self.running:
         
-            if self.counter%20 == 0:
-                displayimage = self.lasttwenty
-                self.quickdisplay(displayimage)
-                self.lasttwenty = numpy.zeros((964,1288), int)
-        
             self.after(2, lambda: self.multiframeloop2(framecount))
  
         else:
@@ -434,8 +429,8 @@ class CameraApp(tk.Frame):
         if self.counter < framecount and self.running:
         
             if self.counter%20 == 0:
-                displayimage = self.lasttwenty
-                self.quickdisplay(displayimage)
+                displaydata = self.lasttwenty
+                self.quickdisplay(displaydata)
                 self.lasttwenty = numpy.zeros((964,1288), int)
         
             self.after(2, lambda: self.capturemultiframe2(framecount))
@@ -573,14 +568,14 @@ class CameraApp(tk.Frame):
             
             
             
-    def quickdisplay(self,displayimage):
+    def quickdisplay(self,displaydata):
     
-        perframe = self.image_data/20
+        perframe = displaydata/20
         histo, bin_steps = numpy.histogram(perframe.astype(int), bins=[0,32,64,96,128,160,192,224,255], range=(0,256))
         x = [16,48,80,112,144,176,208,240]
         self.imagedisplay.clear()
         
-        self.imagedisplay.imshow(displayimage, cmap="inferno")
+        self.imagedisplay.imshow(displaydata, cmap="inferno")
         self.histogram.clear()
         self.histogram.bar(x,histo, width=14, align='center', log=True, tick_label=["0-31","32-63","64-95","96-127","128-159","160-191","192-223","224-255"])
         self.canvas.draw()
