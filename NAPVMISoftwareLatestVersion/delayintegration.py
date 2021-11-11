@@ -172,7 +172,7 @@ class IntegrationGui(tk.Frame):
             currentdelay = "0.00000" + str(i) + "00"
         elif i < 10 and self.timerange.get() == "us":
             currentdelay = "0.00000" + str(i) + "00000"
-        elif i < 100 and self.timerange.get() == "ns":
+        elif i < 100 and self.timerange.get() == "us":
             currentdelay = "0.0000" + str(i) + "00000"
         elif i < 1000 and self.timerange.get() == "us":
             currentdelay = "0.000" + str(i) + "00000"
