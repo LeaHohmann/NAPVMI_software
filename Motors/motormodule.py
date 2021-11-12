@@ -45,8 +45,8 @@ class MotorApp(tk.Tk):
         self.errorcodes = {"-1": "Stop motor first", "-2": "Invalid argument", "-3": "Cannot query this option", "-5": "Action failed due to internal error", "-6": "Command unavailable in current mode", "-7": "Motor is disabled", "-101": "Wrong argument type", "-102": "Invalid number of arguments"}
 
         self.today = date.today()
-
-        self.portnum = 1
+        
+        self.portnum = 2
         
         self.connectbutton = tk.Button(self.controlframe, text="Connect to motors", command=self.portconnect)
         self.connectbutton.pack(side=tk.TOP)
@@ -54,81 +54,88 @@ class MotorApp(tk.Tk):
 
     
     def portconnect(self):
+    
+        if self.portnum == 5:
         
-        try:
-            string = "COM{}".format(self.portnum)
-            self.port = serial.Serial(string,baudrate=115200,bytesize=8,parity="N",stopbits=1,timeout=30)
-        
-            self.port.write("SER\r\n".encode("utf-8"))
-            lastline = self.port.readline().decode("utf-8")
+            self.portnum += 1
+            self.portconnect()
+            return
             
-            if self.serialnumbers["X"] in lastline:
-
-                self.port.close()
-                self.xport = serial.Serial(string,baudrate=115200,bytesize=8,parity="N",stopbits=1,timeout=30)
-                self.motorstatus["X"] = 1
-                self.globalstatus += 1
-
-            elif self.serialnumbers["Y"] in lastline:
-
-                self.port.close()
-                self.yport = serial.Serial(string,baudrate=115200,bytesize=8,parity="N",stopbits=1,timeout=30)
-                self.motorstatus["Y"] = 1
-                self.globalstatus += 1
-
-            elif self.serialnumbers["Z"] in lastline:
-
-                self.port.close()
-                self.zport = serial.Serial(string,baudrate=115200,bytesize=8,parity="N",stopbits=1,timeout=30)
-                self.motorstatus["Z"] = 1
-                self.globalstatus += 1
-
-            elif self.serialnumbers["R"] in lastline:
-
-                self.port.close()
-                self.rport = serial.Serial(string,baudrate=115200,bytesize=8,parity="N",stopbits=1,timeout=30)
-                self.motorstatus["R"] = 1
-                self.globalstatus += 1
+        else:
+        
+            try:
+                string = "COM{}".format(self.portnum)
+                self.port = serial.Serial(string,baudrate=115200,bytesize=8,parity="N",stopbits=1,timeout=30)
+            
+                self.port.write("SER\r\n".encode("utf-8"))
+                lastline = self.port.readline().decode("utf-8")
                 
-        except:
+                if self.serialnumbers["X"] in lastline:
+
+                    self.port.close()
+                    self.xport = serial.Serial(string,baudrate=115200,bytesize=8,parity="N",stopbits=1,timeout=30)
+                    self.motorstatus["X"] = 1
+                    self.globalstatus += 1
+
+                elif self.serialnumbers["Y"] in lastline:
+
+                    self.port.close()
+                    self.yport = serial.Serial(string,baudrate=115200,bytesize=8,parity="N",stopbits=1,timeout=30)
+                    self.motorstatus["Y"] = 1
+                    self.globalstatus += 1
+
+                elif self.serialnumbers["Z"] in lastline:
+
+                    self.port.close()
+                    self.zport = serial.Serial(string,baudrate=115200,bytesize=8,parity="N",stopbits=1,timeout=30)
+                    self.motorstatus["Z"] = 1
+                    self.globalstatus += 1
+
+                elif self.serialnumbers["R"] in lastline:
+
+                    self.port.close()
+                    self.rport = serial.Serial(string,baudrate=115200,bytesize=8,parity="N",stopbits=1,timeout=30)
+                    self.motorstatus["R"] = 1
+                    self.globalstatus += 1
+                    
+            except:
+                
+                if self.portnum < 10:
+                
+                    self.portnum += 1
+                    self.portconnect()
+                    return
+
+            if self.globalstatus == 4:
             
-            if self.portnum < 10:
-            
+                self.loadcurrent()
+                
+           
+            elif self.portnum < 10:
+
                 self.portnum += 1
                 self.portconnect()
                 return
 
-        if self.globalstatus == 4:
-        
-            self.loadcurrent()
-            
-       
-        elif self.portnum < 10:
-
-            self.portnum += 1
-            self.portconnect()
-            return
-
-        else:
-
-            self.port.close()
-            
-            string = ""
-
-            for motor, stat in self.motorstatus.items():
-                if stat == 0:
-                    string += "{} ".format(motor)
-
-            answer = messagebox.askretrycancel("Error:", "Motors {} could not be found. Retry connection?".format(string))
-
-            if answer:
-                self.portnum = 1
-                self.portconnect()
-
             else:
-                self.closegui()
 
-        
+                self.port.close()
+                
+                string = ""
+
+                for motor, stat in self.motorstatus.items():
+                    if stat == 0:
+                        string += "{} ".format(motor)
+
+                answer = messagebox.askretrycancel("Error:", "Motors {} could not be found. Retry connection?".format(string))
+
+                if answer:
+                    self.portnum = 2
+                    self.portconnect()
+
+                else:
+                    self.closegui()
+
     
     
     def loadcurrent(self):
