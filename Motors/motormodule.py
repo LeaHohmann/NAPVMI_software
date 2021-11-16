@@ -601,25 +601,25 @@ class Motor():
             
     def moveto(self,newposition):
     
-        if self.overridevar == 1 and self.reloverridevar == 1:
+        if self.master.overridevar.get() and self.master.reloverridevar.get() == 1:
         
             answer = messagebox.askquestion("Caution: Limit override", "Override of absolute and relative motor limits is selected. Are you sure you want to proceed without checking limits? Only click YES if you are sure that the position can be reached without damaging motors.")
             
-            if answer == yes:
+            if answer == "yes":
             
                 self.runmotor(newposition)
                 
-            self.overridebutton.deselect()
-            self.reloverridebutton.deselect()
+            self.master.overridebutton.deselect()
+            self.master.reloverridebutton.deselect()
                 
                 
-        elif self.overridevar == 1:
+        elif self.master.overridevar.get():
         
             answer = messagebox.askquestion("Caution: Absolute limit override", "Override of absolute motor limits is selected. Are you sure you want to proceed without checking limits? Only click YES if you are sure that the position can be reached without damaging motors.")
                  
-            if answer == yes:
+            if answer == "yes":
             
-                if self.name == "Z" and self.pos >= 45000 and newposition < 45000:
+                if self.name == "Z" and int(self.pos) >= 45000 and newposition < 45000:
                     
                     xpos = self.master.x.pos
                     self.master.x.runmotor(-600)
@@ -630,36 +630,36 @@ class Motor():
             
                 self.runmotor(newposition)   
                 
-                if self.name == "Z" and self.pos >= 45000 and newposition < 45000 and self.master.positioncall == False:
+                if self.name == "Z" and int(self.pos) >= 45000 and newposition < 45000 and self.master.positioncall == False:
                         
                     self.master.x.runmotor(xpos)
                     self.master.y.runmotor(ypos)
                     self.master.r.runmotor(rpos)
                     
-            self.overridebutton.deselect()
+            self.master.overridebutton.deselect()
              
                     
-        elif self.reloverridevar == 1 and self.name == "Z":
+        elif self.master.reloverridevar.get() and self.name == "Z":
             
             if self.limits[0] <= newposition <= self.limits[1]:
           
                 answer = messagebox.askquestion("Caution: Relative limit override", "Override of relative motor limits is selected. Are you sure you want to proceed without checking limits? Only click YES if you are sure that target Z-position can be safely reached with the current X,Y and R position.")
             
-                if answer == yes:
+                if answer == "yes":
                     self.runmotor(newposition)
                 
             else:
             
                 messagebox.showerror("Out of Range", "Value set for this motor is out of range. Motor absolute limits are: {}".format(self.limits))
                 
-            self.reloverridebutton.deselect()
+            self.master.reloverridebutton.deselect()
                     
    
         else:
     
             if self.limits[0] <= newposition <= self.limits[1]:
                 
-                if self.name == "Z" and self.pos >= 45000 and newposition < 45000:
+                if self.name == "Z" and int(self.pos) >= 45000 and newposition < 45000:
                     
                     xpos = self.master.x.pos
                     self.master.x.runmotor(-600)
@@ -671,15 +671,15 @@ class Motor():
                 self.runmotor(newposition)
                     
                         
-                if self.name == "Z" and self.pos >= 45000 and newposition < 45000 and self.master.positioncall == False:
+                if self.name == "Z" and int(self.pos) >= 45000 and newposition < 45000 and self.master.positioncall == False:
                         
                     self.master.x.runmotor(xpos)
                     self.master.y.runmotor(ypos)
                     self.master.r.runmotor(rpos)
                                           
-                else:
-                
-                    messagebox.showerror("Out of Range", "Value set for this motor is out of range. Motor absolute limits are: {}".format(self.limits))
+            else:
+                        
+                messagebox.showerror("Out of Range", "Value set for this motor is out of range. Motor absolute limits are: {}".format(self.limits))
                     
                     
                     
