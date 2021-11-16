@@ -24,21 +24,27 @@ class MotorApp(tk.Tk):
         self.globalstatus = 0
 
         self.serialnumbers = {"X": "20052-011", "Y": "20052-012", "Z": "20052-013", "R": "20052-014"}
+        
+        self.upperframe = tk.Frame(self)
+        self.upperframe.pack(side=tk.TOP)
+        
+        self.lowerframe = tk.Frame(self)
+        self.lowerframe.pack(side=tk.TOP)
 
-        self.statusframe = tk.Frame(self, height=300, width=350)
+        self.statusframe = tk.Frame(self.upperframe, height=300, width=350)
         self.statusframe.pack(side=tk.LEFT,padx=5)
         self.statusframe.pack_propagate(0)
 
-        self.controlframe = tk.Frame(self, height=300, width=480)
+        self.controlframe = tk.Frame(self.upperframe, height=300, width=480)
         self.controlframe.pack(side=tk.LEFT, padx=5)
         self.controlframe.pack_propagate(0)
 
-        self.menuframe = tk.Frame(self, height=300, width=200)
+        self.menuframe = tk.Frame(self.upperframe, height=300, width=200)
         self.menuframe.pack(side=tk.LEFT, padx=5)
         self.menuframe.pack_propagate(0)
         
-        self.overrideframe = tk.Frame(self,height=50)
-        self.overrideframe.pack(side=tk.BOTTOM, pady=5)
+        self.overrideframe = tk.Frame(self.lowerframe,height=50)
+        self.overrideframe.pack(side=tk.TOP, pady=5)
         
         self.xlimits = (-5000,5000)
         self.ylimits = (-4500,4500)
@@ -305,9 +311,12 @@ class MotorApp(tk.Tk):
         #Override frame
         
         self.overridevar = tk.IntVar()
-        self.overridebutton = tk.Checkbutton(self.overrideframe, text="Limit override for single move", variable=self.overridevar)
+        self.overridebutton = tk.Checkbutton(self.overrideframe, text="Override motor limits for single move", variable=self.overridevar)
         self.overridebutton.pack(side=tk.TOP)
         
+        self.reloverridevar = tk.IntVar()
+        self.reloverridebutton = tk.Checkbutton(self.overrideframe, text="Override relative limits for single move", variable=self.reloverridevar)
+        self.reloverridebutton.pack(side=tk.TOP)
         
         
     def loadfavourites(self):
@@ -592,16 +601,60 @@ class Motor():
             
     def moveto(self,newposition):
     
-        if self.overridevar == 1:
+        if self.overridevar == 1 and self.reloverridevar == 1:
         
-            answer = messagebox.askquestion("Caution: Limit override", "Override of motor limits is selected. Are you sure you want to proceed without checking limits (relative or absolute)? Only click YES if you are sure that the position can be reached without damaging motors.")
+            answer = messagebox.askquestion("Caution: Limit override", "Override of absolute and relative motor limits is selected. Are you sure you want to proceed without checking limits? Only click YES if you are sure that the position can be reached without damaging motors.")
             
             if answer == yes:
             
-                self.master.running = False
                 self.runmotor(newposition)
                 
-               
+            self.overridebutton.deselect()
+            self.reloverridebutton.deselect()
+                
+                
+        elif self.overridevar == 1:
+        
+            answer = messagebox.askquestion("Caution: Absolute limit override", "Override of absolute motor limits is selected. Are you sure you want to proceed without checking limits? Only click YES if you are sure that the position can be reached without damaging motors.")
+                 
+            if answer == yes:
+            
+                if self.name == "Z" and self.pos >= 45000 and newposition < 45000:
+                    
+                    xpos = self.master.x.pos
+                    self.master.x.runmotor(-600)
+                    ypos = self.master.y.pos
+                    self.master.y.runmotor(3000)
+                    rpos = self.master.r.pos
+                    self.master.r.runmotor(-1800)
+            
+                self.runmotor(newposition)   
+                
+                if self.name == "Z" and self.pos >= 45000 and newposition < 45000 and self.master.positioncall == False:
+                        
+                    self.master.x.runmotor(xpos)
+                    self.master.y.runmotor(ypos)
+                    self.master.r.runmotor(rpos)
+                    
+            self.overridebutton.deselect()
+             
+                    
+        elif self.reloverridevar == 1 and self.name == "Z":
+            
+            if self.limits[0] <= newposition <= self.limits[1]:
+          
+                answer = messagebox.askquestion("Caution: Relative limit override", "Override of relative motor limits is selected. Are you sure you want to proceed without checking limits? Only click YES if you are sure that target Z-position can be safely reached with the current X,Y and R position.")
+            
+                if answer == yes:
+                    self.runmotor(newposition)
+                
+            else:
+            
+                messagebox.showerror("Out of Range", "Value set for this motor is out of range. Motor absolute limits are: {}".format(self.limits))
+                
+            self.reloverridebutton.deselect()
+                    
+   
         else:
     
             if self.limits[0] <= newposition <= self.limits[1]:
@@ -609,24 +662,24 @@ class Motor():
                 if self.name == "Z" and self.pos >= 45000 and newposition < 45000:
                     
                     xpos = self.master.x.pos
-                    self.master.x.moveto(-600)
+                    self.master.x.runmotor(-600)
                     ypos = self.master.y.pos
-                    self.master.y.moveto(3000)
+                    self.master.y.runmotor(3000)
                     rpos = self.master.r.pos
-                    self.master.r.moveto(-1800)
+                    self.master.r.runmotor(-1800)
                     
                 self.runmotor(newposition)
                     
                         
                 if self.name == "Z" and self.pos >= 45000 and newposition < 45000 and self.master.positioncall == False:
                         
-                    self.master.x.moveto(xpos)
-                    self.master.y.moveto(ypos)
-                    self.master.r.moveto(rpos)
+                    self.master.x.runmotor(xpos)
+                    self.master.y.runmotor(ypos)
+                    self.master.r.runmotor(rpos)
                                           
                 else:
                 
-                    messagebox.showerror("Out of Range", "Value set for this motor is out of range. Motor range limits are: {}".format(self.limits))
+                    messagebox.showerror("Out of Range", "Value set for this motor is out of range. Motor absolute limits are: {}".format(self.limits))
                     
                     
                     
