@@ -31,11 +31,11 @@ class MotorApp(tk.Tk):
         self.lowerframe = tk.Frame(self)
         self.lowerframe.pack(side=tk.TOP)
 
-        self.statusframe = tk.Frame(self.upperframe, height=300, width=350)
+        self.statusframe = tk.Frame(self.upperframe, height=300, width=250)
         self.statusframe.pack(side=tk.LEFT,padx=5)
         self.statusframe.pack_propagate(0)
 
-        self.controlframe = tk.Frame(self.upperframe, height=300, width=560)
+        self.controlframe = tk.Frame(self.upperframe, height=300, width=700)
         self.controlframe.pack(side=tk.LEFT, padx=5)
         self.controlframe.pack_propagate(0)
 
@@ -64,6 +64,8 @@ class MotorApp(tk.Tk):
         
         self.connectbutton = tk.Button(self.controlframe, text="Connect to motors", command=self.portconnect)
         self.connectbutton.pack(side=tk.TOP)
+        
+        self.units = {"X": "mm", "Y": "mm", "Z": "mm", "R": u"\N{DEGREE SIGN}"}
         
         self.positioncall = False
         
@@ -600,6 +602,8 @@ class Motor():
         self.unitpos = unitposition
         self.unitlimits = unitlimits
         
+        self.units = self.master.units[self.name]
+        
         self.guiinit()
         
         
@@ -613,8 +617,8 @@ class Motor():
         self.poslabel.pack(side=tk.LEFT, padx=5)
         self.entry = tk.Entry(self.frame)
         self.entry.pack(side=tk.LEFT, padx=5)
-        self.unitposlabel = tk.Label(self.frame, text=self.unitpos, font=("Helvetica",12), width=10)
-        self.unitposlabel.pack()
+        self.unitposlabel = tk.Label(self.frame, text=self.unitpos+" "+self.units, font=("Helvetica",12), width=10)
+        self.unitposlabel.pack(side=tk.LEFT, padx=5)
         self.unitentry = tk.Entry(self.frame)
         self.unitentry.pack(side=tk.LEFT, padx=5)
         self.startbutton = tk.Button(self.frame, text="Start", command=self.changeposition)
@@ -651,8 +655,8 @@ class Motor():
                 
                 if self.pos != "Error":
                 
-                    self.mmpos = str(self.master.steptomm(int(self.pos)))
-                    self.mmposlabel.configure(text=self.mmpos)
+                    self.unitpos = str(self.master.steptomm(int(self.pos)))
+                    self.unitposlabel.configure(text=self.unitpos+" "+self.units)
         
         
         
@@ -660,6 +664,7 @@ class Motor():
 
         try:
             self.newpos = int(self.entry.get())
+            
         except ValueError:
             
             try:
