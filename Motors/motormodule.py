@@ -35,7 +35,7 @@ class MotorApp(tk.Tk):
         self.statusframe.pack(side=tk.LEFT,padx=5)
         self.statusframe.pack_propagate(0)
 
-        self.controlframe = tk.Frame(self.upperframe, height=300, width=480)
+        self.controlframe = tk.Frame(self.upperframe, height=300, width=560)
         self.controlframe.pack(side=tk.LEFT, padx=5)
         self.controlframe.pack_propagate(0)
 
@@ -51,6 +51,11 @@ class MotorApp(tk.Tk):
         self.zlimits = (0,80000)
         self.rlimits = (-3600,3600)
         
+        self.xmmlimits = ("-25mm","25mm")
+        self.ymmlimits = ("-22.5mm","22.5mm")
+        self.zmmlimits = ("0mm","400mm")
+        self.rdeglimits = ("-360 degrees","360 degrees")
+        
         self.errorcodes = {"-1": "Stop motor first", "-2": "Invalid argument", "-3": "Cannot query this option", "-5": "Action failed due to internal error", "-6": "Command unavailable in current mode", "-7": "Motor is disabled", "-101": "Wrong argument type", "-102": "Invalid number of arguments"}
 
         self.today = date.today()
@@ -61,6 +66,7 @@ class MotorApp(tk.Tk):
         self.connectbutton.pack(side=tk.TOP)
         
         self.positioncall = False
+        
 
 
     
@@ -146,6 +152,55 @@ class MotorApp(tk.Tk):
 
                 else:
                     self.closegui()
+                    
+    
+    
+    def steptomm(self,stepvalue):
+    
+        microns = stepvalue*5
+        mm = str(microns/1000)
+    
+        return(mm)
+        
+        
+        
+    def mmtostep(self,mminput):
+    
+        if "." in mminput:
+        
+            mm = mminput[0:mminput.index(".")]
+            um = mminput[mminput.index(".")+1:]
+            
+            umtotal = int(mm)*1000 + int(um)
+        
+            if umtotal%5 < 3:
+                step = umtotal//5
+            else:
+                step = umtotal//5 + 1
+            
+        else:
+        
+            um = int(mminput)*1000
+            step = int(um//5)
+        
+        return(step)
+        
+        
+    
+    def steptodegree(self,stepvalue):
+    
+        degree = str(stepvalue/10)
+        
+        return(degree)
+        
+    
+    
+    def degreetostep(self,degreestring):
+    
+        deg = float(degreestring)
+        step = int(round(deg*10))
+        
+        return(step)
 
     
     
@@ -237,11 +292,16 @@ class MotorApp(tk.Tk):
         
 
     def initiatemotors(self,xpos,ypos,zpos,rpos):
+    
+        xmmpos = self.steptomm(int(xpos))
+        ymmpos = self.steptomm(int(ypos))
+        zmmpos = self.steptomm(int(zpos))
+        rdegpos = self.steptodegree(int(rpos))
 
-        self.x = Motor(self,"X",self.xport,xpos,self.xlimits)
-        self.y = Motor(self,"Y",self.yport,ypos,self.ylimits)
-        self.z = Motor(self,"Z",self.zport,zpos,self.zlimits)  
-        self.r = Motor(self,"R",self.rport,rpos,self.rlimits)
+        self.x = Motor(self,"X",self.xport,xpos,xmmpos,self.xlimits,self.xmmlimits)
+        self.y = Motor(self,"Y",self.yport,ypos,ymmpos,self.ylimits,self.ymmlimits)
+        self.z = Motor(self,"Z",self.zport,zpos,zmmpos,self.zlimits,self.zmmlimits)
+        self.r = Motor(self,"R",self.rport,rpos,rdegpos,self.rlimits,self.rdeglimits)
         
     
         self.running = True
@@ -529,7 +589,7 @@ class MotorApp(tk.Tk):
 
 class Motor():
 
-    def __init__(self,master,name,unit,position,limits):
+    def __init__(self,master,name,unit,position,unitposition,limits,unitlimits):
     
         
         self.name = name
@@ -537,6 +597,8 @@ class Motor():
         self.limits = limits
         self.master = master
         self.pos = position
+        self.unitpos = unitposition
+        self.unitlimits = unitlimits
         
         self.guiinit()
         
@@ -551,13 +613,17 @@ class Motor():
         self.poslabel.pack(side=tk.LEFT, padx=5)
         self.entry = tk.Entry(self.frame)
         self.entry.pack(side=tk.LEFT, padx=5)
+        self.unitposlabel = tk.Label(self.frame, text=self.unitpos, font=("Helvetica",12), width=10)
+        self.unitposlabel.pack()
+        self.unitentry = tk.Entry(self.frame)
+        self.unitentry.pack(side=tk.LEFT, padx=5)
         self.startbutton = tk.Button(self.frame, text="Start", command=self.changeposition)
         self.startbutton.pack(side=tk.LEFT, padx=5)
         self.stopbutton = tk.Button(self.frame, text="Stop", command=self.stopmotor)
         self.stopbutton.pack(side=tk.LEFT, padx=5)
         self.clearbutton = tk.Button(self.frame, text="Clear error", command=self.clearerror)
         self.clearbutton.pack(side=tk.LEFT,padx=5)
-        
+          
         
         
     def guipack(self):
@@ -576,12 +642,17 @@ class Motor():
         
                 self.motor.write("PACT\r\n".encode("utf-8"))
                 try:
-                    response = self.motor.readline().decode("utf-(").split(",")
+                    response = self.motor.readline().decode("utf-8").split(",")
                     self.pos = response[2][0:-5]
                 except RecursionError:
                     self.pos = "Error"
             
                 self.poslabel.configure(text=self.pos)
+                
+                if self.pos != "Error":
+                
+                    self.mmpos = str(self.master.steptomm(int(self.pos)))
+                    self.mmposlabel.configure(text=self.mmpos)
         
         
         
@@ -590,12 +661,19 @@ class Motor():
         try:
             self.newpos = int(self.entry.get())
         except ValueError:
-            messagebox.showerror("Error", "Please enter a position to set")
-            return
+            
+            try:
+                unitnewpos = str(self.unitentry.get())
+                if self.name == "R":
+                    self.newpos = self.master.degreetostep(unitnewpos)
+                else:
+                    self.newpos = self.master.mmtostep(unitnewpos)
+                
+            except ValueError:
+                messagebox.showerror("Error", "Please enter a position to set")
+                return
 
-            
         self.moveto(self.newpos)
-            
             
             
             
@@ -650,7 +728,7 @@ class Motor():
                 
             else:
             
-                messagebox.showerror("Out of Range", "Value set for this motor is out of range. Motor absolute limits are: {}".format(self.limits))
+                messagebox.showerror("Out of Range", "Value set for this motor is out of range. Motor absolute limits are: {} ({})".format(self.limits,self.unitlimits))
                 
             self.master.reloverridebutton.deselect()
                     
@@ -679,7 +757,8 @@ class Motor():
                                           
             else:
                         
-                messagebox.showerror("Out of Range", "Value set for this motor is out of range. Motor absolute limits are: {}".format(self.limits))
+                messagebox.showerror("Out of Range", "Value set for this motor is out of range. Motor absolute limits are: {} ({})".format(self.limits,self.unitlimits))
+                    
                     
                     
                     
