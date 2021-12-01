@@ -654,9 +654,12 @@ class Motor():
                 self.poslabel.configure(text=self.pos)
                 
                 if self.pos != "Error":
-                
-                    self.unitpos = str(self.master.steptomm(int(self.pos)))
-                    self.unitposlabel.configure(text=self.unitpos+" "+self.units)
+                    if self.name == "R":
+                        self.unitpos = str(self.master.steptodegree(int(self.pos)))
+                        self.unitposlabel.configure(text=self.unitpos+" "+self.units)
+                    else:
+                        self.unitpos = str(self.master.steptomm(int(self.pos)))
+                        self.unitposlabel.configure(text=self.unitpos+" "+self.units)
         
         
         
