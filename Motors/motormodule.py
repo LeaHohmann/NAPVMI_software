@@ -180,6 +180,18 @@ class MotorApp(tk.Tk):
             else:
                 step = umtotal//5 + 1
             
+        elif "," in mminput:
+        
+            mm == mminput[0:mminput.index(",")]
+            um == mminput[mminput.index(",")+1:]
+            
+            umtotal = int(mm)*1000 + int(um)
+            
+            if umtotal%5 < 3:
+                step = umtotal//5
+            else:
+                step = umtotal//5 +1
+            
         else:
         
             um = int(mminput)*1000
@@ -710,10 +722,16 @@ class Motor():
                     xpos = self.master.x.pos
                     self.master.x.runmotor(-600)
                     ypos = self.master.y.pos
-                    self.master.y.runmotor(3000)
+                    self.master.y.runmotor(3500)
                     rpos = self.master.r.pos
                     self.master.r.runmotor(-1800)
-            
+                    
+                elif self.master.z.pos < 5800:
+                    
+                    if self.checkrellimits(newposition) == False:
+                        messagebox.showerror("Out of Range", "Value set for this motor violates relative limits. Check positions of other motors and retry.")
+                        return
+                           
                 self.runmotor(newposition)   
                 
                 if self.name == "Z" and int(self.pos) >= 45000 and newposition < 45000 and self.master.positioncall == False:
@@ -754,6 +772,12 @@ class Motor():
                     rpos = self.master.r.pos
                     self.master.r.runmotor(-1800)
                     
+                elif self.master.z.pos < 5800:
+                    
+                    if self.checkrellimits(newposition) == False:
+                        messagebox.showerror("Out of Range", "Value set for this motor violates relative limits. Check positions of other motors and retry.")
+                        return
+                    
                 self.runmotor(newposition)
                     
                         
@@ -766,6 +790,24 @@ class Motor():
             else:
                         
                 messagebox.showerror("Out of Range", "Value set for this motor is out of range. Motor absolute limits are: {} ({})".format(self.limits,self.unitlimits))
+                
+                
+                
+    def checkrellimits(self,newposition):
+    
+        if self.name == "X":
+            if not -2600 < newposition < 1400:
+                return False
+                
+        if self.name == "R":
+            if not -1800 - (self.master.y.pos - 2700)/5 < newposition < -1800 + (self.master.y.pos - 2700)/5:
+                return False
+        
+        if self.name == "Y":
+            if newposition < 2700 + abs(self.master.r.pos + 1800)*5:
+                return False
+                
+        return True
                     
                     
                     
