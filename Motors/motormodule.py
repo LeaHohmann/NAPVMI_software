@@ -48,7 +48,7 @@ class MotorApp(tk.Tk):
         
         self.xlimits = (-5000,5000)
         self.ylimits = (-4500,4500)
-        self.zlimits = (0,80000)
+        self.zlimits = (400,80000)
         self.rlimits = (-3600,3600)
         
         self.xmmlimits = ("-25mm","25mm")
@@ -726,7 +726,7 @@ class Motor():
                     rpos = self.master.r.pos
                     self.master.r.runmotor(-1800)
                     
-                elif self.master.z.pos < 5800:
+                elif int(self.master.z.pos) < 5800:
                     
                     if self.checkrellimits(newposition) == False:
                         messagebox.showerror("Out of Range", "Value set for this motor violates relative limits. Check positions of other motors and retry.")
@@ -743,7 +743,7 @@ class Motor():
             self.master.overridebutton.deselect()
              
                     
-        elif self.master.reloverridevar.get() and self.name == "Z":
+        elif self.master.reloverridevar.get():
             
             if self.limits[0] <= newposition <= self.limits[1]:
           
@@ -836,6 +836,8 @@ class Motor():
     def stopmotor(self):
     
         self.master.running = False
+        
+        time.sleep(0.05)
     
         self.motor.write("STOP\r\n".encode("utf-8"))
         lastline = self.motor.readline().decode("utf-8")
@@ -858,6 +860,9 @@ class Motor():
         
     
     def emergencystop(self):
+    
+        self.master.running = False
+        time.sleep(0.02)
         
         self.motor.write("ESTOP\r\n".encode("utf-8"))
         lastline = self.motor.readline().decode("utf-8")
@@ -865,6 +870,7 @@ class Motor():
         self.startbutton.configure(state=tk.DISABLED)
         self.stopbutton.configure(state=tk.DISABLED)
      
+        self.master.running = True
      
      
             
