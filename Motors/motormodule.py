@@ -772,7 +772,7 @@ class Motor():
                     rpos = self.master.r.pos
                     self.master.r.runmotor(-1800)
                     
-                elif self.master.z.pos < 5800:
+                elif int(self.master.z.pos) < 5800:
                     
                     if self.checkrellimits(newposition) == False:
                         messagebox.showerror("Out of Range", "Value set for this motor violates relative limits. Check positions of other motors and retry.")
@@ -800,11 +800,11 @@ class Motor():
                 return False
                 
         if self.name == "R":
-            if not -1800 - (self.master.y.pos - 2700)/5 < newposition < -1800 + (self.master.y.pos - 2700)/5:
+            if not -1800 - (int(self.master.y.pos) - 2700)/5 < newposition < -1800 + (int(self.master.y.pos) - 2700)/5:
                 return False
         
         if self.name == "Y":
-            if newposition < 2700 + abs(self.master.r.pos + 1800)*5:
+            if newposition < 2700 + abs(int(self.master.r.pos) + 1800)*5:
                 return False
                 
         return True
