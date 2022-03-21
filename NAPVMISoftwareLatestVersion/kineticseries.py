@@ -91,6 +91,13 @@ class SeriesGui(tk.Frame):
         self.framenumber = tk.Entry(self.leftframe, textvariable=self.sumframes, width=10)
         self.framenumber.pack(side=tk.TOP, pady=(0,20))
         
+        self.thresholdlabel = tk.Label(self.leftframe,text="Threshold (individual frame)")
+        self.thresholdlable.pack(side=tk.TOP,pady=(10,5))
+        
+        self.threshold = tk.IntVar(self.leftframe, value=0)
+        self.thresholdentry = tk.Entry(self.leftframe,textvariable=self.threshold,width=10)
+        self.thresholdentry.pack(side=tk.TOP,pady=(0,20))
+        
         self.minusvar = tk.IntVar(self.leftframe, value=0)
         self.minuscheck = tk.Checkbutton(self.leftframe, text="Negative delays", variable=self.minusvar, onvalue=1, offvalue=0)
         self.minuscheck.pack(side=tk.TOP,pady=(10,20))
@@ -257,6 +264,8 @@ class SeriesGui(tk.Frame):
             try:
                 image_result = self.camera.GetNextImage(2000)
                 image_data = image_result.GetNDArray()
+                if self.thresholdentry.get() > 0:
+                    image_data = image_data*(image_data>self.thresholdentry.get())
                 self.sumimage += image_data
                 image_result.Release()
 
