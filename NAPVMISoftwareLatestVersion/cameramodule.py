@@ -263,6 +263,14 @@ class CameraApp(tk.Frame):
         node_bufferhandling.SetIntValue(node_bufferhandling.GetEntryByName("NewestOnly").GetValue())
 
         self.node_acquisitionmode = PySpin.CEnumerationPtr(self.nodemap.GetNode('AcquisitionMode'))
+        
+        try:
+            self.threshold = int(self.thresholdentry.get())
+        except ValueError:
+            messagebox.showerror("Error", "Set threshold as integer number. No thresholding performed")
+            self.thresholdentry.delete(0,tk.END)
+            self.thresholdentry.insert(tk.END,"0")
+            self.threshold = 0
            
 
        
@@ -495,7 +503,9 @@ class CameraApp(tk.Frame):
         
             try:
                 image_result = self.camera.GetNextImage(3000)
-                frame_data = image_result.GetNDArray()
+                frame_data = image_result.GetNDArray
+                if self.threhold > 0:
+                    frame_data = frame_data*(frame_data>self.threshold)
                 self.sumimage += frame_data
                 self.lasttwenty += frame_data
             
@@ -527,14 +537,7 @@ class CameraApp(tk.Frame):
             self.uppercrange = 255
             self.lowercrange = 0
 
-        try:
-            self.threshold = int(self.thresholdentry.get())
-            displayimage = (self.image_data > self.threshold) * self.image_data
-        except ValueError:
-            messagebox.showerror("Error", "Set threshold as integer number. No thresholding performed")
-            self.thresholdentry.delete(0,tk.END)
-            self.thresholdentry.insert(tk.END,"0")
-            displayimage = self.image_data
+        displayimage = self.image_data
 
 
 
