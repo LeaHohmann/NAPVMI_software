@@ -92,7 +92,7 @@ class SeriesGui(tk.Frame):
         self.framenumber.pack(side=tk.TOP, pady=(0,20))
         
         self.thresholdlabel = tk.Label(self.leftframe,text="Threshold (individual frame)")
-        self.thresholdlable.pack(side=tk.TOP,pady=(10,5))
+        self.thresholdlabel.pack(side=tk.TOP,pady=(10,5))
         
         self.threshold = tk.IntVar(self.leftframe, value=0)
         self.thresholdentry = tk.Entry(self.leftframe,textvariable=self.threshold,width=10)
@@ -264,8 +264,8 @@ class SeriesGui(tk.Frame):
             try:
                 image_result = self.camera.GetNextImage(2000)
                 image_data = image_result.GetNDArray()
-                if self.thresholdentry.get() > 0:
-                    image_data = image_data*(image_data>self.thresholdentry.get())
+                if int(self.thresholdentry.get()) > 0:
+                    image_data = image_data*(image_data>int(self.thresholdentry.get()))
                 self.sumimage += image_data
                 image_result.Release()
 
