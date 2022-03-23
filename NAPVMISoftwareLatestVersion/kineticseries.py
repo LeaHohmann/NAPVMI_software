@@ -69,20 +69,28 @@ class SeriesGui(tk.Frame):
         self.delayrangeframe = tk.Frame(self.leftframe)
         self.delayrangeframe.pack(side=tk.TOP)
 
-        self.delayrangelower = tk.IntVar(self.delayrangeframe, value=0)
-        self.delayrangestart = tk.Entry(self.delayrangeframe, textvariable=self.delayrangelower, width=10)
-        self.delayrangestart.pack(side=tk.LEFT)
+        self.rangelower1 = tk.IntVar(self.delayrangeframe, value=0)
+        self.rangestart1 = tk.Entry(self.delayrangeframe, textvariable=self.delayrangelower, width=10)
+        self.rangestart1.pack(side=tk.LEFT)
 
-        self.delayrangeupper = tk.IntVar(self.delayrangeframe, value=2000)
-        self.delayrangeend = tk.Entry(self.delayrangeframe, textvariable=self.delayrangeupper, width=10)
-        self.delayrangeend.pack(side=tk.LEFT)
+        self.rangeupper1 = tk.IntVar(self.delayrangeframe, value=2000)
+        self.rangeend1 = tk.Entry(self.delayrangeframe, textvariable=self.delayrangeupper, width=10)
+        self.rangeend1.pack(side=tk.LEFT)
+        
+        self.rangenumber = 1
+        
+        self.rangeadder = tk.Button(self.leftframe, text="Add delay range", command=lambda:self.addrange(2))
+        self.rangeadder.pack(side=tk.TOP, pady=(20,5))
 
         self.incrementlabel = tk.Label(self.leftframe, text="Delay scanning increment:", font=("Helvetica",12))
         self.incrementlabel.pack(side=tk.TOP, pady=(40,5))
+        
+        self.incrementframe = tk.Frame(self.leftframe)
+        self.incrementframe.pack(side=tk.TOP)
 
-        self.increment = tk.IntVar(self.leftframe, value=100)
-        self.incremententry = tk.Entry(self.leftframe, textvariable=self.increment, width=10)
-        self.incremententry.pack(side=tk.TOP, pady=(0,20))
+        self.increment1 = tk.IntVar(self.incrementframe, value=100)
+        self.incremententry1 = tk.Entry(self.incrementframe, textvariable=self.increment, width=10)
+        self.incremententry1.pack(side=tk.TOP, pady=(0,20))
 
         self.framenumberlabel = tk.Label(self.leftframe, text="Number of averaged frames per delay:", font=("Helvetica",12))
         self.framenumberlabel.pack(side=tk.TOP, pady=(10,5))
@@ -91,7 +99,7 @@ class SeriesGui(tk.Frame):
         self.framenumber = tk.Entry(self.leftframe, textvariable=self.sumframes, width=10)
         self.framenumber.pack(side=tk.TOP, pady=(0,20))
         
-        self.thresholdlabel = tk.Label(self.leftframe,text="Threshold (individual frame)")
+        self.thresholdlabel = tk.Label(self.leftframe,text="Threshold (individual frame)", font=("Helvetica",12))
         self.thresholdlabel.pack(side=tk.TOP,pady=(10,5))
         
         self.threshold = tk.IntVar(self.leftframe, value=0)
@@ -115,8 +123,45 @@ class SeriesGui(tk.Frame):
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.rightframe)
         self.canvas.draw()
         self.canvas.get_tk_widget().pack(side=tk.TOP, expand=1, fill=tk.BOTH, pady=10)
+        
+        
+        
+    def addrange(self,instance):
+    
+        if instance == 2:
+            
+            self.rangelower2 = tk.IntVar(self.delayrangeframe, value=0)
+            self.rangestart2 = tk.Entry(self.delayrangeframe, textvariable=self.delayrangelower, width=10)
+            self.rangestart2.pack(side=tk.LEFT)
 
+            self.rangeupper2 = tk.IntVar(self.delayrangeframe, value=2000)
+            self.rangeend2 = tk.Entry(self.delayrangeframe, textvariable=self.delayrangeupper, width=10)
+            self.rangeend2.pack(side=tk.LEFT)
+            
+            self.increment2 = tk.IntVar(self.incrementframe, value=100)
+            self.incremententry2 = tk.Entry(self.incrementframe, textvariable=self.increment, width=10)
+            self.incremententry2.pack(side=tk.TOP, pady=(0,20))
+            
+            self.rangeadder.configure(command=lambda:self.addrange(3))
+            
+        if instance == 3:
+           
+            self.rangelower3 = tk.IntVar(self.delayrangeframe, value=0)
+            self.rangestart3 = tk.Entry(self.delayrangeframe, textvariable=self.delayrangelower, width=10)
+            self.rangestart3.pack(side=tk.LEFT)
 
+            self.rangeupper3 = tk.IntVar(self.delayrangeframe, value=2000)
+            self.rangeend3 = tk.Entry(self.delayrangeframe, textvariable=self.delayrangeupper, width=10)
+            self.rangeend3.pack(side=tk.LEFT)
+            
+            self.increment3 = tk.IntVar(self.incrementframe, value=100)
+            self.incremententry3 = tk.Entry(self.incrementframe, textvariable=self.increment, width=10)
+            self.incremententry3.pack(side=tk.TOP, pady=(0,20))
+            
+            self.rangeadder.configure(state=tk.DISABLED)
+            
+        self.rangenumber = instance
+           
 
     def startacquisition(self):
 
@@ -162,8 +207,16 @@ class SeriesGui(tk.Frame):
         self.stopbutton.pack(side=tk.TOP, pady=(20,10))
 
         self.intensityvtime.set_xlim(int(self.delayrangestart.get())-5, int(self.delayrangeend.get())+5)
-
-        self.delayscanrange = numpy.arange(int(self.delayrangestart.get()), (int(self.delayrangeend.get()) + 1), int(self.incremententry.get()))
+        
+        self.delayscanrange1 = numpy.arange(int(self.rangestart1.get()), (int(self.rangeend1.get()) + 1), int(self.incremententry1.get()))
+        
+        if self.rangenumber > 1:
+            self.delayscanrange2 = numpy.arange(int(self.rangestart2.get()), (int(self.rangeend2.get()) + 1), int(self.incremententry2.get()))
+            
+        if self.rangenumber == 3:
+            self.delayscanrange3 = numpy.arange(int(self.rangestart3.get()), (int(self.rangeend3.get()) + 1), int(self.incremententry3.get()))
+        
+        self.delayscanrange = np.concatenate([self.delayscanrange1,self.delayscanrange2,self.delayscanrange3])
         
         self.bncgui.channel.active = False
 
