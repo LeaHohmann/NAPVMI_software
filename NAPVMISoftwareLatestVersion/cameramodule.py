@@ -503,8 +503,8 @@ class CameraApp(tk.Frame):
         
             try:
                 image_result = self.camera.GetNextImage(3000)
-                frame_data = image_result.GetNDArray
-                if self.threhold > 0:
+                frame_data = image_result.GetNDArray()
+                if self.threshold > 0:
                     frame_data = frame_data*(frame_data>self.threshold)
                 self.sumimage += frame_data
                 self.lasttwenty += frame_data

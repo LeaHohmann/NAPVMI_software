@@ -69,12 +69,15 @@ class SeriesGui(tk.Frame):
         self.delayrangeframe = tk.Frame(self.leftframe)
         self.delayrangeframe.pack(side=tk.TOP)
 
-        self.rangelower1 = tk.IntVar(self.delayrangeframe, value=0)
-        self.rangestart1 = tk.Entry(self.delayrangeframe, textvariable=self.delayrangelower, width=10)
+        self.range1frame = tk.Frame(self.delayrangeframe)
+        self.range1frame.pack(side=tk.TOP)
+
+        self.rangelower1 = tk.IntVar(self.range1frame, value=0)
+        self.rangestart1 = tk.Entry(self.range1frame, textvariable=self.rangelower1, width=10)
         self.rangestart1.pack(side=tk.LEFT)
 
-        self.rangeupper1 = tk.IntVar(self.delayrangeframe, value=2000)
-        self.rangeend1 = tk.Entry(self.delayrangeframe, textvariable=self.delayrangeupper, width=10)
+        self.rangeupper1 = tk.IntVar(self.range1frame, value=2000)
+        self.rangeend1 = tk.Entry(self.range1frame, textvariable=self.rangeupper1, width=10)
         self.rangeend1.pack(side=tk.LEFT)
         
         self.rangenumber = 1
@@ -89,11 +92,11 @@ class SeriesGui(tk.Frame):
         self.incrementframe.pack(side=tk.TOP)
 
         self.increment1 = tk.IntVar(self.incrementframe, value=100)
-        self.incremententry1 = tk.Entry(self.incrementframe, textvariable=self.increment, width=10)
-        self.incremententry1.pack(side=tk.TOP, pady=(0,20))
+        self.incremententry1 = tk.Entry(self.incrementframe, textvariable=self.increment1, width=10)
+        self.incremententry1.pack(side=tk.TOP, pady=(0,0))
 
         self.framenumberlabel = tk.Label(self.leftframe, text="Number of averaged frames per delay:", font=("Helvetica",12))
-        self.framenumberlabel.pack(side=tk.TOP, pady=(10,5))
+        self.framenumberlabel.pack(side=tk.TOP, pady=(30,5))
 
         self.sumframes = tk.IntVar(self.leftframe, value=10)
         self.framenumber = tk.Entry(self.leftframe, textvariable=self.sumframes, width=10)
@@ -130,33 +133,39 @@ class SeriesGui(tk.Frame):
     
         if instance == 2:
             
-            self.rangelower2 = tk.IntVar(self.delayrangeframe, value=0)
-            self.rangestart2 = tk.Entry(self.delayrangeframe, textvariable=self.delayrangelower, width=10)
+            self.range2frame = tk.Frame(self.delayrangeframe)
+            self.range2frame.pack(side=tk.TOP)
+            
+            self.rangelower2 = tk.IntVar(self.range2frame, value=0)
+            self.rangestart2 = tk.Entry(self.range2frame, textvariable=self.rangelower2, width=10)
             self.rangestart2.pack(side=tk.LEFT)
 
-            self.rangeupper2 = tk.IntVar(self.delayrangeframe, value=2000)
-            self.rangeend2 = tk.Entry(self.delayrangeframe, textvariable=self.delayrangeupper, width=10)
+            self.rangeupper2 = tk.IntVar(self.range2frame, value=2000)
+            self.rangeend2 = tk.Entry(self.range2frame, textvariable=self.rangeupper2, width=10)
             self.rangeend2.pack(side=tk.LEFT)
             
             self.increment2 = tk.IntVar(self.incrementframe, value=100)
-            self.incremententry2 = tk.Entry(self.incrementframe, textvariable=self.increment, width=10)
-            self.incremententry2.pack(side=tk.TOP, pady=(0,20))
+            self.incremententry2 = tk.Entry(self.incrementframe, textvariable=self.increment2, width=10)
+            self.incremententry2.pack(side=tk.TOP, pady=(0,0))
             
             self.rangeadder.configure(command=lambda:self.addrange(3))
             
         if instance == 3:
            
-            self.rangelower3 = tk.IntVar(self.delayrangeframe, value=0)
-            self.rangestart3 = tk.Entry(self.delayrangeframe, textvariable=self.delayrangelower, width=10)
+            self.range3frame = tk.Frame(self.delayrangeframe)
+            self.range3frame.pack(side=tk.TOP)           
+           
+            self.rangelower3 = tk.IntVar(self.range3frame, value=0)
+            self.rangestart3 = tk.Entry(self.range3frame, textvariable=self.rangelower3, width=10)
             self.rangestart3.pack(side=tk.LEFT)
 
-            self.rangeupper3 = tk.IntVar(self.delayrangeframe, value=2000)
-            self.rangeend3 = tk.Entry(self.delayrangeframe, textvariable=self.delayrangeupper, width=10)
+            self.rangeupper3 = tk.IntVar(self.range3frame, value=2000)
+            self.rangeend3 = tk.Entry(self.range3frame, textvariable=self.rangeupper3, width=10)
             self.rangeend3.pack(side=tk.LEFT)
             
             self.increment3 = tk.IntVar(self.incrementframe, value=100)
-            self.incremententry3 = tk.Entry(self.incrementframe, textvariable=self.increment, width=10)
-            self.incremententry3.pack(side=tk.TOP, pady=(0,20))
+            self.incremententry3 = tk.Entry(self.incrementframe, textvariable=self.increment3, width=10)
+            self.incremententry3.pack(side=tk.TOP, pady=(0,0))
             
             self.rangeadder.configure(state=tk.DISABLED)
             
@@ -205,18 +214,21 @@ class SeriesGui(tk.Frame):
 
         self.running = True
         self.stopbutton.pack(side=tk.TOP, pady=(20,10))
-
-        self.intensityvtime.set_xlim(int(self.delayrangestart.get())-5, int(self.delayrangeend.get())+5)
         
         self.delayscanrange1 = numpy.arange(int(self.rangestart1.get()), (int(self.rangeend1.get()) + 1), int(self.incremententry1.get()))
         
         if self.rangenumber > 1:
             self.delayscanrange2 = numpy.arange(int(self.rangestart2.get()), (int(self.rangeend2.get()) + 1), int(self.incremententry2.get()))
-            
-        if self.rangenumber == 3:
-            self.delayscanrange3 = numpy.arange(int(self.rangestart3.get()), (int(self.rangeend3.get()) + 1), int(self.incremententry3.get()))
         
-        self.delayscanrange = np.concatenate([self.delayscanrange1,self.delayscanrange2,self.delayscanrange3])
+        if self.rangenumber == 1:
+            self.delayscanrange = self.delayscanrange1
+        elif self.rangenumber == 2:
+            self.delayscanrange = numpy.concatenate([self.delayscanrange1,self.delayscanrange2])
+        elif self.rangenumber == 3:
+            self.delayscanrange3 = numpy.arange(int(self.rangestart3.get()), (int(self.rangeend3.get()) + 1), int(self.incremententry3.get()))
+            self.delayscanrange = numpy.concatenate([self.delayscanrange1,self.delayscanrange2,self.delayscanrange3])
+        
+        self.intensityvtime.set_xlim(self.delayscanrange[0]-5, self.delayscanrange[-1]+5)
         
         self.bncgui.channel.active = False
 
@@ -278,7 +290,7 @@ class SeriesGui(tk.Frame):
         self.intensityvtime.plot(self.delaylist, self.totalintensities)
         self.canvas.draw()
 
-        if i < int(self.delayrangeend.get()) and self.running == True:
+        if i < self.delayscanrange[-1] and self.running == True:
             index += 1
             self.after(10, self.delayloop, index)
 
@@ -293,7 +305,7 @@ class SeriesGui(tk.Frame):
         
         numpy.savez_compressed(self.filename, **self.imageseries)
 
-        self.parameters = {"Exposure time": self.exposure, "Gain": self.gain, "Number of frames per delay": self.numberofframes, "Negative delays": self.minusvar, "Scan channel": self.channelname.get(), "Delay start": int(self.delayrangestart.get()), "Delay end": int(self.delayrangeend.get()), "Delay increment": int(self.incremententry.get()), "Delay A": self.delaysvector[0], "Delay B": self.delaysvector[1], "Delay C": self.delaysvector[2], "Delay E": self.delaysvector[3], "Delay F": self.delaysvector[4], "Delay G": self.delaysvector[5], "Delay H": self.delaysvector[6]}
+        self.parameters = {"Exposure time": self.exposure, "Gain": self.gain, "Number of frames per delay": self.numberofframes, "Negative delays": self.minusvar, "Scan channel": self.channelname.get(), "Delay start": int(self.delayscanrange[0]), "Delay end": int(self.delayscanrange[-1]), "Delay A": self.delaysvector[0], "Delay B": self.delaysvector[1], "Delay C": self.delaysvector[2], "Delay E": self.delaysvector[3], "Delay F": self.delaysvector[4], "Delay G": self.delaysvector[5], "Delay H": self.delaysvector[6]}
         
         f = open(self.parameterfilename, "w")
         f.write(str(self.parameters))
