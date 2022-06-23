@@ -189,12 +189,12 @@ class SeriesGui(tk.Frame):
         
     def removerange(self,rangenumber):
     
-        if rangenumber = 3:
+        if rangenumber == 3:
             self.range3frame.pack_forget()
             self.rangenumber = 2
             self.rangeadder.configure(state=tk.NORMAL,command=lambda:self.addrange(3))
         
-        if rangenumber = 2:
+        if rangenumber == 2:
             self.range2frame.pack_forget()
             self.rangenumber = 1
             self.rangeadder.configure(command=lambda:self.addrange(2))
@@ -382,9 +382,9 @@ class SeriesGui(tk.Frame):
         
        
         if self.rangenumber == 1:
-        rangelower = int(self.rangestart1.get())
-        rangeupper = int(self.rangeend1.get())
-        increment = int(self.incremententry1.get())
+            rangelower = int(self.rangestart1.get())
+            rangeupper = int(self.rangeend1.get())
+            increment = int(self.incremententry1.get())
         elif self.rangenumber == 2:
             rangelower = (int(self.rangestart1.get()),int(self.rangestart2.get()))
             rangeupper = (int(self.rangeend1.get()),int(self.rangeend2.get()))
@@ -430,7 +430,7 @@ class SeriesGui(tk.Frame):
             self.incremententry2.delete(0,tk.END)
             self.incremententry2.insert(0,experiment["increment"][1])
             
-        if self.rangenumber = 3:
+        if self.rangenumber == 3:
         
             self.rangestart3.delete(0,tk.END)
             self.rangestart3.insert(0,experiment["rangelower"][2])
