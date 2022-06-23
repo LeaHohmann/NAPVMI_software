@@ -229,12 +229,12 @@ class SeriesGui(tk.Frame):
         self.startbutton.configure(state=tk.DISABLED)
 
         self.filename = filedialog.asksaveasfilename(initialdir="C:/", title="Choose experiment file name", filetypes=(("numpy zip archive", "*.npz"),("All files", "*.*")))
+        if not filename:
+            return
         if self.filename[-4:] != ".npz":
             self.filename += ".npz"
 
         self.parameterfilename = self.filename[:-4] + "_parameters.txt"
-
-        self.root.attributes("-topmost","true")
 
         self.imageseries = {}
 
@@ -260,6 +260,8 @@ class SeriesGui(tk.Frame):
         self.intensityvtime.set_xlim(self.delayscanrange[0]-5, self.delayscanrange[-1]+5)
         
         self.bncgui.channel.active = False
+        
+        self.root.lift()
 
         self.delayloop(0)
 

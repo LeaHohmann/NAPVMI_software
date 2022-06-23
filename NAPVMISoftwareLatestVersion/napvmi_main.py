@@ -184,8 +184,6 @@ class Root(tk.Tk):
 
         self.seriesgui = delayintegration.IntegrationGui(self.serieswindow,self.bnc,self.bncgui,self.system,self.camera,self.cameragui.nodemap, self.cameragui.streamnodemap, exposure,gain,self.delaysvector)
 
-        self.serieswindow.mainloop()
-
 
 
     def startkineticseries(self):
