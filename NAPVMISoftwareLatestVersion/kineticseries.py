@@ -2,6 +2,7 @@ import tkinter as tk
 import serial
 import PySpin
 import numpy
+import ast
 import matplotlib
 from tkinter import filedialog
 from tkinter import messagebox
@@ -49,6 +50,15 @@ class SeriesGui(tk.Frame):
         self.description = tk.Message(self.leftframe, text="Kinetic series over a range of delays. Please specify delay range, increment and number of frames per delay.", font=("Helvetica",11), width=250)
         self.description.pack(side=tk.TOP, pady=10)
         
+        self.settingsframe = tk.Frame(self.leftframe)
+        self.settingsframe.pack(side=tk.TOP, pady=10)
+        
+        self.savesettings = tk.Button(self.settingsframe, text="Save Settings", command=self.experimentsaver)
+        self.savesettings.pack(side=tk.LEFT)
+        
+        self.loadsettings = tk.Button(self.settingsframe, text="Load Settings", command=self.experimentloader)
+        self.loadsettings.pack(side=tk.LEFT)
+        
         self.channellabel = tk.Label(self.leftframe, text="Channel to scan:", anchor=tk.NW, font=("Helvetica",12))
         self.channellabel.pack()
 
@@ -62,6 +72,7 @@ class SeriesGui(tk.Frame):
         self.timerange = tk.StringVar(self.leftframe)
         self.timetuner = tk.OptionMenu(self.leftframe, self.timerange, "us", "ns")
         self.timetuner.pack(side=tk.TOP,pady=(10,20))
+        
 
         self.delayrangelabel = tk.Label(self.leftframe, text="Delay range (min 0 - max 10000):", font=("Helvetica",12))
         self.delayrangelabel.pack(side=tk.TOP, pady=(20,5))
@@ -84,6 +95,9 @@ class SeriesGui(tk.Frame):
         
         self.rangeadder = tk.Button(self.leftframe, text="Add delay range", command=lambda:self.addrange(2))
         self.rangeadder.pack(side=tk.TOP, pady=(20,5))
+        
+        self.rangeremover = tk.Button(self.leftframe, text="Remove delay range", command=lambda:self.removerange(self.rangenumber) ,state=tk.DISABLED)
+        self.rangeremover.pack(side=tk.TOP, pady=(20,5))
 
         self.incrementlabel = tk.Label(self.leftframe, text="Delay scanning increment:", font=("Helvetica",12))
         self.incrementlabel.pack(side=tk.TOP, pady=(40,5))
@@ -112,7 +126,7 @@ class SeriesGui(tk.Frame):
         self.minusvar = tk.IntVar(self.leftframe, value=0)
         self.minuscheck = tk.Checkbutton(self.leftframe, text="Negative delays", variable=self.minusvar, onvalue=1, offvalue=0)
         self.minuscheck.pack(side=tk.TOP,pady=(10,20))
-
+        
         self.startbutton = tk.Button(self.leftframe, text="Start Acquisition", background="green", command=self.startacquisition)
         self.startbutton.pack(side=tk.TOP, pady=(50,10))
 
@@ -149,6 +163,7 @@ class SeriesGui(tk.Frame):
             self.incremententry2.pack(side=tk.TOP, pady=(0,0))
             
             self.rangeadder.configure(command=lambda:self.addrange(3))
+            self.rangeremover.configure(state=tk.NORMAL)
             
         if instance == 3:
            
@@ -170,6 +185,20 @@ class SeriesGui(tk.Frame):
             self.rangeadder.configure(state=tk.DISABLED)
             
         self.rangenumber = instance
+        
+        
+    def removerange(self,rangenumber):
+    
+        if rangenumber = 3:
+            self.range3frame.pack_forget()
+            self.rangenumber = 2
+            self.rangeadder.configure(state=tk.NORMAL,command=lambda:self.addrange(3))
+        
+        if rangenumber = 2:
+            self.range2frame.pack_forget()
+            self.rangenumber = 1
+            self.rangeadder.configure(command=lambda:self.addrange(2))
+            self.rangeremover.configure(state=tk.DISABLED)
            
 
     def startacquisition(self):
@@ -345,6 +374,95 @@ class SeriesGui(tk.Frame):
         except PySpin.SpinnakerException:
             pass
 
+
+
+    def experimentsaver(self):
+        
+        filename = filedialog.asksaveasfilename(initialdir="C:/", title="Save experiment settings:", filetypes=(("Text files", "*.txt"),("All files", "*.*")))
+        
+       
+        if self.rangenumber == 1:
+        rangelower = int(self.rangestart1.get())
+        rangeupper = int(self.rangeend1.get())
+        increment = int(self.incremententry1.get())
+        elif self.rangenumber == 2:
+            rangelower = (int(self.rangestart1.get()),int(self.rangestart2.get()))
+            rangeupper = (int(self.rangeend1.get()),int(self.rangeend2.get()))
+            increment = (int(self.incremententry1.get()),int(self.incremententry2.get()))
+        elif self.rangenumber == 3:
+            rangelower = (int(self.rangestart1.get()),int(self.rangestart2.get()),int(self.rangestart3.get()))
+            rangeupper = (int(self.rangeend1.get()),int(self.rangeend2.get()),int(self.rangeend3.get()))
+            increment = (int(self.incremententry1.get()),int(self.incremententry2.get()),int(self.incremententry3.get()))
+       
+        experiment = {"channel": self.channelname.get(), "timerange": self.timerange.get(), "rangenumber": self.rangenumber, "rangelower": rangelower, "rangeupper": rangeupper, "increment": increments, "frameno": self.sumframes.get(), "threshold": int(self.thresholdentry.get()), "negative": self.minusvar.get()}
+        
+        f = open(filename, "w")
+        f.write(str(experiment))
+        f.close()
+        
+        
+        
+    def experimentloader(self):
+        
+        filename = filedialog.askopenfilename(initialdir="C:/", title="Open experiment settings:", filetypes=(("Text files", "*.txt"), ("All files", "*.*")))
+        f = open(filename, "r")
+        experiment = ast.literal_eval(f.read())
+        f.close()
+    
+        self.channelname.set(experiment["channel"])
+        self.timerange.set(experiment["timerange"])
+        
+        if self.rangenumber != experiment["rangenumber"]:
+            self.setranges(experiment["rangenumber"])
+        
+        self.rangestart1.delete(0,tk.END)
+        self.rangestart1.insert(0,experiment["rangelower"][0])
+        self.rangeend1.delete(0,tk.END)
+        self.rangeend1.insert(0,experiment["rangeupper"][0])
+        self.incremententry1.delete(0,tk.END)
+        self.incremententry1.insert(0,experiment["increment"][0])
+        
+        if self.rangenumber > 1:
+            self.rangestart2.delete(0,tk.END)
+            self.rangestart2.insert(0,experiment["rangelower"][1])
+            self.rangeend2.delete(0,tk.END)
+            self.rangeend2.insert(0,experiment["rangeupper"][1])
+            self.incremententry2.delete(0,tk.END)
+            self.incremententry2.insert(0,experiment["increment"][1])
+            
+        if self.rangenumber = 3:
+        
+            self.rangestart3.delete(0,tk.END)
+            self.rangestart3.insert(0,experiment["rangelower"][2])
+            self.rangeend3.delete(0,tk.END)
+            self.rangeend3.insert(0,experiment["rangeupper"][2])
+            self.incremententry3.delete(0,tk.END)
+            self.incremententry3.insert(0,experiment["increment"][2])
+            
+        self.framenumber.delete(0,tk.END)
+        self.framenumber.insert(0,experiment["frameno"])
+        self.thresholdentry.delete(0,tk.END)
+        self.thresholdentry.insert(0,experiment["threshold"])
+        if experiment["negative"] == 1:
+            self.minuscheck.select()
+        else:
+            self.minuscheck.deselect()
+        
+        
+    
+    def setranges(self,rangenumber):
+    
+        if self.rangenumber < rangenumber:
+            self.addrange()
+        elif self.rangenumber > rangenumber:
+            self.removerange()
+        
+        if self.rangenumber == rangenumber:
+            return
+            
+        self.setranges()
+        
+    
 
 
     def userinterrupt(self):
