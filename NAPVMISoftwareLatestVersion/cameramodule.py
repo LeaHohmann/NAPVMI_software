@@ -23,14 +23,14 @@ class CameraApp(tk.Frame):
         self.camera = camera
         self.nodemap = self.camera.GetNodeMap()
         self.streamnodemap = self.camera.GetTLStreamNodeMap()
-
-        self.camerasetup()
-        self.guiinit()
         
         self.wbrpoints = {"red":((0.0,1,1),(0.5,0.0,0.0),(1.0,1.0,1.0)),"green":((0.0,1.0,1.0),(0.5,0.0,0.0),(1.0,0.0,0.0)),"blue":((0.0,1.0,1.0),(0.5,0.0,0.0),(1.0,0.0,0.0))}
-        self.cmapwbr = colors.LinearSegmentedColormap("wbr",segmentdata=wbrpoints)
+        self.cmapwbr = colors.LinearSegmentedColormap("wbr",segmentdata=self.wbrpoints)
         
-        self.cmaplist = {"inferno": "inferno", "WBR": self.cmap_wbr}
+        self.cmaplist = {"inferno": "inferno", "wbr": self.cmapwbr}
+        
+        self.camerasetup()
+        self.guiinit()
 
 
 
@@ -110,11 +110,13 @@ class CameraApp(tk.Frame):
         self.rangeauto = tk.Checkbutton(self.colorrangeframe, text="Auto", variable=self.autovar, onvalue=1, offvalue=0)
         self.rangeauto.pack()
         
-        self.cmapselect = tk.Listbox(self.leftframe, selectmode = tk.SINGLE)
-        self.cmapselect.pack(tk.TOP, pady=(0,20))
-        for i in self.cmaplist.keys():
-            self.cmapselect.inser(tk.END, i)
+        self.cmaplabel = tk.Label(self.leftframe, text="Select color map:", font=("Helvetica",12))
+        self.cmaplabel.pack(side=tk.TOP,pady=5)
         
+        self.cmap = tk.StringVar(self.leftframe)
+        self.cmapselect = tk.OptionMenu(self.leftframe, self.cmap, "inferno", "wbr")
+        self.cmapselect.pack(side=tk.TOP,pady=(0,20))
+       
         self.xpixelframe = tk.Frame(self.leftframe)
         self.xpixelframe.pack(side=tk.TOP, pady=(0,20))
 
@@ -546,14 +548,12 @@ class CameraApp(tk.Frame):
 
         displayimage = self.image_data
 
-        self.favourites.get(self.favourites.curselection())
-
         perframe = self.image_data/framecount
         histo, bin_steps = numpy.histogram(perframe.astype(int), bins=[0,32,64,96,128,160,192,224,255], range=(0,256))
         x = [16,48,80,112,144,176,208,240]
         self.imagedisplay.clear()
         if self.autovar.get() == 0:
-            self.imagedisplay.imshow(displayimage, cmap=cmaplist[self.cmapselect.get(self.cmapselect.curselection())], vmin=self.lowercrange, vmax=self.uppercrange)
+            self.imagedisplay.imshow(displayimage, cmap=self.cmaplist[self.cmap.get()], vmin=self.lowercrange, vmax=self.uppercrange)
         else:
             self.imagedisplay.imshow(displayimage, cmap="inferno")
         self.imagedisplay.axhline(y=int(self.ypixelstart.get()), color="red", linewidth=0.3)
@@ -585,7 +585,7 @@ class CameraApp(tk.Frame):
         x = [16,48,80,112,144,176,208,240]
         self.imagedisplay.clear()
         
-        self.imagedisplay.imshow(displaydata, cmap="inferno")
+        self.imagedisplay.imshow(displaydata, cmap=self.cmaplist[self.cmap.get()])
         self.histogram.clear()
         self.histogram.bar(x,histo, width=14, align='center', log=True, tick_label=["0-31","32-63","64-95","96-127","128-159","160-191","192-223","224-255"])
         self.canvas.draw()
