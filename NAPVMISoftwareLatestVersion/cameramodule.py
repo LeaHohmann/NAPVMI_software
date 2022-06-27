@@ -6,6 +6,7 @@ import numpy
 import matplotlib 
 matplotlib.use("TkAgg")
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib import colors
 import ast
 import time
 import threading
@@ -25,6 +26,11 @@ class CameraApp(tk.Frame):
 
         self.camerasetup()
         self.guiinit()
+        
+        self.wbrpoints = {"red":((0.0,1,1),(0.5,0.0,0.0),(1.0,1.0,1.0)),"green":((0.0,1.0,1.0),(0.5,0.0,0.0),(1.0,0.0,0.0)),"blue":((0.0,1.0,1.0),(0.5,0.0,0.0),(1.0,0.0,0.0))}
+        self.cmapwbr = colors.LinearSegmentedColormap("wbr",segmentdata=wbrpoints)
+        
+        self.cmaplist = {"inferno": "inferno", "WBR": self.cmap_wbr}
 
 
 
@@ -103,7 +109,12 @@ class CameraApp(tk.Frame):
         self.autovar = tk.IntVar()
         self.rangeauto = tk.Checkbutton(self.colorrangeframe, text="Auto", variable=self.autovar, onvalue=1, offvalue=0)
         self.rangeauto.pack()
-
+        
+        self.cmapselect = tk.Listbox(self.leftframe, selectmode = tk.SINGLE)
+        self.cmapselect.pack(tk.TOP, pady=(0,20))
+        for i in self.cmaplist.keys():
+            self.cmapselect.inser(tk.END, i)
+        
         self.xpixelframe = tk.Frame(self.leftframe)
         self.xpixelframe.pack(side=tk.TOP, pady=(0,20))
 
@@ -535,14 +546,14 @@ class CameraApp(tk.Frame):
 
         displayimage = self.image_data
 
-
+        self.favourites.get(self.favourites.curselection())
 
         perframe = self.image_data/framecount
         histo, bin_steps = numpy.histogram(perframe.astype(int), bins=[0,32,64,96,128,160,192,224,255], range=(0,256))
         x = [16,48,80,112,144,176,208,240]
         self.imagedisplay.clear()
         if self.autovar.get() == 0:
-            self.imagedisplay.imshow(displayimage, cmap="inferno", vmin=self.lowercrange, vmax=self.uppercrange)
+            self.imagedisplay.imshow(displayimage, cmap=cmaplist[self.cmapselect.get(self.cmapselect.curselection())], vmin=self.lowercrange, vmax=self.uppercrange)
         else:
             self.imagedisplay.imshow(displayimage, cmap="inferno")
         self.imagedisplay.axhline(y=int(self.ypixelstart.get()), color="red", linewidth=0.3)
