@@ -28,9 +28,11 @@ class CameraApp(tk.Frame):
         self.cmapwbr = colors.LinearSegmentedColormap("wbr",segmentdata=self.wbrpoints)
         
         self.cmaplist = {"inferno": "inferno", "wbr": self.cmapwbr}
-        
+
         self.camerasetup()
         self.guiinit()
+        
+        self.autorange()
 
 
 
@@ -116,35 +118,48 @@ class CameraApp(tk.Frame):
         self.cmap = tk.StringVar(self.leftframe)
         self.cmapselect = tk.OptionMenu(self.leftframe, self.cmap, "inferno", "wbr")
         self.cmapselect.pack(side=tk.TOP,pady=(0,20))
-       
-        self.xpixelframe = tk.Frame(self.leftframe)
-        self.xpixelframe.pack(side=tk.TOP, pady=(0,20))
-
-        self.xpixellabel = tk.Label(self.xpixelframe, text="X-range (whole frame: 0-1287):")
-        self.xpixellabel.pack(side=tk.LEFT)
-
-        self.xpixellower = tk.IntVar(self.xpixelframe, value=0)
-        self.xpixelstart = tk.Entry(self.xpixelframe, textvariable=self.xpixellower, width=10)
-        self.xpixelstart.pack(side=tk.LEFT)
-
-        self.xpixelupper = tk.IntVar(self.xpixelframe, value=1287)
-        self.xpixelend = tk.Entry(self.xpixelframe, textvariable=self.xpixelupper, width=10)
-        self.xpixelend.pack(side=tk.LEFT)
-
-        self.ypixelframe = tk.Frame(self.leftframe)
-        self.ypixelframe.pack(side=tk.TOP, pady=(0,30))
-
-        self.ypixellabel = tk.Label(self.ypixelframe, text="Y-range (whole frame: 0-963):")
-        self.ypixellabel.pack(side=tk.LEFT)
-
-        self.ypixellower = tk.IntVar(self.ypixelframe, value=0)
-        self.ypixelstart = tk.Entry(self.ypixelframe, textvariable=self.ypixellower, width=10)
-        self.ypixelstart.pack(side=tk.LEFT)
-
-        self.ypixelupper = tk.IntVar(self.ypixelframe, value=963)
-        self.ypixelend = tk.Entry(self.ypixelframe, textvariable=self.ypixelupper, width=10)
-        self.ypixelend.pack(side=tk.LEFT)
-
+        
+        self.zoomlabel = tk.Label(self.leftframe, text="Select zoom region:", font=("Helvetica",12))
+        self.zoomlabel.pack(side=tk.TOP,pady=5)
+        
+        self.zoomframe1 = tk.Frame(self.leftframe)
+        self.zoomframe1.pack(side=tk.TOP, pady=(0,5))
+        
+        self.zoominstruction = tk.Label(self.zoomframe1, text="Enter zoom region center and width (whole image: 1287x963)")
+        self.zoominstruction.pack(tk.TOP,pady=5)
+        
+        self.xlabel = tk.Label(self.zoomframe1, text="Center X:", font=("Helvetica",12))
+        self.xlabel.pack(side=tk.LEFT)
+        
+        self.xcenter = tk.Entry(self.zoomframe1)
+        self.xcenter.pack(side=tk.LEFT)
+        
+        self.ylabel = tk.Label(self.zoomframe1, text="Y:", font=("Helvetica",12))
+        self.ylabel.pack(side=tk.LEFT)
+        
+        self.ycenter = tk.Entry(self.zoomframe1)
+        self.ycenter.pack(side=tk.LEFT)
+        
+        self.widthlabel = tk.Label(self.zoomframe1, text="Width and height:", font=("Helvetica",12))
+        self.widthlabel.pack(side=tk.LEFT)
+        
+        self.width = tk.Entry(self.zoomframe1)
+        self.width.pack(side=tk.LEFT)
+        
+        self.height = tk.Entry(self.zoomframe1)
+        self.height.pack(side=tk.LEFT)
+        
+        self.zoomframe2 = tk.Frame(self.leftframe)
+        self.zoomframe2.pack(side=tk.TOP,pady=(0,20))
+        
+        self.displayzoom = tk.IntVar(self.zoomframe2, value=0)
+        self.zoomdisplay = tk.Checkbutton(self.zoomframe2, text="Apply zoom to display", variable=self.displayzoom, onvalue=1, offvalue=0)
+        self.zoomdisplay.pack(side=tk.LEFT)
+        
+        self.datazoom = tk.IntVar(self.zoomframe2, value=0)
+        self.zoomdata = tk.Checkbutton(self.zoomframe2, text="Apply zoom to display", variable=self.datazoom, onvalue=1, offvalue=0)
+        self.zoomdata.pack(side=tk.LEFT)
+        
         self.saveparameters = tk.Button(self.leftframe, text="Save parameter file", command=self.saveparameterfile)
         self.saveparameters.pack(side=tk.LEFT, pady=(50,0))
 
@@ -189,9 +204,17 @@ class CameraApp(tk.Frame):
 
         self.saveimage = tk.Button(self.rightframe, text="Save image", command=self.save_asimage, state=tk.DISABLED)
         self.saveimage.pack(side=tk.RIGHT,ipadx=5, ipady=5, pady=(0,10))
-
         
+        
+    
+    def autorange(self):
+    
+        self.xstart = 0
+        self.xend = 1287
+        self.ystart = 0
+        self.yend = 963
 
+       
     
     def camerasetup(self):
         
@@ -284,8 +307,21 @@ class CameraApp(tk.Frame):
             self.thresholdentry.delete(0,tk.END)
             self.thresholdentry.insert(tk.END,"0")
             self.threshold = 0
+            
+        if self.datazoom == 1:
+            self.zoomdisplay.select()
            
-
+        if self.displayzoom == 1:
+            try:
+                self.xstart = int(self.xcenter.get())-int(self.width.get())/2
+                self.xend = int(self.xcenter.get())+int(self.width.get())/2
+                self.ystart = int(self.ycenter.get())-int(self.height.get())/2
+                self.yend = int(self.ycenter.get())+int(self.height.get())/2
+            except ValueError:
+                messagebox.showerror("Error", "Invalid zoom range values, no zoom performed")
+                self.zoomdisplay.deselect()
+                self.zoomdata.deselect()
+                self.autorange()
        
     def start_liveacquisition(self):
         self.setup_acquisition()
@@ -360,8 +396,6 @@ class CameraApp(tk.Frame):
                 self.multiframe.configure(state=tk.NORMAL)
                 self.takexslice.configure(state=tk.NORMAL)
                 self.takeyslice.configure(state=tk.NORMAL)
- 
-
 
 
     def stop_acquisition(self):
@@ -459,13 +493,11 @@ class CameraApp(tk.Frame):
         else:
 
             if self.captureexception == False:
-                self.xstart = int(self.xpixelstart.get()) 
-                self.xend = int(self.xpixelend.get()) + 1
-                self.ystart = int(self.ypixelstart.get())
-                self.yend = int(self.ypixelend.get()) +1
-
                 
-                self.image_data = self.sumimage[self.ystart:self.yend,self.xstart:self.xend]
+                if self.datazoom == 1:  
+                    self.image_data = self.sumimage[self.ystart:self.yend,self.xstart:self.xend]
+                else:
+                    self.image_data = self.sumimage
                     
             
                 if self.imtype == "image":
@@ -479,20 +511,26 @@ class CameraApp(tk.Frame):
                 
                 elif self.imtype == "xslice":
                 
-                    self.slice = numpy.sum(self.image_data, axis=0, dtype=int)
-                    self.pixelvalues = numpy.arange(self.xstart,self.xend, dtype=int)
+                    self.slicedata = numpy.sum(self.image_data, axis=0, dtype=int)
+                    if self.datazoom == 1:
+                        self.pixelvalues = numpy.arange(self.xstart,self.xend, dtype=int)
+                    else:
+                        self.pixelvalues = numpy.arange(0,1287, dtype=int)
 
-                    self.displayslice()
+                    self.displayslice(self.xstart,self.xend)
 
                     self.saveslice.configure(state=tk.NORMAL, text="Save X-slice")
                     self.takexslice.configure(text="X-slice", command=self.acquirexslice)
                     
                 elif self.imtype == "yslice":
                 
-                    self.slice = numpy.sum(self.image_data, axis=1, dtype=int)
-                    self.pixelvalues = numpy.arange(self.ystart,self.yend, dtype=int)
+                    self.slicedata = numpy.sum(self.image_data, axis=1, dtype=int)
+                    if self.datazoom == 1:
+                        self.pixelvalues = numpy.arange(self.ystart,self.yend, dtype=int)
+                    else:
+                        self.pixelvalues = numpy.arange(0,963, dtype=int)
 
-                    self.displayslice()
+                    self.displayslice(self.ystart,self.yend)
                 
                     self.saveslice.configure(state=tk.NORMAL, text="Save Y-slice")
                     self.takeyslice.configure(text="Y-slice", command=self.acquireyslice)
@@ -545,8 +583,11 @@ class CameraApp(tk.Frame):
         except ValueError:
             self.uppercrange = 255
             self.lowercrange = 0
-
-        displayimage = self.image_data
+        
+        if self.displayzoom == 1 and self.datazoom == 0:
+            displayimage = self.image_data[self.ystart:self.yend,self.xstart:self.xend]
+        else:
+            displayimage = self.image_data
 
         perframe = self.image_data/framecount
         histo, bin_steps = numpy.histogram(perframe.astype(int), bins=[0,32,64,96,128,160,192,224,255], range=(0,256))
@@ -556,10 +597,6 @@ class CameraApp(tk.Frame):
             self.imagedisplay.imshow(displayimage, cmap=self.cmaplist[self.cmap.get()], vmin=self.lowercrange, vmax=self.uppercrange)
         else:
             self.imagedisplay.imshow(displayimage, cmap="inferno")
-        self.imagedisplay.axhline(y=int(self.ypixelstart.get()), color="red", linewidth=0.3)
-        self.imagedisplay.axhline(y=int(self.ypixelend.get()), color="red", linewidth=0.3)
-        self.imagedisplay.axvline(x=int(self.xpixelstart.get()), color="red", linewidth=0.3)
-        self.imagedisplay.axvline(x=int(self.xpixelend.get()), color="red", linewidth=0.3)
         self.histogram.clear()
         self.histogram.bar(x,histo, width=14, align='center', log=True, tick_label=["0-31","32-63","64-95","96-127","128-159","160-191","192-223","224-255"])
         self.canvas.draw()
@@ -604,11 +641,13 @@ class CameraApp(tk.Frame):
 
 
 
-    def displayslice(self):
+    def displayslice(self,start,end):
 
         self.imagedisplay.set_aspect("auto")
         self.imagedisplay.clear()
-        self.imagedisplay.plot(self.pixelvalues, self.slice)
+        if self.dispayzoom == 1 and self.datazoom == 0:
+            self.imagedisplay.plot(self.pixelvalues[start:end], self.slicedata[start:end])
+        self.imagedisplay.plot(self.pixelvalues, self.slicedata)
         self.histogram.clear()
         self.canvas.draw()
 
@@ -674,10 +713,10 @@ class CameraApp(tk.Frame):
         gain = self.node_gain.GetValue()
         framecount = int(self.sumimages.get())
         threshold = int(self.thresholdentry.get())
-        xstart = int(self.xpixelstart.get()) 
-        xend = int(self.xpixelend.get()) + 1
-        ystart = int(self.ypixelstart.get()) 
-        yend = int(self.ypixelend.get()) + 1
+        xstart = self.xstart 
+        xend = self.xend
+        ystart = self.ystart 
+        yend = self.yend
 
         parameters = {"Exposure time": exposure, "Gain": gain, "Number of frames": framecount, "Threshold": threshold, "Lower end x": xstart, "Upper end x": xend, "Lower end y": ystart, "Upper end y": yend}
         
