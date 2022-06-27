@@ -500,10 +500,10 @@ class MotorApp(tk.Tk):
         
         self.positioncall = True
         
-        self.z.moveto(setposition["Z"])
-        self.x.moveto(setposition["X"])
-        self.y.moveto(setposition["Y"])
-        self.r.moveto(setposition["R"])
+        self.z.moveto(int(setposition["Z"]))
+        self.x.moveto(int(setposition["X"]))
+        self.y.moveto(int(setposition["Y"]))
+        self.r.moveto(int(setposition["R"]))
         
         self.positioncall = False
         
