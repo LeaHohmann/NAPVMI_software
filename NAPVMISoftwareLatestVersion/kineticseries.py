@@ -3,6 +3,7 @@ import serial
 import PySpin
 import numpy
 import ast
+import os
 import matplotlib
 from tkinter import filedialog
 from tkinter import messagebox
@@ -380,21 +381,23 @@ class SeriesGui(tk.Frame):
 
     def experimentsaver(self):
         
-        filename = filedialog.asksaveasfilename(initialdir="C:/", title="Save experiment settings:", filetypes=(("Text files", "*.txt"),("All files", "*.*")))
+        filename = filedialog.asksaveasfilename(initialdir=os.getcwd(), title="Save experiment settings:", filetypes=(("Text files", "*.txt"),("All files", "*.*")))
+        if filename[:-4] != ".txt":
+            filename = filename + ".txt"
         
        
         if self.rangenumber == 1:
             rangelower = int(self.rangestart1.get())
             rangeupper = int(self.rangeend1.get())
-            increment = int(self.incremententry1.get())
+            increments = int(self.incremententry1.get())
         elif self.rangenumber == 2:
             rangelower = (int(self.rangestart1.get()),int(self.rangestart2.get()))
             rangeupper = (int(self.rangeend1.get()),int(self.rangeend2.get()))
-            increment = (int(self.incremententry1.get()),int(self.incremententry2.get()))
+            increments = (int(self.incremententry1.get()),int(self.incremententry2.get()))
         elif self.rangenumber == 3:
             rangelower = (int(self.rangestart1.get()),int(self.rangestart2.get()),int(self.rangestart3.get()))
             rangeupper = (int(self.rangeend1.get()),int(self.rangeend2.get()),int(self.rangeend3.get()))
-            increment = (int(self.incremententry1.get()),int(self.incremententry2.get()),int(self.incremententry3.get()))
+            increments = (int(self.incremententry1.get()),int(self.incremententry2.get()),int(self.incremententry3.get()))
        
         experiment = {"channel": self.channelname.get(), "timerange": self.timerange.get(), "rangenumber": self.rangenumber, "rangelower": rangelower, "rangeupper": rangeupper, "increment": increments, "frameno": self.sumframes.get(), "threshold": int(self.thresholdentry.get()), "negative": self.minusvar.get()}
         
@@ -406,7 +409,7 @@ class SeriesGui(tk.Frame):
         
     def experimentloader(self):
         
-        filename = filedialog.askopenfilename(initialdir="C:/", title="Open experiment settings:", filetypes=(("Text files", "*.txt"), ("All files", "*.*")))
+        filename = filedialog.askopenfilename(initialdir=os.getcwd(), title="Open experiment settings:", filetypes=(("Text files", "*.txt"), ("All files", "*.*")))
         f = open(filename, "r")
         experiment = ast.literal_eval(f.read())
         f.close()
@@ -418,11 +421,16 @@ class SeriesGui(tk.Frame):
             self.setranges(experiment["rangenumber"])
         
         self.rangestart1.delete(0,tk.END)
-        self.rangestart1.insert(0,experiment["rangelower"][0])
         self.rangeend1.delete(0,tk.END)
-        self.rangeend1.insert(0,experiment["rangeupper"][0])
         self.incremententry1.delete(0,tk.END)
-        self.incremententry1.insert(0,experiment["increment"][0])
+        if self.rangenumber > 1:
+            self.rangestart1.insert(0,experiment["rangelower"][0])
+            self.rangeend1.insert(0,experiment["rangeupper"][0])
+            self.incremententry1.insert(0,experiment["increment"][0])
+        else:
+            self.rangestart1.insert(0,experiment["rangelower"])
+            self.rangeend1.insert(0,experiment["rangeupper"])
+            self.incremententry1.insert(0,experiment["increment"]) 
         
         if self.rangenumber > 1:
             self.rangestart2.delete(0,tk.END)

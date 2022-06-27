@@ -80,6 +80,12 @@ class MotorApp(tk.Tk):
             self.portconnect()
             return
             
+        if self.portnum == 4:
+        
+            self.portnum += 2
+            self.portconnect()
+            return
+            
         else:
         
             try:
