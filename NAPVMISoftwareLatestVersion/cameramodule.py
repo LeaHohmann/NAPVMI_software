@@ -451,12 +451,8 @@ class CameraApp(tk.Frame):
                 self.ystart = int(self.ypixelstart.get())
                 self.yend = int(self.ypixelend.get()) +1
 
-                try:
-                    self.threshold = int(self.thresholdentry.get())
-                    self.image_data = (self.sumimage[self.ystart:self.yend,self.xstart:self.xend] > self.threshold) * self.sumimage[self.ystart:self.yend,self.xstart:self.xend]
-                except ValueError:
-                    messagebox.showerror("Error", "Set threshold as integer number. No thresholding performed")
-                    self.image_data = self.sumimage[self.ystart:self.yend,self.xstart:self.xend]
+                
+                self.image_data = self.sumimage[self.ystart:self.yend,self.xstart:self.xend]
                     
             
                 if self.imtype == "image":
