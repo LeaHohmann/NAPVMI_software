@@ -139,6 +139,8 @@ class IntegrationGui(tk.Frame):
         self.startbutton.configure(state=tk.DISABLED)
 
         self.filename = filedialog.asksaveasfilename(initialdir="C:/", title="Choose image file name", filetypes=(("binary numpy array file","*.npy"),("All files","*.*")))
+        if not self.filename:
+            return
         if self.filename[-4:] != ".npy":
             self.filename += ".npy"
 
@@ -260,8 +262,54 @@ class IntegrationGui(tk.Frame):
             self.camera.EndAcquisition()
         except PySpin.SpinnakerException:
             pass
+            
+            
+            
+    def experimentsaver(self):
+        
+        filename = filedialog.asksaveasfilename(initialdir=os.getcwd(), title="Save experiment settings:", filetypes=(("Text files", "*.txt"),("All files", "*.*")))
+        if filename[:-4] != ".txt":
+            filename = filename + ".txt"
+        
+        rangelower = int(self.delayrangestart.get())
+        rangeupper = int(self.delayrangeend.get())
+        increments = int(self.incremententry.get())
+     
+        experiment = {"channel": self.channelname.get(), "timerange": self.timerange.get(), "rangelower": rangelower, "rangeupper": rangeupper, "increment": increments, "frameno": self.sumframes.get(), "threshold": int(self.thresholdentry.get()), "negative": self.minusvar.get()}
+        
+        f = open(filename, "w")
+        f.write(str(experiment))
+        f.close()
+        
+        
+        
+    def experimentloader(self):
+        
+        filename = filedialog.askopenfilename(initialdir=os.getcwd(), title="Open experiment settings:", filetypes=(("Text files", "*.txt"), ("All files", "*.*")))
+        f = open(filename, "r")
+        experiment = ast.literal_eval(f.read())
+        f.close()
     
-
+        self.channelname.set(experiment["channel"])
+        self.timerange.set(experiment["timerange"])
+        
+        self.delayrangestart.delete(0,tk.END)
+        self.delayrangeend.delete(0,tk.END)
+        self.incremententry.delete(0,tk.END)
+        self.delayrangestart.insert(0,experiment["rangelower"])
+        self.delayrangeend.insert(0,experiment["rangeupper"])
+        self.incremententry.insert(0,experiment["increment"]) 
+            
+        self.framenumber.delete(0,tk.END)
+        self.framenumber.insert(0,experiment["frameno"])
+        self.thresholdentry.delete(0,tk.END)
+        self.thresholdentry.insert(0,experiment["threshold"])
+        if experiment["negative"] == 1:
+            self.minuscheck.select()
+        else:
+            self.minuscheck.deselect()
+    
+    
 
     def userinterrupt(self):
 
