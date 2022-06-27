@@ -230,7 +230,7 @@ class SeriesGui(tk.Frame):
         self.startbutton.configure(state=tk.DISABLED)
 
         self.filename = filedialog.asksaveasfilename(initialdir="C:/", title="Choose experiment file name", filetypes=(("numpy zip archive", "*.npz"),("All files", "*.*")))
-        if not filename:
+        if not self.filename:
             return
         if self.filename[-4:] != ".npz":
             self.filename += ".npz"
