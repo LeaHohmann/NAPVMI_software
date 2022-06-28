@@ -600,7 +600,7 @@ class CameraApp(tk.Frame):
         if self.autovar.get() == 0:
             self.imagedisplay.imshow(displayimage, cmap=self.cmaplist[self.cmap.get()], vmin=self.lowercrange, vmax=self.uppercrange)
         else:
-            self.imagedisplay.imshow(displayimage, cmap="inferno")
+            self.imagedisplay.imshow(displayimage, cmap=self.cmaplist[self.cmap.get()])
         self.histogram.clear()
         self.histogram.bar(x,histo, width=14, align='center', log=True, tick_label=["0-31","32-63","64-95","96-127","128-159","160-191","192-223","224-255"])
         self.canvas.draw()
