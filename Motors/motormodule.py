@@ -244,7 +244,7 @@ class MotorApp(tk.Tk):
         f.close()
         
         if xselfloc != current["X"] or yselfloc != current["Y"] or zselfloc != current["Z"] or rselfloc != current["R"]:
-            result = messagebox.askyesnocancel("Out of sync","The position information stored on motors does not match the current position file. Last position on file (saved on {}) is: X: {}, Y: {}, Z: {}, R: {}. Last position on motors is: X: {}, Y: {}, Z: {}, R: {}. Would you like to overwrite current file position with motor position? If yes, click YES. If you would like to use file position instead, click NO (this will override motor saved positions). Else click CANCEL, program will be closed and position file opened for edit.".format(current["date"],current["X"],current["Y"],current["Z"],current["R"],xselfloc,yselfloc,zselfloc,rselfloc))
+            result = messagebox.askyesnocancel("Out of sync","The position information stored on motors does not match the current position file. Last position on file (saved on {}) is: X: {}, Y: {}, Z: {}, R: {}. Last position on motors is: X: {}, Y: {}, Z: {}, R: {}. Override options: \n YES: Use motor position (override file). \n NO: Use file position (override motor saved position). \n CANCEL: Close program and open position file for edit.".format(current["date"],current["X"],current["Y"],current["Z"],current["R"],xselfloc,yselfloc,zselfloc,rselfloc))
         
             if result:
                 
