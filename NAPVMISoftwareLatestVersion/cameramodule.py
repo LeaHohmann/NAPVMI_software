@@ -756,14 +756,14 @@ class CameraApp(tk.Frame):
         self.sumimages.insert(0,str(framecount))
         self.thresholdentry.delete(0,tk.END)
         self.thresholdentry.insert(0,str(threshold))
-        self.width.delete(0,.tk.END)
+        self.width.delete(0,tk.END)
         self.width.insert(0,str(width))
         self.height.delete(0,tk.END)
         self.height.insert(0,str(height))
         self.xcenter.delete(0,tk.END)
-        self.xcenter.insert(0,str(int(x[0])+width//2)
+        self.xcenter.insert(0,str(int(x[0])+width//2))
         self.ycenter.delete(0,tk.END)
-        self.ycenter.insert(0,str(int(y[0])+height//2)
+        self.ycenter.insert(0,str(int(y[0])+height//2))
 
 
 
