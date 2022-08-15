@@ -742,6 +742,10 @@ class CameraApp(tk.Frame):
         gain = parameters["Gain"]
         framecount = parameters["Number of frames"]
         threshold = parameters["Threshold"]
+        x = (parameters["Lower end x"],parameters["Upper end x"])
+        y = (parameters["Lower end y"],parameters["Upper end y"])
+        width = int(x[1])-int(x[0])
+        height = int(y[1])-int(y[0])
         self.node_exposuretime.SetValue(exposuretime)
         self.exposureslider.set(self.node_exposuretime.GetValue())
         self.exposurelabel.configure(text="Exposure time [us]: {}".format(round(self.node_exposuretime.GetValue(),2)))
@@ -752,6 +756,14 @@ class CameraApp(tk.Frame):
         self.sumimages.insert(0,str(framecount))
         self.thresholdentry.delete(0,tk.END)
         self.thresholdentry.insert(0,str(threshold))
+        self.width.delete(0,.tk.END)
+        self.width.insert(0,str(width))
+        self.height.delete(0,tk.END)
+        self.height.insert(0,str(height))
+        self.xcenter.delete(0,tk.END)
+        self.xcenter.insert(0,str(int(x[0])+width//2)
+        self.ycenter.delete(0,tk.END)
+        self.ycenter.insert(0,str(int(y[0])+height//2)
 
 
 
