@@ -227,13 +227,13 @@ class SeriesGui(tk.Frame):
             return
         self.channelnumber = self.channelnumbers[channelname]
 
-        self.startbutton.configure(state=tk.DISABLED)
-
         self.filename = filedialog.asksaveasfilename(initialdir="C:/", title="Choose experiment file name", filetypes=(("numpy zip archive", "*.npz"),("All files", "*.*")))
         if not self.filename:
             return
         if self.filename[-4:] != ".npz":
             self.filename += ".npz"
+
+        self.startbutton.configure(state=tk.DISABLED)
 
         self.parameterfilename = self.filename[:-4] + "_parameters.txt"
 

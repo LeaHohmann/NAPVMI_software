@@ -135,14 +135,14 @@ class IntegrationGui(tk.Frame):
             self.startbutton.configure(state=tk.NORMAL)
             return
         self.channelnumber = self.channelnumbers[channelname]
-        
-        self.startbutton.configure(state=tk.DISABLED)
 
         self.filename = filedialog.asksaveasfilename(initialdir="C:/", title="Choose image file name", filetypes=(("binary numpy array file","*.npy"),("All files","*.*")))
         if not self.filename:
             return
         if self.filename[-4:] != ".npy":
             self.filename += ".npy"
+            
+        self.startbutton.configure(state=tk.DISABLED)
 
         self.parameterfilename = self.filename[:-4] + "_parameters.txt"
 
