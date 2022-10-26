@@ -147,7 +147,7 @@ class Root(tk.Tk):
             return
 
 
-        self.connectlaser.destroy()
+        self.connectlaser.pack_forget()
         self.laserinit()
         self.laserstatus = "connected"
 

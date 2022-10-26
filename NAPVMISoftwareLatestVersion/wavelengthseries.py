@@ -29,6 +29,8 @@ class WavelengthGui(tk.Frame):
         self.exposure = exposuretime
         self.gain = gain
         self.delaysvector = delaysvector
+        
+        self.channelnumbers = {"A": 1, "B": 2, "C": 3, "D": 4, "E": 5, "F": 6, "G": 7, "H": 8}
 
         node_bufferhandling = PySpin.CEnumerationPtr(streamnodemap.GetNode("StreamBufferHandlingMode"))
         node_bufferhandling.SetIntValue(node_bufferhandling.GetEntryByName("NewestOnly").GetValue())
@@ -55,21 +57,44 @@ class WavelengthGui(tk.Frame):
 
         self.lambdarangeframe = tk.Frame(self.leftframe)
         self.lambdarangeframe.pack(side=tk.TOP)
+        
+        self.rangeframes = {}
+        self.lambdarangelower = {}
+        self.lambdarangestart = {}
+        self.lambdarangeupper = {}
+        self.lambdarangeend = {}
+        
+        self.rangeframes[1] = tk.Frame(self.lambdarangeframe)
+        self.rangeframes[1].pack(side=tk.TOP)
 
-        self.lambdarangelower = tk.StrVar(self.lambdarangeframe, value="200.00000")
-        self.lambdarangestart = tk.Entry(self.lambdarangeframe, textvariable=self.lambdarangelower, width=10)
-        self.lambdarangestart.pack(side=tk.LEFT)
+        self.lambdarangelower[1] = tk.StrVar(self.rangeframes[1], value="600.00000")
+        self.lambdarangestart[1] = tk.Entry(self.rangeframes[1], textvariable=self.lambdarangelower, width=10)
+        self.lambdarangestart[1].pack(side=tk.LEFT)
 
-        self.lambdarangeupper = tk.StrVar(self.lambdarangeframe, value="230.00000")
-        self.lambdarangeend = tk.Entry(self.lambdarangeframe, textvariable=self.lambdarangeupper, width=10)
-        self.lambdarangeend.pack(side=tk.LEFT)
+        self.lambdarangeupper[1] = tk.StrVar(self.rangeframes[1], value="603.00000")
+        self.lambdarangeend[1] = tk.Entry(self.rangeframes[1], textvariable=self.lambdarangeupper, width=10)
+        self.lambdarangeend[1].pack(side=tk.LEFT)
+        
+        self.rangenumber = 1
+        
+        self.rangeadder = tk.Button(self.leftframe, text="Add wavelength range", command=lambda:self.addrange(self.rangenumber+1))
+        self.rangeadder.pack(side=tk.TOP, pady=(20,5))
+        
+        self.rangeremover = tk.Button(self.leftframe, text="Remove wavelength range", command=lambda:self.removerange(self.rangenumber) ,state=tk.DISABLED)
+        self.rangeremover.pack(side=tk.TOP, pady=(20,5))
 
-        self.incrementlabel = tk.Label(self.leftframe, text="Wavelength scanning increment in nm (min 0.005, max 1)", font=("Helvetica",12))
+        self.incrementlabel = tk.Label(self.leftframe, text="Wavelength scanning increment in nm (min 0.001, max 1)", font=("Helvetica",12))
         self.incrementlabel.pack(side=tk.TOP, pady=(40,5))
 
-        self.increment = tk.StrVar(self.leftframe, value=10)
-        self.incremententry = tk.Entry(self.leftframe, textvariable=self.increment, width=10)
-        self.incremententry.pack(side=tk.TOP, pady=(0,20))
+        self.incrementframe = tk.Frame(self.leftframe)
+        self.incrementframe.pack(side=tk.TOP)
+        
+        self.increment = {}
+        self.incremententry = {}
+
+        self.increment[1] = tk.StrVar(self.incrementframe, value=10)
+        self.incremententry[1] = tk.Entry(self.incrementframe, textvariable=self.increment, width=10)
+        self.incremententry[1].pack(side=tk.TOP, pady=(0,20))
 
         self.framenumberlabel = tk.Label(self.leftframe, text="Number of averaged frames per wavelength:", font=("Helvetica",12))
         self.framenumberlabel.pack(side=tk.TOP, pady=(10,5))
@@ -78,14 +103,21 @@ class WavelengthGui(tk.Frame):
         self.framenumber = tk.Entry(self.leftframe, textvariable=self.sumframes, width=10)
         self.framenumber.pack(side=tk.TOP, pady=(0,20))
 
-        self.delayBlabel = tk.Label(self.leftframe, text="Beam - laser delay in microseconds (min 0 - max 2000):", font=("Helvetica",12))
-        self.delayBlabel.pack(side=tk.TOP, pady=(10,5))
+        self.delaylabel = tk.Label(self.leftframe, text="Beam - laser delay in microseconds (min 0 - max 6000):", font=("Helvetica",12))
+        self.delaylabel.pack(side=tk.TOP, pady=(10,5))
 
-        self.delayB = tk.IntVar(self.leftframe, value=100)
-        self.delayBentry = tk.Entry(self.leftframe, textvariable=self.delayB, width=10)
-        self.delayBentry.pack(side=tk.TOP, pady=(0,20))
+        self.delay = tk.IntVar(self.leftframe, value=100)
+        self.delayentry = tk.Entry(self.leftframe, textvariable=self.delayB, width=10)
+        self.delayentry.pack(side=tk.TOP, pady=(0,20))
+        
+        self.channellabel = tk.Label(self.leftframe, text="Beam - laser delay channel", font=("Helvetica",12))
+        self.channellabel.pack(side=tk.TOP, pady=(10,5))
+        
+        self.channelname = tk.StringVar(self.leftframe)
+        self.channeltuner = tk.OptionMenu(self.leftframe, self.channelname, "A", "B", "C", "D", "E", "F", "G", "H")
+        self.channeltuner.pack(side=tk.TOP,pady=(10,20))
 
-        self.startbutton = tk.Button(self.leftframe, text="Start Acquisition", background="green", command=self.evalentry)
+        self.startbutton = tk.Button(self.leftframe, text="Start Acquisition", background="green", command=self.startacquisition)
         self.startbutton.pack(side=tk.TOP, pady=(50,10))
 
         self.stopbutton = tk.Button(self.leftframe, text ="Interrupt Acquisition", background="red", command=self.userinterrupt)
@@ -98,7 +130,40 @@ class WavelengthGui(tk.Frame):
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.rightframe)
         self.canvas.draw()
         self.canvas.get_tk_widget().pack(side=tk.TOP, expand=1, fill=tk.BOTH, pady=10)
+        
+        
+    
+    def addrange(self,instance):
+    
+        self.rangeframes[instance] = tk.Frame(self.lambdarangeframe)
+        self.rangeframes[instance].pack(side=tk.TOP)
 
+        self.lambdarangelower[instance] = tk.StrVar(self.rangeframes[instance], value="603.00000")
+        self.lambdarangestart[instance] = tk.Entry(self.rangeframes[instance], textvariable=self.lambdarangelower, width=10)
+        self.lambdarangestart[instance].pack(side=tk.LEFT)
+
+        self.lambdarangeupper[instance] = tk.StrVar(self.rangeframes[instance], value="606.00000")
+        self.lambdarangeend[instance] = tk.Entry(self.rangeframes[instance], textvariable=self.lambdarangeupper, width=10)
+        self.lambdarangeend[instance].pack(side=tk.LEFT)
+        
+        self.increment[instance] = tk.StrVar(self.incrementframe, value=10)
+        self.incremententry[instance] = tk.Entry(self.incrementframe, textvariable=self.increment, width=10)
+        self.incremententry[instance].pack(side=tk.TOP, pady=(0,20))
+
+        self.rangeremover.configure(state=tk.NORMAL)
+        
+        self.rangenumber = instance
+        
+        
+    def removerange(self,instance):
+    
+        self.rangeframes[instance].destroy()
+        self.increment[instance].destroy()
+        
+        self.rangenumber = instance-1
+        
+        if instance == 2:
+            self.rangeremover.configure(state=tk.DISABLED)
 
 
     def evalentry(self):
@@ -110,55 +175,64 @@ class WavelengthGui(tk.Frame):
             return
 
         try:
-            self.usdelay = -1*str(self.delayBentry.get())
+            self.usdelay = int(self.delayBentry.get())
         except KeyError:
             self.wrongentry("Please enter a molecular beam - laser delay")
             return
+            
+        try:
+            channelname = self.channelname.get()
+        except ValueError:
+            messagebox.showerror("Error", "Please choose a channel")
+            return
+        self.channelnumber = self.channelnumbers[channelname]
 
-        if self.usdelay >= -999:
+        if self.usdelay <= 999:
             self.currentdelay = "-0.000" + str(self.usdelay)[1:] + "00000"
-            inputstring = ":PULS2:DEL {}\r\n".format(self.currentdelay)
+            inputstring = ":PULS{}:DEL {}\r\n".format(self.channelnumber,self.currentdelay)
             self.bnc.write(inputstring.encode("utf-8"))
             self.bnc.reset_input_buffer()
 
-        elif self.usdelay >= -2000:
+        elif self.usdelay <= 6000:
             self.currentdelay = "-0.00" + str(self.usdelay)[1:] + "00000"
-            inputstring = ":PULS2:Del {}\r\n".format(self.currentdelay)
+            inputstring = ":PULS{}:Del {}\r\n".format(self.channelnumber,self.currentdelay)
             self.bnc.write(inputstring.encode("utf-8"))
             self.bnc.reset_input_buffer()
 
         else:
-            self.wrongentry("Please choose a delay between 0 and 2000us")
+            self.wrongentry("Please choose a delay between 0 and 6000us")
             return
- 
-        try:
-            self.startfund = decimal.Decimal(str(self.lambdarangestart.get()))*3
-            self.stopfund = decimal.Decimal(str(self.lambdarangeend.get()))*3
-        except KeyError:
-            self.wrongentry("Please enter a start and stop wavelength")
-            return
+            
+        self.startfund = {}
+        self.stopfund = {}
+        self.incrementfund = {}
+        
+        for i in self.rangeframe.keys():
+        
+            try:
+                self.startfund[i] = decimal.Decimal(str(self.lambdarangestart[i].get()))
+                self.stopfund[i] = decimal.Decimal(str(self.lambdarangeend[i].get()))
+            except KeyError:
+                self.wrongentry("Please enter a valid start and stop wavelength")
+                return
 
-        if self.startfund < 600 or self.stopfund > 690:
-            self.wrongentry("Wavelength bounds are out of range. Please enter values between 200 and 230nm")
-            return
+            if self.startfund[i] < 600 or self.stopfund[i] > 670:
+                self.wrongentry("Wavelength bounds are out of range. Please enter values between 600 and 670nm")
+                return
 
-        if self.startfund > self.stopfund:
-            self.wrongentry("Start wavelength cannot be larger than end wavelength")
-            return
+            if self.startfund[i] > self.stopfund[i]:
+                self.wrongentry("Start wavelength cannot be larger than end wavelength")
+                return
 
+            try:
+                self.incrementfund[i] = decimal.Decimal(str(self.incremententry[i].get()))
+            except KeyError:
+                self.wrongentry("Enter wavelength increment in nm")
+                return
 
-        try:
-            self.incrementfund = decimal.Decimal(str(self.incremententry.get()))*3
-        except KeyError:
-            self.wrongentry("Enter wavelength increment in nm")
-            return
-
-        if self.incrementfund < decimal.Decimal("0.005") or self.incrementfund > decimal.Decimal(1):
-            self.wrongentry("Increment out of range (min 0.005, max 1nm)")
-            return
-
-
-        self.startacquisition()
+            if self.incrementfund[i] < decimal.Decimal("0.001") or self.incrementfund[i] > decimal.Decimal(1):
+                self.wrongentry("Increment out of range (min 0.001, max 1nm)")
+                return
 
 
 
@@ -180,61 +254,64 @@ class WavelengthGui(tk.Frame):
         self.node_framecount.SetValue(self.numberofframes)
 
         self.startbutton.configure(state=tk.DISABLED)
+        
+        self.evalentry()
 
         self.filename = filedialog.asksaveasfilename(initialdir="C:/", title="Choose experiment file name", filetypes=(("numpy zip archive", "*.npz"),("All files", "*.*")))
         if self.filename[-4:] != ".npz":
             self.filename += ".npz"
 
         self.parameterfilename = self.filename[:-4] + "_parameters.txt"
-
-        self.root.attributes("-topmost","true")
        
         self.imageseries = {}
 
         self.fundamentalist = []
-        self.lambdalist = []
         self.totalintensities = []
 
-        self.intensityvtime.set_xlim(self.startfund - decimal.Decimal(0.5), self.stopfund - decimal.Decimal(0.5))
+        self.intensityvtime.set_xlim(self.startfund[1] - decimal.Decimal(0.5), self.stopfund[len(self.rangeframes.keys())] - decimal.Decimal(0.5))
 
         running = True
         self.stopbutton.pack(side=tk.TOP, pady=(20,10))
+        
+        
+        for i in self.rangeframe.keys():
 
-        inputstring = "SL {}\r\n".format(str(self.startfund))
-        self.laser.write(inputstring.encode("utf-8"))
-        response = self.laser.read(size=2).decode("utf-8")
-        self.laser.reset_input_buffer()
-        if response != "OK":
-            self.wrongentry("Problem occurred while setting wavelength.")
-            return
-        inputstring = "WL {}\r\n".format(str(self.incrementfund))
-        self.laser.write(inputstring.encode("utf-8"))
-        respone = self.laser.read(size=2).decode("utf-8")
-        self.laser.reset_input_buffer()
-        if response != "OK":
-            self.wrongentry("Problem occurred while setting increment")
-            return
+            inputstring = "SL {}\r\n".format(str(self.startfund[i]))
+            self.laser.write(inputstring.encode("utf-8"))
+            response = self.laser.read(size=2).decode("utf-8")
+            self.laser.reset_input_buffer()
+            if response != "OK":
+                self.wrongentry("Problem occurred while setting wavelength.")
+                return
+            inputstring = "WL {}\r\n".format(str(self.incrementfund[i]))
+            self.laser.write(inputstring.encode("utf-8"))
+            respone = self.laser.read(size=2).decode("utf-8")
+            self.laser.reset_input_buffer()
+            if response != "OK":
+                self.wrongentry("Problem occurred while setting increment")
+                return
+    
+            self.imageloop()
 
-        self.imageloop()
+            inputstring = "GLC\r\n"
+            self.laser.write(inputstring.encode("utf-8"))
+            lastline = self.laser.readline().decode("utf-8")
+            self.laser.reset_input_buffer()
+            fundamental = decimal.Decimal(lastline[:-2])
 
-        inputstring = "GLC\r\n"
-        self.laser.write(inputstring.encode("utf-8"))
-        lastline = self.laser.readline().decode("utf-8"))
-        self.laser.reset_input_buffer()
-        fundamental = decimal.Decimal(lastline[:-2])
+            self.imageseries[str(fundamental)] = self.sumimage
+            self.fundamentalist.append(str(fundamental))
+            self.totalintensities.append(numpy.sum(self.sumimage))
 
-        lambdanm = fundamental/3
-
-        self.imageseries[str(lambdanm)] = self.sumimage
-        self.lambdalist.append(lambdanm)
-        self.fundamentalist.append(str(fundamental))
-        self.totalintensities.append(numpy.sum(self.sumimage))
+            self.wavelengthloop(i)
+                
+            if running == False:
+               break
+            
+        self.savedata()
 
 
-        self.wavelengthloop()
-
-
-    def wavelengthloop(self):
+    def wavelengthloop(self,instance):
             
         inputstring = "LU\r\n"
         self.laser.write(inputstring.encode("utf-8"))
@@ -256,29 +333,24 @@ class WavelengthGui(tk.Frame):
             
         inputstring = "GLC\r\n"
         self.laser.write(inputstring.encode("utf-8"))
-        lastline = self.laser.readline().decode("utf-8"))
+        lastline = self.laser.readline().decode("utf-8")
         self.laser.reset_input_buffer()
         fundamental = decimal.Decimal(lastline[:-2])
 
-        lambdanm = fundamental/3
-
-        self.imageseries[str(lambdanm)] = self.sumimage
-        self.lambdalist.append(lambdanm)
+        self.imageseries[str(fundamental)] = self.sumimage
         self.fundamentalist.append(str(fundamental))
         self.totalintensities.append(numpy.sum(self.sumimage))
 
         self.lastdelaydisplay.clear()
         self.lastdelaydisplay.imshow(self.sumimage, cmap="gray", vmin=0)
         self.intensityvtime.clear()
-        self.intensityvtime.plot(self.lambdalist, self.totalintensities)
+        self.intensityvtime.plot(self.fundamentalist, self.totalintensities)
         self.canvas.draw()
 
-        if fundamental < stopfund and running == True 
+        if fundamental < stopfund[i] and running == True:
             self.after(10, self.wavelengthloop)
-
         else:
-            self.savedata()
-                    
+            return     
 
 
     def savedata(self):
@@ -290,8 +362,17 @@ class WavelengthGui(tk.Frame):
         self.bnc.write(inputstring.encode("utf-8"))
         lastline = self.bnc.readline().decode("utf-8")
         Bdelay = lastline[:-2]
+        
+        startlist = []
+        stoplist = []
+        incrementlist = []
+        
+        for i in self.rangeframes.keys():
+            startlist.append(self.lambdarangestart[i].get())
+            stoplist.append(self.lambdarangeend[i].get())
+            incrementlist.append(self.incremententry[i].get())
 
-        self.parameters = {"Exposure time": self.exposure, "Gain": self.gain, "Number of frames per wavelength": self.numberofframes, "Wavelength start": int(self.lambdarangestart.get()), "Wavelength end": int(self.lambdarangeend.get()), "Wavelength increment": int(self.incremententry.get()), "Delay A": self.delaysvector[0], "Delay B": Bdelay, "Delay C": self.delaysvector[1], "Delay D": self.delaysvector[2], "Delay E": self.delaysvector[3], "Delay F": self.delaysvector[4], "Delay G": self.delaysvector[5], "Delay H": self.delaysvector[6]}
+        self.parameters = {"Exposure time": self.exposure, "Gain": self.gain, "Number of frames per wavelength": self.numberofframes, "Wavelength start": startlist, "Wavelength end": stoplist, "Wavelength increment": incrementlist, "Delay A": self.delaysvector[0], "Delay B": Bdelay, "Delay C": self.delaysvector[1], "Delay D": self.delaysvector[2], "Delay E": self.delaysvector[3], "Delay F": self.delaysvector[4], "Delay G": self.delaysvector[5], "Delay H": self.delaysvector[6]}
         
         f = open(self.parameterfilename, "w")
         f.write(str(self.parameters))
