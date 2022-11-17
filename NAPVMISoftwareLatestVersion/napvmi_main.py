@@ -4,8 +4,10 @@ import serial
 import PySpin
 import cameramodule
 import bncmodule
+import lasermodule
 import delayintegration
 import kineticseries
+import wavelengthseries
 
 
 class Root(tk.Tk):
@@ -138,22 +140,30 @@ class Root(tk.Tk):
     
     def laserconnect(self):
         
-        MsgBoxLCon = messagebox.askquestion("Connect to Laser", "Before connecting to the laser, make sure that the laser is in the right wavelength region, the laser is in autotracker/lookup table mode and a lookup table is loaded for the wavelength region you would like to use (otherwise take the necessary steps in the Radiant software and then attempt a connection again. Do you want to continue?") 
+        MsgBoxLCon = messagebox.askquestion("Note", "Correct wavelength range? Lookup table installed and enabled? Connect only if setup correct!") 
 
         try:
-            self.laser = serial.Serial("COM1", baudrate=115200, bytesize=8, parity="N", stopbits=1, timeout=1)
-        except:
+            self.laser = serial.Serial("COM7", baudrate=115200, bytesize=8, parity="N", stopbits=1, timeout=3)
+        except SerialException:
             messagebox.showerror("Error", "Could not connect to laser. Check connection, port number and baudrate and retry")
             return
 
+        self.laser.write("INIT\r\n".encode("utf-8"))
+        response = self.laser.read_until("Ready").decode("utf-8")
+        self.laser.reset_input_buffer()
+        if not "Laser control" in response:
+            messagebox.showerror("Error", "Laser controller does not initialise. If response is empty, press reset button on laser controller and retry. Response: {}".format(response))
+            self.laser.close()
+            return
 
         self.connectlaser.pack_forget()
-        self.laserinit()
         self.laserstatus = "connected"
 
         self.connectionstatus += 3
         if self.connectionstatus == 5:
             self.startlambdaseries.configure(state=tk.NORMAL, background="green")
+            
+        self.laserinit()
 
 
 
@@ -217,6 +227,8 @@ class Root(tk.Tk):
 
         self.checkdelays()
         
+        self.lasergui.running = False
+        
         exposure = self.cameragui.node_exposuretime.GetValue()
         gain = self.cameragui.node_gain.GetValue()
 
@@ -268,10 +280,8 @@ class Root(tk.Tk):
         self.startseries.configure(state=tk.NORMAL)
         self.startintegration.configure(state=tk.NORMAL)
         if self.connectionstatus == 5:
+            self.lasergui.running = True
             self.startlambdaseries.configure(state=tk.NORMAL)
-
-            self.lasergui.initialquery()
-            self.lasergui.guiupdate()
         
         try:
             self.bncgui.channel.bncinit()
@@ -305,7 +315,7 @@ class Root(tk.Tk):
         self.system.ReleaseInstance()
         
         if self.laserstatus == "connected":
-            MsgBoxQuit = messagebox.askquestion("Shutdown", "Do you want to shut down the laser controls before closing the program? This will save the current motor positions and send a shutdown command to the laser. If you choose no, the laser controls will not save the current positions and all motors have to be homed at the next startup.")
+            MsgBoxQuit = messagebox.askquestion("Shutdown", "Shutdown laser controls before closing? This will send shutdown command which saves current positions. If power supply is power cycled without shutdown, motor homing is required.")
             if MsgBoxQuit == "yes":
                 inputstring = "SD\r\n"
                 self.laser.write(inputstring.encode("utf-8"))
