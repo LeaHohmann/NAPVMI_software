@@ -326,6 +326,7 @@ class CameraApp(tk.Frame):
                 self.zoomdisplay.deselect()
                 self.zoomdata.deselect()
                 self.autorange()
+                
        
     def start_liveacquisition(self):
         self.setup_acquisition()
@@ -659,7 +660,10 @@ class CameraApp(tk.Frame):
     
     def integrateimage(self):
 
-        self.totalsignal = numpy.sum(self.image_data)
+        if self.displayzoom.get() == 1 and self.datazoom.get() == 0:
+            self.totalsignal = numpy.sum(self.image_data[self.ystart:self.yend,self.xstart:self.xend])
+        else:
+            self.totalsignal = numpy.sum(self.image_data)
         self.signallabel.configure(text="Total signal: {}".format(self.totalsignal))
 
 

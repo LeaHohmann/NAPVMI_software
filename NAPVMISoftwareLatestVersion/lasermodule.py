@@ -257,10 +257,7 @@ class LaserApp(tk.Frame):
         inputstring = "SD\r\n"
         self.laser.write(inputstring.encode("utf-8"))
         lastline = self.laser.read(2)
-        if lastline != "OK":
-            messagebox.showerror("Error", "Problem occurred during shutdown. Please retry")
-        else:
-            self.destroy()
-            self.root.connectlaser.pack()
+        self.destroy()
+        self.root.connectlaser.pack()
 
 

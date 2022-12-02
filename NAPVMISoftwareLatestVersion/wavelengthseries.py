@@ -8,8 +8,10 @@ from tkinter import messagebox
 matplotlib.use("TkAgg")
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import decimal
+import threading
 import ast
 import os
+import time
 
 
 class WavelengthGui(tk.Frame):
@@ -168,7 +170,7 @@ class WavelengthGui(tk.Frame):
     def removerange(self,instance):
     
         self.rangeframes[instance].destroy()
-        self.increment[instance].destroy()
+        self.incremententry[instance].destroy()
         
         self.rangenumber = instance-1
         
@@ -313,85 +315,87 @@ class WavelengthGui(tk.Frame):
         lastline = self.laser.readline().decode("utf-8")
         self.laser.reset_input_buffer()
         fundamental = decimal.Decimal(lastline[:-2])
+        print(fundamental)
 
         self.imageseries[str(fundamental)] = self.sumimage
         self.fundamentalist.append(str(fundamental))
         self.totalintensities.append(numpy.sum(self.sumimage))
 
-        self.wavelengthloop(0)
+        t1 = threading.Thread(target=lambda: self.wavelengthloop(0))
+        t1.start()
+        
+        self.displayloop()
                 
 
 
     def wavelengthloop(self,instance):
         
-        self.laser.reset_input_buffer()
-        inputstring = "GLC\r\n"
-        self.laser.write(inputstring.encode("utf-8"))
-        lastline = self.laser.readline().decode("utf-8")
-        self.laser.reset_input_buffer()
-        fundamental = decimal.Decimal(lastline[:-2])
+        while running:
         
-        if self.stops[2*instance+1]-fundamental > self.incrementfund[instance]:
-         
-            inputstring = "LU\r\n"
-            self.laser.write(inputstring.encode("utf-8"))
-            response = self.laser.read(size=2).decode("utf-8")
             self.laser.reset_input_buffer()
-            if response != "wl":
-                self.wrongentry("Problem occurred while incrementing wavelength")
-                print(response)
-                self.erroroccurrence = True
+            inputstring = "GLC\r\n"
+            self.laser.write(inputstring.encode("utf-8"))
+            lastline = self.laser.readline().decode("utf-8")
+            self.laser.reset_input_buffer()
+            fundamental = decimal.Decimal(lastline[:-2])
+        
+            if self.stops[2*instance+1]-fundamental >= self.incrementfund[instance]:
+         
+                inputstring = "LU\r\n"
+                self.laser.write(inputstring.encode("utf-8"))
+                response = self.laser.read(size=2).decode("utf-8")
+                self.laser.reset_input_buffer()
+                if response != "wl":
+                    self.wrongentry("Problem occurred while incrementing wavelength")
+                    print(response)
+                    self.erroroccurrence = True
+                    self.running = False
+                    return
+
+                time.sleep(0.05)
+
+                self.imageloop()
+
+                if self.erroroccurrence == True:
+                    self.starbutton.configure(state=tk.NORMAL)
+                    self.stopbutton.pack_forget()
+                    return
+                
+                self.datahandling()
+                
+            elif instance < self.iterations-1:
+            
+                inputstring = "SL {}\r\n".format(str(self.stops[2*instance+2]))
+                self.laser.write(inputstring.encode("utf-8"))
+                response = self.laser.read(2).decode("utf-8")
+                self.laser.reset_input_buffer()
+                if response != "OK":
+                    self.wrongentry("Problem occurred while setting wavelength.")
+                    return
+                inputstring = "WL {}\r\n".format(str(self.incrementfund[instance]))
+                self.laser.write(inputstring.encode("utf-8"))
+                respone = self.laser.read(2).decode("utf-8")
+                self.laser.reset_input_buffer()
+                if response != "OK":
+                    self.wrongentry("Problem occurred while setting increment")
+                    return
+                
+                time.sleep(0.05)
+
+                self.imageloop()
+
+                if self.erroroccurrence == True:
+                    self.starbutton.configure(state=tk.NORMAL)
+                    self.stopbutton.pack_forget()
+                    return
+                
+                self.datahandling()
+            
+            
+            else:
+            
                 self.running = False
                 return
-
-            self.after(100)
-
-            self.imageloop()
-
-            if self.erroroccurrence == True:
-                self.starbutton.configure(state=tk.NORMAL)
-                self.stopbutton.pack_forget()
-                return
-                
-            self.datahandling()
-                
-            if self.running:
-                self.wavelengthloop(instance)
-                
-        elif instance < self.iterations-1:
-            
-            inputstring = "SL {}\r\n".format(str(self.stops[2*instance+1]))
-            self.laser.write(inputstring.encode("utf-8"))
-            response = self.laser.read(2).decode("utf-8")
-            self.laser.reset_input_buffer()
-            if response != "OK":
-                self.wrongentry("Problem occurred while setting wavelength.")
-                return
-            inputstring = "WL {}\r\n".format(str(self.incrementfund[instance]))
-            self.laser.write(inputstring.encode("utf-8"))
-            respone = self.laser.read(2).decode("utf-8")
-            self.laser.reset_input_buffer()
-            if response != "OK":
-                self.wrongentry("Problem occurred while setting increment")
-                return
-                
-            self.after(100)
-
-            self.imageloop()
-
-            if self.erroroccurrence == True:
-                self.starbutton.configure(state=tk.NORMAL)
-                self.stopbutton.pack_forget()
-                return
-                
-            self.datahandling()
-            
-            if self.running:
-                self.wavelengthloop(instance+1)
-              
-        else:
-            
-            self.savedata()
             
             
     
@@ -403,17 +407,34 @@ class WavelengthGui(tk.Frame):
         lastline = self.laser.readline().decode("utf-8")
         self.laser.reset_input_buffer()
         fundamental = decimal.Decimal(lastline[:-2])
+        print(fundamental)
 
         self.imageseries[str(fundamental)] = self.sumimage
         self.fundamentalist.append(str(fundamental))
         self.totalintensities.append(numpy.sum(self.sumimage))
-
-        self.lastdelaydisplay.clear()
-        self.lastdelaydisplay.imshow(self.sumimage, cmap="gray", vmin=0)
-        self.intensityvlambda.clear()
-        self.intensityvlambda.plot(numpy.asarray(self.fundamentalist,float), self.totalintensities)
-        self.canvas.draw()
+        
+        
+        
+    def displayloop(self,counter):
+    
+        if self.running:
             
+            if len(self.fundamentalist) > counter:
+                counter = len(self.fundamentalist)
+                self.lastdelaydisplay.clear()
+                self.lastdelaydisplay.imshow(self.sumimage, cmap="gray", vmin=0)
+                self.intensityvlambda.clear()
+                self.intensityvlambda.plot(numpy.asarray(self.fundamentalist,float), self.totalintensities)
+                self.canvas.draw()
+                
+            self.after(0.05,lambda: self.displayloop(counter))
+            
+        else:
+        
+            self.savedata()
+                
+            self.startbutton.configure(state=tk.NORMAL)
+            self.stopbutton.pack_forget()
 
 
     def savedata(self):
@@ -438,9 +459,7 @@ class WavelengthGui(tk.Frame):
 
         messagebox.showinfo("Measurement finished", "Image has been saved under: {}, parameters under {}".format(self.filename, self.parameterfilename)) 
 
-        self.startbutton.configure(state=tk.NORMAL)
-        self.stopbutton.pack_forget()
-
+       
 
 
     def imageloop(self):

@@ -80,21 +80,28 @@ class SeriesGui(tk.Frame):
 
         self.delayrangeframe = tk.Frame(self.leftframe)
         self.delayrangeframe.pack(side=tk.TOP)
-
-        self.range1frame = tk.Frame(self.delayrangeframe)
-        self.range1frame.pack(side=tk.TOP)
-
-        self.rangelower1 = tk.IntVar(self.range1frame, value=0)
-        self.rangestart1 = tk.Entry(self.range1frame, textvariable=self.rangelower1, width=10)
-        self.rangestart1.pack(side=tk.LEFT)
-
-        self.rangeupper1 = tk.IntVar(self.range1frame, value=2000)
-        self.rangeend1 = tk.Entry(self.range1frame, textvariable=self.rangeupper1, width=10)
-        self.rangeend1.pack(side=tk.LEFT)
         
         self.rangenumber = 1
         
-        self.rangeadder = tk.Button(self.leftframe, text="Add delay range", command=lambda:self.addrange(2))
+        self.rangeframe = {}
+
+        self.rangeframe[1] = tk.Frame(self.delayrangeframe)
+        self.rangeframe[1].pack(side=tk.TOP)
+        
+        self.rangelower = {}
+        self.rangestart = {}
+        self.rangeupper = {}
+        self.rangeend = {}
+
+        self.rangelower[1] = tk.IntVar(self.rangeframe[1], value=0)
+        self.rangestart[1] = tk.Entry(self.rangeframe[1], textvariable=self.rangelower1, width=10)
+        self.rangestart[1].pack(side=tk.LEFT)
+
+        self.rangeupper[1] = tk.IntVar(self.range1frame, value=2000)
+        self.rangeend[1] = tk.Entry(self.range1frame, textvariable=self.rangeupper1, width=10)
+        self.rangeend[1].pack(side=tk.LEFT)
+        
+        self.rangeadder = tk.Button(self.leftframe, text="Add delay range", command=lambda:self.addrange(self.rangenumber+1))
         self.rangeadder.pack(side=tk.TOP, pady=(20,5))
         
         self.rangeremover = tk.Button(self.leftframe, text="Remove delay range", command=lambda:self.removerange(self.rangenumber) ,state=tk.DISABLED)
@@ -105,10 +112,13 @@ class SeriesGui(tk.Frame):
         
         self.incrementframe = tk.Frame(self.leftframe)
         self.incrementframe.pack(side=tk.TOP)
+        
+        self.increment = {}
+        self.incremententry = {}
 
-        self.increment1 = tk.IntVar(self.incrementframe, value=100)
-        self.incremententry1 = tk.Entry(self.incrementframe, textvariable=self.increment1, width=10)
-        self.incremententry1.pack(side=tk.TOP, pady=(0,0))
+        self.increment[1] = tk.IntVar(self.incrementframe, value=100)
+        self.incremententry[1] = tk.Entry(self.incrementframe, textvariable=self.increment1, width=10)
+        self.incremententry[1].pack(side=tk.TOP, pady=(0,0))
 
         self.framenumberlabel = tk.Label(self.leftframe, text="Number of averaged frames per delay:", font=("Helvetica",12))
         self.framenumberlabel.pack(side=tk.TOP, pady=(30,5))
@@ -144,63 +154,41 @@ class SeriesGui(tk.Frame):
         
         
         
-    def addrange(self,instance):
-    
-        if instance == 2:
+    def addrange(self,instance): 
             
-            self.range2frame = tk.Frame(self.delayrangeframe)
-            self.range2frame.pack(side=tk.TOP)
+        self.rangeframe[instance] = tk.Frame(self.delayrangeframe)
+        self.rangeframe[instance].pack(side=tk.TOP)
             
-            self.rangelower2 = tk.IntVar(self.range2frame, value=0)
-            self.rangestart2 = tk.Entry(self.range2frame, textvariable=self.rangelower2, width=10)
-            self.rangestart2.pack(side=tk.LEFT)
+        self.rangelower[instance] = tk.IntVar(self.rangeframe[instance], value=0)
+        self.rangestart[instance] = tk.Entry(self.rangeframe[instance], textvariable=self.rangelower[instance], width=10)
+        self.rangestart[instance].pack(side=tk.LEFT)
 
-            self.rangeupper2 = tk.IntVar(self.range2frame, value=2000)
-            self.rangeend2 = tk.Entry(self.range2frame, textvariable=self.rangeupper2, width=10)
-            self.rangeend2.pack(side=tk.LEFT)
+        self.rangeupper[instance] = tk.IntVar(self.rangeframe[instance], value=2000)
+        self.rangeend[instance] = tk.Entry(self.rangeframe[instance], textvariable=self.rangeupper[instance], width=10)
+        self.rangeend[instance].pack(side=tk.LEFT)
             
-            self.increment2 = tk.IntVar(self.incrementframe, value=100)
-            self.incremententry2 = tk.Entry(self.incrementframe, textvariable=self.increment2, width=10)
-            self.incremententry2.pack(side=tk.TOP, pady=(0,0))
+        self.increment[instance] = tk.IntVar(self.incrementframe, value=100)
+        self.incremententry[instance] = tk.Entry(self.incrementframe, textvariable=self.increment[instance], width=10)
+        self.incremententry[instance].pack(side=tk.TOP, pady=(0,0))
             
-            self.rangeadder.configure(command=lambda:self.addrange(3))
-            self.rangeremover.configure(state=tk.NORMAL)
-            
-        if instance == 3:
-           
-            self.range3frame = tk.Frame(self.delayrangeframe)
-            self.range3frame.pack(side=tk.TOP)           
-           
-            self.rangelower3 = tk.IntVar(self.range3frame, value=0)
-            self.rangestart3 = tk.Entry(self.range3frame, textvariable=self.rangelower3, width=10)
-            self.rangestart3.pack(side=tk.LEFT)
-
-            self.rangeupper3 = tk.IntVar(self.range3frame, value=2000)
-            self.rangeend3 = tk.Entry(self.range3frame, textvariable=self.rangeupper3, width=10)
-            self.rangeend3.pack(side=tk.LEFT)
-            
-            self.increment3 = tk.IntVar(self.incrementframe, value=100)
-            self.incremententry3 = tk.Entry(self.incrementframe, textvariable=self.increment3, width=10)
-            self.incremententry3.pack(side=tk.TOP, pady=(0,0))
-            
-            self.rangeadder.configure(state=tk.DISABLED)
+        self.rangeremover.configure(state=tk.NORMAL)
             
         self.rangenumber = instance
         
         
-    def removerange(self,rangenumber):
-    
-        if rangenumber == 3:
-            self.range3frame.pack_forget()
-            self.rangenumber = 2
-            self.rangeadder.configure(state=tk.NORMAL,command=lambda:self.addrange(3))
         
-        if rangenumber == 2:
-            self.range2frame.pack_forget()
-            self.rangenumber = 1
-            self.rangeadder.configure(command=lambda:self.addrange(2))
+    def removerange(self,instance):
+   
+        self.rangeframe[instance].destroy()
+        self.incremententry[instance].destroy()
+        self.increment[instance].destroy()
+       
+        self.rangenumber = instance - 1
+        
+        if instance == 2:
             self.rangeremover.configure(state=tk.DISABLED)
-           
+            
+            
 
     def startacquisition(self):
 
@@ -245,18 +233,14 @@ class SeriesGui(tk.Frame):
         self.running = True
         self.stopbutton.pack(side=tk.TOP, pady=(20,10))
         
-        self.delayscanrange1 = numpy.arange(int(self.rangestart1.get()), (int(self.rangeend1.get()) + 1), int(self.incremententry1.get()))
+        for i in range(self.rangenumber):
         
-        if self.rangenumber > 1:
-            self.delayscanrange2 = numpy.arange(int(self.rangestart2.get()), (int(self.rangeend2.get()) + 1), int(self.incremententry2.get()))
+            if i == 0:
+                self.delayscanrange = numpy.arange(int(self.rangestart[1].get()), (int(self.rangeend[1].get()) + 1), int(self.incremententry[1].get()))
         
-        if self.rangenumber == 1:
-            self.delayscanrange = self.delayscanrange1
-        elif self.rangenumber == 2:
-            self.delayscanrange = numpy.concatenate([self.delayscanrange1,self.delayscanrange2])
-        elif self.rangenumber == 3:
-            self.delayscanrange3 = numpy.arange(int(self.rangestart3.get()), (int(self.rangeend3.get()) + 1), int(self.incremententry3.get()))
-            self.delayscanrange = numpy.concatenate([self.delayscanrange1,self.delayscanrange2,self.delayscanrange3])
+            else:
+                newrange = numpy.arange(int(self.rangestart[i+1].get()), (int(self.rangeend[i+1].get()) + 1), int(self.incremententry[i+1].get()))
+                self.delayscanrange = numpy.concatenate([self.delayscanrange,newrange])
         
         self.intensityvtime.set_xlim(self.delayscanrange[0]-5, self.delayscanrange[-1]+5)
         
@@ -385,19 +369,14 @@ class SeriesGui(tk.Frame):
         if filename[:-4] != ".txt":
             filename = filename + ".txt"
         
+        rangelower = []
+        rangeupper = []
+        increments = []
        
-        if self.rangenumber == 1:
-            rangelower = int(self.rangestart1.get())
-            rangeupper = int(self.rangeend1.get())
-            increments = int(self.incremententry1.get())
-        elif self.rangenumber == 2:
-            rangelower = (int(self.rangestart1.get()),int(self.rangestart2.get()))
-            rangeupper = (int(self.rangeend1.get()),int(self.rangeend2.get()))
-            increments = (int(self.incremententry1.get()),int(self.incremententry2.get()))
-        elif self.rangenumber == 3:
-            rangelower = (int(self.rangestart1.get()),int(self.rangestart2.get()),int(self.rangestart3.get()))
-            rangeupper = (int(self.rangeend1.get()),int(self.rangeend2.get()),int(self.rangeend3.get()))
-            increments = (int(self.incremententry1.get()),int(self.incremententry2.get()),int(self.incremententry3.get()))
+        for i in range(self.rangenumber):
+            rangelower.append(int(self.rangestart[i+1].get()))
+            rangeupper.append(int(self.rangeend[i+1].get()))
+            increments.append(int(self.incremententry[i+1].get()))
        
         experiment = {"channel": self.channelname.get(), "timerange": self.timerange.get(), "rangenumber": self.rangenumber, "rangelower": rangelower, "rangeupper": rangeupper, "increment": increments, "frameno": self.sumframes.get(), "threshold": int(self.thresholdentry.get()), "negative": self.minusvar.get()}
         
@@ -417,37 +396,19 @@ class SeriesGui(tk.Frame):
         self.channelname.set(experiment["channel"])
         self.timerange.set(experiment["timerange"])
         
-        if self.rangenumber != experiment["rangenumber"]:
-            self.setranges(experiment["rangenumber"])
-        
-        self.rangestart1.delete(0,tk.END)
-        self.rangeend1.delete(0,tk.END)
-        self.incremententry1.delete(0,tk.END)
-        if self.rangenumber > 1:
-            self.rangestart1.insert(0,experiment["rangelower"][0])
-            self.rangeend1.insert(0,experiment["rangeupper"][0])
-            self.incremententry1.insert(0,experiment["increment"][0])
-        else:
-            self.rangestart1.insert(0,experiment["rangelower"])
-            self.rangeend1.insert(0,experiment["rangeupper"])
-            self.incremententry1.insert(0,experiment["increment"]) 
-        
-        if self.rangenumber > 1:
-            self.rangestart2.delete(0,tk.END)
-            self.rangestart2.insert(0,experiment["rangelower"][1])
-            self.rangeend2.delete(0,tk.END)
-            self.rangeend2.insert(0,experiment["rangeupper"][1])
-            self.incremententry2.delete(0,tk.END)
-            self.incremententry2.insert(0,experiment["increment"][1])
+        while self.rangenumber < experiment["rangenumber"]:
+            self.addrange(self.rangenumber+1)
             
-        if self.rangenumber == 3:
+        while self.rangenumber > experiment["rangenumber"]:
+            self.removerange(self.rangenumber)
         
-            self.rangestart3.delete(0,tk.END)
-            self.rangestart3.insert(0,experiment["rangelower"][2])
-            self.rangeend3.delete(0,tk.END)
-            self.rangeend3.insert(0,experiment["rangeupper"][2])
-            self.incremententry3.delete(0,tk.END)
-            self.incremententry3.insert(0,experiment["increment"][2])
+        for i in range(self.rangenumber):
+            self.rangestart[i+1].delete(0,tk.END)
+            self.rangestart[i+1].insert(0,experiment["rangelower"][i])
+            self.rangeend[i+1].delete(0,tk.END)
+            self.rangeend[i+1].insert(0,experiment["rangeupper"][i])
+            self.incremententry[i+1].delete(0,tk.END)
+            self.incremententry[i+1].insert(0,experiment["increment"][i])
             
         self.framenumber.delete(0,tk.END)
         self.framenumber.insert(0,experiment["frameno"])
@@ -458,21 +419,6 @@ class SeriesGui(tk.Frame):
         else:
             self.minuscheck.deselect()
         
-        
-    
-    def setranges(self,rangenumber):
-    
-        if self.rangenumber < rangenumber:
-            self.addrange()
-        elif self.rangenumber > rangenumber:
-            self.removerange()
-        
-        if self.rangenumber == rangenumber:
-            return
-            
-        self.setranges()
-        
-    
 
 
     def userinterrupt(self):
