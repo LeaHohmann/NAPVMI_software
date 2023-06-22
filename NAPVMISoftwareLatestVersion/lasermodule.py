@@ -133,7 +133,7 @@ class LaserApp(tk.Frame):
 
         while self.active:
         
-            time.sleep(0.5)
+            time.sleep(0.2)
             
             if self.running:
                 
@@ -144,6 +144,7 @@ class LaserApp(tk.Frame):
                 self.currentlambda.configure(text=self.fundamental)
                 self.laser.reset_input_buffer()
                 
+                
                 inputstring = "GP2\r\n"
                 self.laser.write(inputstring.encode("utf-8"))
                 lastline = self.laser.readline().decode("utf-8")
@@ -151,12 +152,16 @@ class LaserApp(tk.Frame):
                 self.currentpos1.configure(text=self.fcu1)
                 self.laser.reset_input_buffer()
                 
+                
                 inputstring = "GP3\r\n"
                 self.laser.write(inputstring.encode("utf-8"))
                 lastline = self.laser.readline().decode("utf-8")
                 self.fcu2 = lastline[:-1]
                 self.currentpos2.configure(text=self.fcu2)
                 self.laser.reset_input_buffer()
+                
+                
+                
 
 
 
