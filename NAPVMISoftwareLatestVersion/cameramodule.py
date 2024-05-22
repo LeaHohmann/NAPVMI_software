@@ -164,6 +164,10 @@ class CameraApp(tk.Frame):
         self.zoomdata = tk.Checkbutton(self.zoomframe3, text="Apply zoom to data", variable=self.datazoom, onvalue=1, offvalue=0)
         self.zoomdata.pack(side=tk.LEFT)
         
+        self.zoomint = tk.Button(self.zoomframe3, text="Show integrated signal", command=self.integratezoom state=DISABLED)
+        self.zoomint.pack(side=tk.LEFT)
+        self.zoomintegration = False
+        
         self.saveparameters = tk.Button(self.leftframe, text="Save parameter file", command=self.saveparameterfile)
         self.saveparameters.pack(side=tk.LEFT, pady=(50,0))
 
@@ -349,6 +353,8 @@ class CameraApp(tk.Frame):
         self.multiframe.configure(state=tk.DISABLED)
         self.takexslice.configure(state=tk.DISABLED)
         self.takeyslice.configure(state=tk.DISABLED)
+        if datazoom == 0 and displayzoom == 0:
+            self.zoomint.configure(state=tk.NORMAL)
 
         self.multiframeloop()
 
@@ -665,6 +671,23 @@ class CameraApp(tk.Frame):
         else:
             self.totalsignal = numpy.sum(self.image_data)
         self.signallabel.configure(text="Total signal: {}".format(self.totalsignal))
+        
+        if zoomintegration == True:
+            self.zoomsignal = numpy.sum(self.image_data[self.ystart:self.yend,self.xstart:self.xend])
+            self.zoomintlabel.configure(text=str(self.zoomsignal))
+            
+        
+        
+        
+    def integratezoom(self):
+    
+        self.zoomintwindow = tk.Toplevel(self,width=400,height=200)
+        self.zoomintlabel = tk.Label(self.zoomintwindow,text="0", font=("Helvetica", 40))
+        self.zoomintlabel.pack()
+        
+        self.zoomint.configure(state=tk.DISABLED)
+        self.zoomintegration = True
+        
 
 
 
