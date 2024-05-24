@@ -353,7 +353,7 @@ class CameraApp(tk.Frame):
         self.multiframe.configure(state=tk.DISABLED)
         self.takexslice.configure(state=tk.DISABLED)
         self.takeyslice.configure(state=tk.DISABLED)
-        if datazoom == 0 and displayzoom == 0:
+        if self.datazoom == 0 and self.displayzoom == 0:
             self.zoomint.configure(state=tk.NORMAL)
 
         self.multiframeloop()
