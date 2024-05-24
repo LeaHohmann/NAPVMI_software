@@ -308,6 +308,9 @@ class CameraApp(tk.Frame):
 
         self.node_acquisitionmode = PySpin.CEnumerationPtr(self.nodemap.GetNode('AcquisitionMode'))
         
+        if self.datazoom.get() == 1:
+            self.zoomdisplay.select()
+        
         try:
             self.threshold = int(self.thresholdentry.get())
         except ValueError:
@@ -315,21 +318,7 @@ class CameraApp(tk.Frame):
             self.thresholdentry.delete(0,tk.END)
             self.thresholdentry.insert(tk.END,"0")
             self.threshold = 0
-            
-        if self.datazoom.get() == 1:
-            self.zoomdisplay.select()
-           
-        if self.displayzoom.get() == 1:
-            try:
-                self.xstart = int(int(self.xcenter.get())-int(self.width.get())/2)
-                self.xend = int(int(self.xcenter.get())+int(self.width.get())/2)
-                self.ystart = int(int(self.ycenter.get())-int(self.height.get())/2)
-                self.yend = int(int(self.ycenter.get())+int(self.height.get())/2)
-            except ValueError:
-                messagebox.showerror("Error", "Invalid zoom range values, no zoom performed")
-                self.zoomdisplay.deselect()
-                self.zoomdata.deselect()
-                self.autorange()
+    
                 
        
     def start_liveacquisition(self):
@@ -353,8 +342,10 @@ class CameraApp(tk.Frame):
         self.multiframe.configure(state=tk.DISABLED)
         self.takexslice.configure(state=tk.DISABLED)
         self.takeyslice.configure(state=tk.DISABLED)
-        if self.datazoom == 0 and self.displayzoom == 0:
+        if self.datazoom.get() == 0 and self.displayzoom.get() == 0:
             self.zoomint.configure(state=tk.NORMAL)
+            self.zoomdisplay.configure(state=tk.DISABLED)
+            self.zoomdata.configure(state=tk.DISABLED)
 
         self.multiframeloop()
 
@@ -413,6 +404,10 @@ class CameraApp(tk.Frame):
 
         self.running = False
         self.statuslabel.configure(text="Acquisition stopped")
+        if self.datazoom.get() == 0 and self.displayzoom.get() == 0:
+            self.zoomint.configure(state=tk.DISABLED)
+            self.zoomdisplay.configure(state=tk.NORMAL)
+            self.zoomdata.configure(state=tk.NORMAL)
 
 
  
@@ -594,6 +589,18 @@ class CameraApp(tk.Frame):
         except ValueError:
             self.uppercrange = 255
             self.lowercrange = 0
+           
+        if self.displayzoom.get() == 1 or self.zoomintegration == True:
+            try:
+                self.xstart = int(int(self.xcenter.get())-int(self.width.get())/2)
+                self.xend = int(int(self.xcenter.get())+int(self.width.get())/2)
+                self.ystart = int(int(self.ycenter.get())-int(self.height.get())/2)
+                self.yend = int(int(self.ycenter.get())+int(self.height.get())/2)
+            except ValueError:
+                messagebox.showerror("Error", "Invalid zoom range values, no zoom performed")
+                self.zoomdisplay.deselect()
+                self.zoomdata.deselect()
+                self.autorange()
         
         if self.displayzoom.get() == 1 and self.datazoom.get() == 0:
             displayimage = self.image_data[self.ystart:self.yend,self.xstart:self.xend]
@@ -608,6 +615,11 @@ class CameraApp(tk.Frame):
             self.imagedisplay.imshow(displayimage, cmap=self.cmaplist[self.cmap.get()], vmin=self.lowercrange, vmax=self.uppercrange)
         else:
             self.imagedisplay.imshow(displayimage, cmap=self.cmaplist[self.cmap.get()])
+        if self.zoomintegration == True:
+            self.imagedisplay.plot([self.xstart,self.xend],[self.ystart,self.ystart],color="green",linewidth=1)
+            self.imagedisplay.plot([self.xstart,self.xstart],[self.ystart,self.yend],color="green",linewidth=1)
+            self.imagedisplay.plot([self.xend,self.xend],[self.ystart,self.yend],color="green",linewidth=1)
+            self.imagedisplay.plot([self.xstart,self.xend],[self.yend,self.yend],color="green",linewidth=1)
         self.histogram.clear()
         self.histogram.bar(x,histo, width=14, align='center', log=True, tick_label=["0-31","32-63","64-95","96-127","128-159","160-191","192-223","224-255"])
         self.canvas.draw()
@@ -672,7 +684,7 @@ class CameraApp(tk.Frame):
             self.totalsignal = numpy.sum(self.image_data)
         self.signallabel.configure(text="Total signal: {}".format(self.totalsignal))
         
-        if zoomintegration == True:
+        if self.zoomintegration == True:
             self.zoomsignal = numpy.sum(self.image_data[self.ystart:self.yend,self.xstart:self.xend])
             self.zoomintlabel.configure(text=str(self.zoomsignal))
             
@@ -687,6 +699,16 @@ class CameraApp(tk.Frame):
         
         self.zoomint.configure(state=tk.DISABLED)
         self.zoomintegration = True
+        
+        self.zoomintwindow.protocol("WM_DELETE_WINDOW", self.quitzoomint)
+        
+    
+    def quitzoomint(self):
+    
+        self.zoomintegration = False
+        self.zoomint.configure(state=tk.NORMAL)
+        
+        self.zoomintwindow.destroy()
         
 
 
