@@ -164,7 +164,7 @@ class CameraApp(tk.Frame):
         self.zoomdata = tk.Checkbutton(self.zoomframe3, text="Apply zoom to data", variable=self.datazoom, onvalue=1, offvalue=0)
         self.zoomdata.pack(side=tk.LEFT)
         
-        self.zoomint = tk.Button(self.zoomframe3, text="Show integrated signal", command=self.integratezoom, state=DISABLED)
+        self.zoomint = tk.Button(self.zoomframe3, text="Show integrated signal", command=self.integratezoom, state=tk.DISABLED)
         self.zoomint.pack(side=tk.LEFT)
         self.zoomintegration = False
         
