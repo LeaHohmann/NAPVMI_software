@@ -75,7 +75,7 @@ class SeriesGui(tk.Frame):
         self.timetuner.pack(side=tk.TOP,pady=(10,20))
         
 
-        self.delayrangelabel = tk.Label(self.leftframe, text="Delay range (min 0 - max 10000):", font=("Helvetica",12))
+        self.delayrangelabel = tk.Label(self.leftframe, text="Delay range (min 0 - max 9999):", font=("Helvetica",12))
         self.delayrangelabel.pack(side=tk.TOP, pady=(20,5))
 
         self.delayrangeframe = tk.Frame(self.leftframe)
