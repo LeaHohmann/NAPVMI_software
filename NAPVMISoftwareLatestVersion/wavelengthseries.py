@@ -12,6 +12,7 @@ import threading
 import ast
 import os
 import time
+import fieldmax
 
 
 class WavelengthGui(tk.Frame):
@@ -38,9 +39,13 @@ class WavelengthGui(tk.Frame):
 
         node_bufferhandling = PySpin.CEnumerationPtr(streamnodemap.GetNode("StreamBufferHandlingMode"))
         node_bufferhandling.SetIntValue(node_bufferhandling.GetEntryByName("NewestOnly").GetValue())
+        
+        self.fmserialno = ""
+        self.laserenergy = 0.0
 
         self.erroroccurrence = False
         self.running = False
+        self.powermeasurement = False
 
         self.guiinit()
 
@@ -131,6 +136,14 @@ class WavelengthGui(tk.Frame):
         self.threshold = tk.IntVar(self.leftframe, value=0)
         self.thresholdentry = tk.Entry(self.leftframe,textvariable=self.threshold,width=10)
         self.thresholdentry.pack(side=tk.TOP,pady=(0,20))
+        
+        self.powerlabel = tk.Label(self.leftframe, text="Laser power measurement", font=("Helvetica",12))
+        self.powerlabel.pack(side=tk.TOP,pady=(10,5))
+        
+        self.powermeter = tk.Button(self.leftframe, text="Use power meter", command=self.connectfieldmax)
+        self.powermeter.pack(side=tk.TOP,pady=(0,20))
+        
+        self.powerconnected = tk.Label(self.leftframe, text="Power meter {} connected, {} J".format(self.fmserialno,self.laserenergy), font=("Helvetica",12))
 
         self.startbutton = tk.Button(self.leftframe, text="Start Acquisition", background="green", command=self.startacquisition)
         self.startbutton.pack(side=tk.TOP, pady=(50,10))
@@ -176,6 +189,21 @@ class WavelengthGui(tk.Frame):
         
         if instance == 2:
             self.rangeremover.configure(state=tk.DISABLED)
+            
+        
+    def connectfieldmax(self):
+        
+        self.FMII = fieldmax.FieldMax(r'C:\Program Files (x86)\Coherent\FieldMaxII PC\Drivers\Win10\FieldMax2Lib\x64\FieldMax2Lib.dll')
+        self.FMII.openDriver()
+        #Add: Catch exception if not connected
+        
+        self.fmserialno = self.FMII.get_SerialNumber()
+        self.laserenergy = self.FMII.get_dataPoint()
+        
+        self.powermeasurement = True
+        self.powermeter.configure(state=tk.DISABLED)
+        self.powerconnected.pack()
+        
 
 
     def evalentry(self):
@@ -282,9 +310,14 @@ class WavelengthGui(tk.Frame):
 
         self.parameterfilename = self.filename[:-4] + "_parameters.txt"
         
+        self.energyfilename = self.filename[:-4] + "_energies.txt"
+        
         self.running = True
        
         self.imageseries = {}
+        
+        if powermeasurement == True:
+            self.energies = {}
 
         self.fundamentalist = []
         self.totalintensities = []
@@ -307,6 +340,9 @@ class WavelengthGui(tk.Frame):
         if response != "OK":
             self.wrongentry("Problem occurred while setting increment")
             return
+        
+        if self.powermeasurement == True:
+            self.laserenergy = self.FMII.get_dataPoint()
     
         self.imageloop()
 
@@ -320,6 +356,8 @@ class WavelengthGui(tk.Frame):
         self.imageseries[str(fundamental)] = self.sumimage
         self.fundamentalist.append(str(fundamental))
         self.totalintensities.append(numpy.sum(self.sumimage))
+        if self.powermeasurement == True:
+            self.energies[str(fundamental)] = self.laserenergy
 
         t1 = threading.Thread(target=lambda: self.wavelengthloop(0))
         t1.start()
@@ -353,6 +391,9 @@ class WavelengthGui(tk.Frame):
                     return
 
                 time.sleep(0.05)
+                
+                if self.powermeasurement == True:
+                    self.laserenergy = self.FMII.get_dataPoint()
 
                 self.imageloop()
 
@@ -412,6 +453,8 @@ class WavelengthGui(tk.Frame):
         self.imageseries[str(fundamental)] = self.sumimage
         self.fundamentalist.append(str(fundamental))
         self.totalintensities.append(numpy.sum(self.sumimage))
+        if self.powermeasurement == True:
+            self.energies[str(fundamental)] = self.laserenergy
         
         
         
@@ -456,8 +499,16 @@ class WavelengthGui(tk.Frame):
         f = open(self.parameterfilename, "w")
         f.write(str(self.parameters))
         f.close
-
-        messagebox.showinfo("Measurement finished", "Image has been saved under: {}, parameters under {}".format(self.filename, self.parameterfilename)) 
+        
+        if self.powermeasurement == True:
+            f = open(self.energyfilename, "w")
+            f.write(str(self.energies))
+            f.close()
+            
+            messagebox.showinfo("Measurement finished", "Image has been saved under: {}, beam energies under: {}, parameters under {}".format(self.filename, self.energyfilename, self.parameterfilename)) 
+            
+        else:
+            messagebox.showinfo("Measurement finished", "Image has been saved under: {}, parameters under {}".format(self.filename, self.parameterfilename)) 
 
        
 
