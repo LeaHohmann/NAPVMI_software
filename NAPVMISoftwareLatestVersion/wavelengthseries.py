@@ -194,8 +194,11 @@ class WavelengthGui(tk.Frame):
     def connectfieldmax(self):
         
         self.FMII = fieldmax.FieldMax(r'C:\Program Files (x86)\Coherent\FieldMaxII PC\Drivers\Win10\FieldMax2Lib\x64\FieldMax2Lib.dll')
-        self.FMII.openDriver()
-        #Add: Catch exception if not connected
+        try:
+            self.FMII.openDriver()
+        except OSError:
+            messagebox.showerror("Error","Could not connect to FieldMaII")
+            return
         
         self.fmserialno = self.FMII.get_SerialNumber()
         self.laserenergy = self.FMII.get_dataPoint()
