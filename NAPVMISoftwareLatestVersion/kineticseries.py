@@ -94,11 +94,11 @@ class SeriesGui(tk.Frame):
         self.rangeend = {}
 
         self.rangelower[1] = tk.IntVar(self.rangeframe[1], value=0)
-        self.rangestart[1] = tk.Entry(self.rangeframe[1], textvariable=self.rangelower1, width=10)
+        self.rangestart[1] = tk.Entry(self.rangeframe[1], textvariable=self.rangelower[1], width=10)
         self.rangestart[1].pack(side=tk.LEFT)
 
-        self.rangeupper[1] = tk.IntVar(self.range1frame, value=2000)
-        self.rangeend[1] = tk.Entry(self.range1frame, textvariable=self.rangeupper1, width=10)
+        self.rangeupper[1] = tk.IntVar(self.rangeframe[1], value=2000)
+        self.rangeend[1] = tk.Entry(self.rangeframe[1], textvariable=self.rangeupper[1], width=10)
         self.rangeend[1].pack(side=tk.LEFT)
         
         self.rangeadder = tk.Button(self.leftframe, text="Add delay range", command=lambda:self.addrange(self.rangenumber+1))
@@ -117,7 +117,7 @@ class SeriesGui(tk.Frame):
         self.incremententry = {}
 
         self.increment[1] = tk.IntVar(self.incrementframe, value=100)
-        self.incremententry[1] = tk.Entry(self.incrementframe, textvariable=self.increment1, width=10)
+        self.incremententry[1] = tk.Entry(self.incrementframe, textvariable=self.increment, width=10)
         self.incremententry[1].pack(side=tk.TOP, pady=(0,0))
 
         self.framenumberlabel = tk.Label(self.leftframe, text="Number of averaged frames per delay:", font=("Helvetica",12))
