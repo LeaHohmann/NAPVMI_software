@@ -143,7 +143,8 @@ class WavelengthGui(tk.Frame):
         self.powermeter = tk.Button(self.leftframe, text="Use power meter", command=self.connectfieldmax)
         self.powermeter.pack(side=tk.TOP,pady=(0,20))
         
-        self.powerconnected = tk.Label(self.leftframe, text="Power meter {} connected, {} J".format(self.fmserialno,self.laserenergy), font=("Helvetica",12))
+        self.powerconnected = tk.Label(self.leftframe, text="Power meter not connected", font=("Helvetica",12))
+        self.powerconnected.pack()
 
         self.startbutton = tk.Button(self.leftframe, text="Start Acquisition", background="green", command=self.startacquisition)
         self.startbutton.pack(side=tk.TOP, pady=(50,10))
@@ -202,10 +203,12 @@ class WavelengthGui(tk.Frame):
         
         self.fmserialno = self.FMII.get_SerialNumber()
         self.laserenergy = self.FMII.get_dataPoint()
+        if self.laserenergy == 0:
+            self.laserenergy = self.FMII.get_dataPoint()
         
+        self.powerconnected.config(text="Power meter {} connected, {} J".format(self.fmserialno,self.laserenergy))
         self.powermeasurement = True
         self.powermeter.configure(state=tk.DISABLED)
-        self.powerconnected.pack()
         
 
 
@@ -435,7 +438,6 @@ class WavelengthGui(tk.Frame):
                 
                 self.datahandling()
             
-            
             else:
             
                 self.running = False
@@ -602,6 +604,9 @@ class WavelengthGui(tk.Frame):
 
     
     def userinterrupt(self):
+        
+        if self.powermeasurement == True:
+            self.FMII.closeDriver()
 
         self.running = False
         self.stopbutton.pack_forget()
