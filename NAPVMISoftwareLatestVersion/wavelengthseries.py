@@ -322,7 +322,7 @@ class WavelengthGui(tk.Frame):
        
         self.imageseries = {}
         
-        if powermeasurement == True:
+        if self.powermeasurement == True:
             self.energies = {}
 
         self.fundamentalist = []
