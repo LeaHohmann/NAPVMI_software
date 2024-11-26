@@ -368,13 +368,13 @@ class WavelengthGui(tk.Frame):
         t1 = threading.Thread(target=lambda: self.wavelengthloop(0))
         t1.start()
         
-        self.displayloop()
+        self.displayloop(0)
                 
 
 
     def wavelengthloop(self,instance):
         
-        while running:
+        while self.running:
         
             self.laser.reset_input_buffer()
             inputstring = "GLC\r\n"
@@ -475,7 +475,7 @@ class WavelengthGui(tk.Frame):
                 self.intensityvlambda.plot(numpy.asarray(self.fundamentalist,float), self.totalintensities)
                 self.canvas.draw()
                 
-            self.after(0.05,lambda: self.displayloop(counter))
+            self.after(50,lambda: self.displayloop(counter))
             
         else:
         
