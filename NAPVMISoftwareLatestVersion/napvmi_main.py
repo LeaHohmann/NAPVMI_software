@@ -144,7 +144,7 @@ class Root(tk.Tk):
 
         try:
             self.laser = serial.Serial("COM7", baudrate=115200, bytesize=8, parity="N", stopbits=1, timeout=3)
-        except SerialException:
+        except serial.SerialException:
             messagebox.showerror("Error", "Could not connect to laser. Check connection, port number and baudrate and retry")
             return
 
