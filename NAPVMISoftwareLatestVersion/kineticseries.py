@@ -35,6 +35,7 @@ class SeriesGui(tk.Frame):
         self.channelnumbers = {"A": 1, "B": 2, "C": 3, "D": 4, "E": 5, "F": 6, "G": 7, "H": 8}
 
         self.erroroccurrence = False
+        self.powermeasurement = False
 
         self.guiinit()
 
@@ -138,6 +139,15 @@ class SeriesGui(tk.Frame):
         self.minuscheck = tk.Checkbutton(self.leftframe, text="Negative delays", variable=self.minusvar, onvalue=1, offvalue=0)
         self.minuscheck.pack(side=tk.TOP,pady=(10,20))
         
+        self.powerlabel = tk.Label(self.leftframe, text="Laser power measurement", font=("Helvetica",12))
+        self.powerlabel.pack(side=tk.TOP,pady=(10,5))
+        
+        self.powermeter = tk.Button(self.leftframe, text="Use power meter", command=self.connectfieldmax)
+        self.powermeter.pack(side=tk.TOP,pady=(0,20))
+        
+        self.powerconnected = tk.Label(self.leftframe, text="Power meter not connected", font=("Helvetica",12))
+        self.powerconnected.pack()
+        
         self.startbutton = tk.Button(self.leftframe, text="Start Acquisition", background="green", command=self.startacquisition)
         self.startbutton.pack(side=tk.TOP, pady=(50,10))
 
@@ -189,6 +199,25 @@ class SeriesGui(tk.Frame):
             self.rangeremover.configure(state=tk.DISABLED)
             
             
+    def connectfieldmax(self):
+        
+        self.FMII = fieldmax.FieldMax(r'C:\Program Files (x86)\Coherent\FieldMaxII PC\Drivers\Win10\FieldMax2Lib\x64\FieldMax2Lib.dll')
+        try:
+            self.FMII.openDriver()
+        except OSError:
+            messagebox.showerror("Error","Could not connect to FieldMaII")
+            return
+        
+        self.fmserialno = self.FMII.get_SerialNumber()
+        self.laserenergy = self.FMII.get_dataPoint()
+        if self.laserenergy == 0:
+            self.laserenergy = self.FMII.get_dataPoint()
+        
+        self.powerconnected.config(text="Power meter {} connected, {} J".format(self.fmserialno,self.laserenergy))
+        self.powermeasurement = True
+        self.powermeter.configure(state=tk.DISABLED)
+            
+            
 
     def startacquisition(self):
 
@@ -224,6 +253,11 @@ class SeriesGui(tk.Frame):
         self.startbutton.configure(state=tk.DISABLED)
 
         self.parameterfilename = self.filename[:-4] + "_parameters.txt"
+        
+        self.energyfilename = self.filename[:-4] + "_energies.txt"
+        
+        if self.powermeasurement == True:
+            self.energies = {}
 
         self.imageseries = {}
 
@@ -287,6 +321,9 @@ class SeriesGui(tk.Frame):
         lastline = self.bnc.readline().decode("utf-8")
 
         self.after(100)
+        
+        if self.powermeasurement == True:
+            self.laserenergy = self.FMII.get_dataPoint()
 
         self.imageloop()
 
@@ -299,6 +336,8 @@ class SeriesGui(tk.Frame):
         self.imageseries[str(i)] = self.sumimage
         self.delaylist.append(i)
         self.totalintensities.append(numpy.sum(self.sumimage))
+        if self.powermeasurement == True:
+            self.energies[str(i)] = self.laserenergy
 
         self.lastdelaydisplay.clear()
         self.lastdelaydisplay.imshow(self.sumimage, cmap="gray", vmin=0)
@@ -326,8 +365,16 @@ class SeriesGui(tk.Frame):
         f = open(self.parameterfilename, "w")
         f.write(str(self.parameters))
         f.close
+        
+        if self.powermeasurement == True:
+            f = open(self.energyfilename, "w")
+            f.write(str(self.energies))
+            f.close()
+            
+            messagebox.showinfo("Measurement finished", "Image has been saved under: {}, energy file under {}, parameters under {}".format(self.filename, self.energyfilename, self.parameterfilename))
 
-        messagebox.showinfo("Measurement finished", "Image has been saved under: {}, parameters under {}".format(self.filename, self.parameterfilename))
+        else:
+            messagebox.showinfo("Measurement finished", "Image has been saved under: {}, parameters under {}".format(self.filename, self.parameterfilename))
 
         self.startbutton.configure(state=tk.NORMAL)
         self.stopbutton.pack_forget()
@@ -423,6 +470,9 @@ class SeriesGui(tk.Frame):
 
     def userinterrupt(self):
 
+        if self.powermeasurement == True:
+            self.FMII.closeDriver()
+        
         self.running = False
         self.stopbutton.pack_forget()
 
